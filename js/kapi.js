@@ -12,7 +12,8 @@ function kapi(canvas, params, events){
 		defaults = {
 			fillColor : '#f0f',
 			fRate : 20
-		};
+		},
+		DEBUG = true;
 	
 	/* Define some useful methods that are private to Kapi. */
 	
@@ -279,18 +280,18 @@ function kapi(canvas, params, events){
 			return this._keyframize(inst, initialParams);
 		},
 		
+		_isFirstStateForObj: function(keyframeId, stateObj){
+			
+		},
+		
 		_keyframize: function(implementationObj){
 			var self = this;
 
 			// TODO:  keyframe() blows up if given a keyframeId that is a string.
 			// It should accept strings.
 			implementationObj.keyframe = function(keyframeId, stateObj){
-				//stateObj.draw = implementationObj;
 				stateObj.prototype = this;
 				
-				extend(stateObj, implementationObj.params);
-				stateObj._params = implementationObj.params;
-
 				// Make really really sure the id is unique, if one is not provided
 				if (typeof implementationObj.id === 'undefined'){
 					implementationObj.id = 
@@ -306,6 +307,9 @@ function kapi(canvas, params, events){
 				self._keyframes[keyframeId][implementationObj.id] = stateObj;
 
 				self._updateKeyframes(implementationObj, keyframeId);
+				
+				extend(stateObj, implementationObj.params);
+				stateObj._params = implementationObj.params;
 
 				// Calculate and update the number of seconds this animation will run for
 				self._animationDuration = 
@@ -350,33 +354,32 @@ function kapi(canvas, params, events){
 				}
 			}
 			
-			// Store the ordered keyframes into a temporary object
-			for (i = 0; i < arr.length; i++){
-				_keyframes[arr[i] + ''] = this._keyframes[arr[i]];
-			}
+			if (DEBUG){
+				// Store the ordered keyframes into a temporary object
+				for (i = 0; i < arr.length; i++){
+					_keyframes[arr[i] + ''] = this._keyframes[arr[i]];
+				}
 			
-			// Set the contents of the internal _keyframes object to that of the ordered temporary object
-			this._keyframes = _keyframes;
+				// Set the contents of the internal _keyframes object to that of the ordered temporary object
+				this._keyframes = _keyframes;
+			}
 		},
 		
 		_normalizeObjectAcrossKeyframes: function(keyframedObjId){
-			var state, prevState, tempParams;
+			var state, prevState, tempParams, i,
+				length = this._keyframeIds.length;
 			
 			// Traverse all keyframes in the animation
-			for (state in this._keyframes){
+			for (i = 0; i < length; i++){
+				state = this._keyframeIds[i];
 				
-				// BUG:  If the last keyframe for an keyframedObj doesn't have
-				// a property that a previous frame does, it inherits the initial
-				// value for the property instead of the previous keyframe's.
-				if (this._keyframes.hasOwnProperty(state)){
-					if (prevState){
-						extend(
-							this._keyframes[state][keyframedObjId],
-							this._keyframes[prevState][keyframedObjId]);
-					}
-				
-					prevState = state;
+				if (prevState){
+					extend(
+						this._keyframes[state][keyframedObjId],
+						this._keyframes[prevState][keyframedObjId]);
 				}
+				
+				prevState = state;
 			}
 		},
 		
