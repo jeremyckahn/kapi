@@ -28,11 +28,6 @@ function kapi(canvas, params, events){
 		return + new Date();
 	}
 	
-	// Find the difference between two numbers
-	function difference(a, b){
-		return Math.max(a, b) - Math.min(a, b);
-	}
-	
 	// Inspired by the map() method in Processing.js: http://processingjs.org/reference/map_
 	function map(value, low1, high1, low2, high2){
 		value = norm(value, low1, high1);
@@ -134,6 +129,8 @@ function kapi(canvas, params, events){
 		},
 		
 		play: function(){
+			var pauseDuration;
+			
 			if (this.isPlaying()){
 				return;
 			}
@@ -145,7 +142,12 @@ function kapi(canvas, params, events){
 			}
 			
 			if (this._loopStartTime){
-				this._loopStartTime += now() - this._pausedAtTime;
+				pauseDuration = now() - this._pausedAtTime;
+				this._loopStartTime += pauseDuration;
+				
+				// _startTime needs to be adjusted so that the loop doesn't
+				// start somewhere other than the beginning in update()
+				this._startTime += pauseDuration;
 			} else {
 				this._loopStartTime = now();
 			}
@@ -176,9 +178,14 @@ function kapi(canvas, params, events){
 				
 				self._loopLength = now() - self._loopStartTime;
 				
+				// BUG:  The loop starts over when the final keyframe has run,
+				// not the actual length of time that the loop has ran for
+				
 				// Start the loop over if need be.
 				if (self._loopLength > self._animationDuration){
-					self._loopStartTime = now();
+					// Reset the loop start time relative to when the animation began,
+					// not to when the final keyframe last completed
+					self._loopStartTime = self._startTime + parseInt((now() - self._startTime) / self._animationDuration, 10) * self._animationDuration;
 					self._loopLength -= self._animationDuration;	
 				}
 				
@@ -203,7 +210,7 @@ function kapi(canvas, params, events){
 		
 		// Handle low-level drawing logic
 		_update: function(currentFrame){
-			var i, objStateIndices, currentFrameStateProperties;
+			var objStateIndices, currentFrameStateProperties;
 			
 			for(objStateIndices in this._objStateIndex){
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)){
@@ -223,13 +230,11 @@ function kapi(canvas, params, events){
 		// Make it faster and easier to follow.
 		_calculateCurrentFrameStateProperties: function(stateObj){
 			
-			var self = this,
-				stateObjKeyframeIndex = this._objStateIndex[stateObj],
+			var stateObjKeyframeIndex = this._objStateIndex[stateObj],
 				latestKeyframeId = this._getLatestKeyFrameId( stateObjKeyframeIndex ),
 				nextKeyframeId = this._getNextKeyframeId( stateObjKeyframeIndex, latestKeyframeId ),
 				latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj],
 				nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj],
-				positionBetweenKeyframes = norm( this._currentFrame, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId] ),
 				currentFrameProps = {},
 				prop;
 				
@@ -366,7 +371,7 @@ function kapi(canvas, params, events){
 		},
 		
 		_normalizeObjectAcrossKeyframes: function(keyframedObjId){
-			var state, prevState, tempParams, i,
+			var state, prevState, i,
 				length = this._keyframeIds.length;
 			
 			// Traverse all keyframes in the animation
@@ -398,9 +403,9 @@ function kapi(canvas, params, events){
 			}
 			
 			// TODO:  Fill this in and test it!
-			if (typeof params.remove !== 'undefined'){
+			/*if (typeof params.remove !== 'undefined'){
 				
-			}
+			}*/
 		}
 		
 	}.init(canvas, params, events);
