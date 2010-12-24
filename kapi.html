@@ -107,11 +107,11 @@
 				x : 0,
 				y : 0,
 				radius : 50,
-				color : '#0f0'
+				color : '#00ff00'
 			}),
 			circle2 = kapi.add(circle, {
 				name : 'myCircle2',
-				color : '#f00'
+				color : '#ff0000'
 			}),
 			square1 = kapi.add(square, {
 				name : 'square1',
@@ -119,20 +119,23 @@
 				width : 75,
 				x : 200,
 				y : 200,
-				color : '#00f'
+				color : '#0000ff'
 			}),
 			currFrameOutput = $('#currentFrame span');
 		
 		// Testing the API.
 		circle1.keyframe(0, {
-			x : 0
-		}).keyframe(10, {
+			x : 0,
+			color : '#00ff00'
+		}).keyframe(30, {
 			x : 10,
-			y : 50
+			y : 50,
+			color : '#ff00ff'
 		}).keyframe(45, {
 			x : 200,
 			y : 150,
-			radius : 100
+			radius : 100,
+			color : '#0000ff'
 		});
 		
 		circle2.keyframe(0, {
@@ -142,7 +145,8 @@
 		}).keyframe(45, {
 			x : 10,
 			y : 10,
-			radius : 100
+			radius : 100,
+			color: '#123456'
 		});
 		
 		square1.keyframe(0, {
@@ -151,7 +155,8 @@
 			x : 300,
 			y : 30
 		}).keyframe(45, {
-			y : 250
+			y : 250,
+			color: '#654321'
 		});
 		
 		canvas.kapi.play();

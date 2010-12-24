@@ -17,6 +17,30 @@ function kapi(canvas, params, events){
 	
 	/* Define some useful methods that are private to Kapi. */
 	
+	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
+	function extend(child, parent, doOverwrite){
+		var i, 
+			toStr = Object.prototype.toString,
+			astr = '[object Array]';
+			
+		child = child || {};
+		
+		for (i in parent){
+			if (parent.hasOwnProperty(i)){
+				if (typeof parent[i] === 'object'){
+					if (!child[i] || doOverwrite){
+						child[i] = (toStr.call(parent[i]) === astr) ? [] : {};
+					}
+					extend(child[i], parent[i]);
+				} else {
+					if (!child[i] || doOverwrite){
+						child[i] = parent[i];
+					}
+				}
+			}
+		}
+	}
+	
 	// Strip the 'px' from a style string and add it to the element directly
 	// Meant to be called with Function.call()
 	function setDimensionVal(dim){
@@ -44,34 +68,30 @@ function kapi(canvas, params, events){
 		return ((rangeEnd - rangeBegin) * position) + rangeBegin;		
 	}
 	
-	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
-	function extend(child, parent, doOverwrite){
-		var i, 
-			toStr = Object.prototype.toString,
-			astr = '[object Array]';
-			
-		child = child || {};
-		
-		for (i in parent){
-			if (parent.hasOwnProperty(i)){
-				if (typeof parent[i] === 'object'){
-					if (!child[i] || doOverwrite){
-						child[i] = (toStr.call(parent[i]) === astr) ? [] : {};
-					}
-					extend(child[i], parent[i]);
-				} else {
-					if (!child[i] || doOverwrite){
-						child[i] = parent[i];
-					}
-				}
-			}
-		}
-	}
-	
 	function sortArrayNumerically(array){
 		return array.sort(function(a, b){
 			return a - b;
 		});
+	}
+	
+	function isColorString(str){
+		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
+	}
+	
+	function hexToDec(hex){
+		return parseInt(hex, 16);
+	}
+	
+	function decToHex(dec){
+		var ret = Number(parseInt(dec, 10)).toString(16);
+		return ret.length === 1 ? '0' + ret : ret;
+	}
+	
+	function hexToRGBArr(hex){
+		if (typeof hex === 'string'){
+			hex = hex.replace(/#/g, '');
+			return arr = [ hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2)) ];
+		}
 	}
 	
 	return {
@@ -178,9 +198,6 @@ function kapi(canvas, params, events){
 				
 				self._loopLength = now() - self._loopStartTime;
 				
-				// BUG:  The loop starts over when the final keyframe has run,
-				// not the actual length of time that the loop has ran for
-				
 				// Start the loop over if need be.
 				if (self._loopLength > self._animationDuration){
 					// Reset the loop start time relative to when the animation began,
@@ -236,20 +253,56 @@ function kapi(canvas, params, events){
 				latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj],
 				nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj],
 				currentFrameProps = {},
-				prop;
+				keyProp,
+				currProp, nextProp,
+				isColor, isRotation,
+				i, unconvertedColor;
 				
 			
-			for (prop in latestKeyframeProps){
+			for (keyProp in latestKeyframeProps){
 
-				// TODO:  This needs to accept more than just numbers.
-				// Example: Strings that represent colors should fade to the correct in-between color.
-				if (latestKeyframeProps.hasOwnProperty(prop) && typeof latestKeyframeProps[prop] === 'number'){
-					currentFrameProps[prop] = map(
-							this._currentFrame,
-							stateObjKeyframeIndex[latestKeyframeId],
-							stateObjKeyframeIndex[nextKeyframeId],
-							latestKeyframeProps[prop],
-							nextKeyframeProps[prop]);
+				currProp = latestKeyframeProps[keyProp];
+				
+				if (latestKeyframeProps.hasOwnProperty(keyProp) && (typeof currProp === 'number' || isColorString(currProp)) ){
+					
+					nextProp = nextKeyframeProps[keyProp];
+					
+					isColor = isRotation = false;
+					
+					if (typeof currProp === 'string'){
+						isColor = true;
+						currProp = hexToRGBArr(currProp);
+						nextProp = hexToRGBArr(nextProp);
+					}
+					
+					// Not being used yet... but it will be!
+					/*if (typeof currProp === 'number' && (/rotation/i).test(keyProp.toLowerCase())){
+						isRotation = true;
+					}*/
+					
+					if (isColor){
+						
+						currentFrameProps[keyProp] = '#';
+						
+						for (i = 0; i < currProp.length; i++){
+							unconvertedColor = map(
+								this._currentFrame,
+								stateObjKeyframeIndex[latestKeyframeId],
+								stateObjKeyframeIndex[nextKeyframeId],
+								currProp[i],
+								nextProp[i]);
+								
+							currentFrameProps[keyProp] += decToHex(unconvertedColor);
+						}
+						
+					} else {
+						currentFrameProps[keyProp] = map(
+								this._currentFrame,
+								stateObjKeyframeIndex[latestKeyframeId],
+								stateObjKeyframeIndex[nextKeyframeId],
+								currProp,
+								nextProp);
+					}
 				}
 			}
 			
@@ -283,10 +336,6 @@ function kapi(canvas, params, events){
 			inst.params = initialParams;
 			
 			return this._keyframize(inst, initialParams);
-		},
-		
-		_isFirstStateForObj: function(keyframeId, stateObj){
-			
 		},
 		
 		_keyframize: function(implementationObj){
