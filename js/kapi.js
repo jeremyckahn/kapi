@@ -20,8 +20,8 @@ function kapi(canvas, params, events) {
 	/* Define some useful methods that are private to Kapi. */
 
 	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
-
-
+	// Contains some modifications to improve performance for Kapi, so
+	// just copy pasting this for other implementations is likely not wise.
 	function extend(child, parent, doOverwrite) {
 		var i, toStr = Object.prototype.toString,
 			astr = '[object Array]';
@@ -30,7 +30,7 @@ function kapi(canvas, params, events) {
 
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
-				if (typeof parent[i] === 'object') {
+				if (typeof parent[i] === 'object' && i !== 'prototype') {
 					if (!child[i] || doOverwrite) {
 						child[i] = (toStr.call(parent[i]) === astr) ? [] : {};
 					}
@@ -388,7 +388,7 @@ function kapi(canvas, params, events) {
 				self._updateKeyframes(implementationObj, keyframeId);
 
 				extend(stateObj, implementationObj.params);
-				stateObj._params = implementationObj.params;
+				//stateObj._params = implementationObj.params;
 
 				// Calculate and update the number of seconds this animation will run for
 				self._animationDuration =
