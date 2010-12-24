@@ -90,7 +90,7 @@ function kapi(canvas, params, events){
 	function hexToRGBArr(hex){
 		if (typeof hex === 'string'){
 			hex = hex.replace(/#/g, '');
-			return arr = [ hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2)) ];
+			return [ hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2)) ];
 		}
 	}
 	
@@ -261,49 +261,50 @@ function kapi(canvas, params, events){
 			
 			for (keyProp in latestKeyframeProps){
 
-				currProp = latestKeyframeProps[keyProp];
-				
-				if (latestKeyframeProps.hasOwnProperty(keyProp) && (typeof currProp === 'number' || isColorString(currProp)) ){
+				if (latestKeyframeProps.hasOwnProperty(keyProp)){
 					
-					nextProp = nextKeyframeProps[keyProp];
+					currProp = latestKeyframeProps[keyProp];
 					
-					isColor = isRotation = false;
-					
-					if (typeof currProp === 'string'){
-						isColor = true;
-						currProp = hexToRGBArr(currProp);
-						nextProp = hexToRGBArr(nextProp);
-					}
-					
-					// Not being used yet... but it will be!
-					/*if (typeof currProp === 'number' && (/rotation/i).test(keyProp.toLowerCase())){
-						isRotation = true;
-					}*/
-					
-					if (isColor){
-						
-						currentFrameProps[keyProp] = '#';
-						
-						for (i = 0; i < currProp.length; i++){
-							unconvertedColor = map(
-								this._currentFrame,
-								stateObjKeyframeIndex[latestKeyframeId],
-								stateObjKeyframeIndex[nextKeyframeId],
-								currProp[i],
-								nextProp[i]);
-								
-							currentFrameProps[keyProp] += decToHex(unconvertedColor);
+					if (typeof currProp === 'number' || isColorString(currProp)){
+						nextProp = nextKeyframeProps[keyProp];
+						isColor = isRotation = false;
+
+						if (typeof currProp === 'string'){
+							isColor = true;
+							currProp = hexToRGBArr(currProp);
+							nextProp = hexToRGBArr(nextProp);
 						}
-						
-					} else {
-						currentFrameProps[keyProp] = map(
-								this._currentFrame,
-								stateObjKeyframeIndex[latestKeyframeId],
-								stateObjKeyframeIndex[nextKeyframeId],
-								currProp,
-								nextProp);
-					}
-				}
+
+						// Not being used yet... but it will be!
+						/*if (typeof currProp === 'number' && (/rotation/i).test(keyProp.toLowerCase())){
+							isRotation = true;
+						}*/
+
+						if (isColor){
+
+							currentFrameProps[keyProp] = '#';
+
+							for (i = 0; i < currProp.length; i++){
+								unconvertedColor = map(
+									this._currentFrame,
+									stateObjKeyframeIndex[latestKeyframeId],
+									stateObjKeyframeIndex[nextKeyframeId],
+									currProp[i],
+									nextProp[i]);
+
+								currentFrameProps[keyProp] += decToHex(unconvertedColor);
+							}
+
+						} else {
+							currentFrameProps[keyProp] = map(
+									this._currentFrame,
+									stateObjKeyframeIndex[latestKeyframeId],
+									stateObjKeyframeIndex[nextKeyframeId],
+									currProp,
+									nextProp);
+						}
+					}	
+				}		
 			}
 			
 			extend(currentFrameProps, latestKeyframeProps);
@@ -425,6 +426,7 @@ function kapi(canvas, params, events){
 			
 			// Traverse all keyframes in the animation
 			for (i = 0; i < length; i++){
+				
 				state = this._keyframeIds[i];
 				
 				if (prevState){
@@ -433,7 +435,10 @@ function kapi(canvas, params, events){
 						this._keyframes[prevState][keyframedObjId]);
 				}
 				
-				prevState = state;
+				// Only store the prevState if keyframedObjId actually exists in this keyframe 
+				if (this._keyframes[state][keyframedObjId]){
+					prevState = state;
+				}
 			}
 		},
 		
