@@ -107,11 +107,13 @@
 				x : 0,
 				y : 0,
 				radius : 50,
-				color : '#00ff00'
+				color : '#00ff00',
+				easing : 'easeInOutQuad'
 			}),
 			circle2 = kapi.add(circle, {
 				name : 'myCircle2',
-				color : '#ff0000'
+				color : '#ff0000',
+				easing : 'easeInOutQuint'
 			}),
 			square1 = kapi.add(square, {
 				name : 'square1',
@@ -119,10 +121,11 @@
 				width : 75,
 				x : 200,
 				y : 200,
-				color : '#0000ff'
+				color : '#0000ff',
+				easing : 'easeInOutSine'
 			}),
 			currFrameOutput = $('#currentFrame span');
-		
+			
 		// Testing the API.
 		circle1.keyframe(0, {
 			x : 0,

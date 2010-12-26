@@ -15,9 +15,181 @@ function kapi(canvas, params, events) {
 			fillColor: '#f0f',
 			fRate: 20
 		},
-		DEBUG = true;
+		DEBUG = true,
+		tween = {
+			// All equations are copied from here: http://www.gizma.com/easing/
+			// Originally written by Robert Penner, copied under BSD License (http://www.robertpenner.com/)
+			//
+			// Params are as follows
+			// c = current time
+			// b = start value
+			// c = change in value
+			// d = duration
+			
+			// no easing, no acceleration
+			linear: function(t, b, c, d){
+				return c * t / d + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInQuad: function(t, b, c, d){
+				t /= d;
+				return c * t * t + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutQuad: function (t, b, c, d) {
+				t /= d;
+				return -c * t * (t - 2) + b;
+			},
+			
+			// acceleration until halfway, then deceleration
+			easeInOutQuad: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1) {
+					return c/2*t*t + b;
+				}
+				t--;
+				return -c/2 * (t*(t-2) - 1) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInCubic: function (t, b, c, d) {
+				t /= d;
+				return c*t*t*t + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutCubic: function (t, b, c, d) {
+				t /= d;
+				t--;
+				return c*(t*t*t + 1) + b;
+			},
+			
+			// acceleration until halfway, then deceleration
+			easeInOutCubic: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1) {
+					return c/2*t*t*t + b;
+				}
+				t -= 2;
+				return c/2*(t*t*t + 2) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInQuart: function (t, b, c, d) {
+				t /= d;
+				return c*t*t*t*t + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutQuart: function (t, b, c, d) {
+				t /= d;
+				t--;
+				return -c * (t*t*t*t - 1) + b;
+			},
+			
+			// acceleration until halfway, then deceleration
+			easeInOutQuart: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1) {
+					return c/2*t*t*t*t + b;
+				}
+				t -= 2;
+				return -c/2 * (t*t*t*t - 2) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInQuint: function (t, b, c, d) {
+				t /= d;
+				return c*t*t*t*t*t + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutQuint: function (t, b, c, d) {
+				t /= d;
+				t--;
+				return c*(t*t*t*t*t + 1) + b;
+			},
+			
+			// acceleration until halfway, then deceleration
+			easeInOutQuint: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1){
+					return c/2*t*t*t*t*t + b;
+				}
+				t -= 2;
+				return c/2*(t*t*t*t*t + 2) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInSine: function (t, b, c, d) {
+				return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutSine: function (t, b, c, d) {
+				return c * Math.sin(t/d * (Math.PI/2)) + b;
+			},
+			
+			// accelerating until halfway, then decelerating
+			easeInOutSine: function (t, b, c, d) {
+				return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInExpo: function (t, b, c, d) {
+				return c * Math.pow( 2, 10 * (t/d - 1) ) + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutExpo: function (t, b, c, d) {
+				return c * ( -Math.pow( 2, -10 * t/d ) + 1 ) + b;
+			},
+			
+			// accelerating until halfway, then decelerating
+			easeInOutExpo: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1) {
+					return c/2 * Math.pow( 2, 10 * (t - 1) ) + b;
+				}
+				t--;
+				return c/2 * ( -Math.pow( 2, -10 * t) + 2 ) + b;
+			},
+			
+			// accelerating from zero velocity
+			easeInCirc: function (t, b, c, d) {
+				t /= d;
+				return -c * (Math.sqrt(1 - t*t) - 1) + b;
+			},
+			
+			// decelerating to zero velocity
+			easeOutCirc: function (t, b, c, d) {
+				t /= d;
+				t--;
+				return c * Math.sqrt(1 - t*t) + b;
+			},
+			
+			// acceleration until halfway, then deceleration
+			easeInOutCirc: function (t, b, c, d) {
+				t /= d/2;
+				if (t < 1) {
+					return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
+				}
+				t -= 2;
+				return c/2 * (Math.sqrt(1 - t*t) + 1) + b;
+			}
+		};
 
 	/* Define some useful methods that are private to Kapi. */
+	
+	function applyEase(easing, previousKeyframe, nextKeyframe, currProp, nextProp){
+		return tween[easing](
+			this._currentFrame - previousKeyframe,
+			currProp,
+			nextProp - currProp,
+			nextKeyframe - previousKeyframe);
+	}
 
 	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
 	// Contains some modifications to improve performance for Kapi, so
@@ -46,39 +218,13 @@ function kapi(canvas, params, events) {
 
 	// Strip the 'px' from a style string and add it to the element directly
 	// Meant to be called with Function.call()
-
-
 	function setDimensionVal(dim) {
 		this[dim] = this.style[dim].replace(/px/gi, '') || this._params[dim];
 	}
 
 	// Get UNIX epoch time
-
-
 	function now() {
 		return +new Date();
-	}
-
-	// Inspired by the map() method in Processing.js: http://processingjs.org/reference/map_
-
-
-	function map(value, low1, high1, low2, high2) {
-		value = norm(value, low1, high1);
-		return lerp(value, low2, high2);
-	}
-
-	// Copied from Proccessing.js's norm function: http://processingjs.org/reference/norm()
-
-
-	function norm(num, rangeBegin, rangeEnd) {
-		return (num - rangeBegin) / (rangeEnd - rangeBegin);
-	}
-
-	// Copied from Proccessing.js's lerp function: http://processingjs.org/reference/lerp()
-
-
-	function lerp(position, rangeBegin, rangeEnd) {
-		return ((rangeEnd - rangeBegin) * position) + rangeBegin;
 	}
 
 	function sortArrayNumerically(array) {
@@ -98,11 +244,6 @@ function kapi(canvas, params, events) {
 	function isColorString(str) {
 		return isHexString(str) || isRGBString(str);
 	}
-
-	/*function decToHex(dec){
-		var ret = Number(parseInt(dec, 10)).toString(16);
-		return ret.length === 1 ? '0' + ret : ret;
-	}*/
 
 	function hexToDec(hex) {
 		return parseInt(hex, 16);
@@ -291,13 +432,12 @@ function kapi(canvas, params, events) {
 				latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj],
 				nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj],
 				currentFrameProps = {},
-				keyProp, currProp, nextProp, isColor, isRotation, i, unconvertedColor;
-
+				keyProp, currProp, nextProp, isColor, isRotation, i, 
+				easing = tween[nextKeyframeProps.easing] ? nextKeyframeProps.easing : 'linear';
 
 			for (keyProp in latestKeyframeProps) {
 
 				if (latestKeyframeProps.hasOwnProperty(keyProp)) {
-
 					currProp = latestKeyframeProps[keyProp];
 
 					if (typeof currProp === 'number' || isColorString(currProp)) {
@@ -321,19 +461,15 @@ function kapi(canvas, params, events) {
 							currentFrameProps[keyProp] = 'rgb(';
 
 							for (i = 0; i < currProp.length; i++) {
-
-								// Kind of a mess, but breaking this out into multiple
-								// statements would hurt performance
-								currentFrameProps[keyProp] += Math.floor(map(
-								this._currentFrame, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp[i], nextProp[i])) + ',';
+								currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp[i], nextProp[i])) + ',';
 							}
 
 							// Swap the last RGB comma for an end-paren
 							currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
 
 						} else {
-							currentFrameProps[keyProp] = map(
-							this._currentFrame, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp, nextProp);
+							currentFrameProps[keyProp] = applyEase.call(this, easing, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp, nextProp);
+								
 						}
 					}
 				}
@@ -384,11 +520,9 @@ function kapi(canvas, params, events) {
 
 				// If this keyframe does not already have state info for this object, create it
 				self._keyframes[keyframeId][implementationObj.id] = stateObj;
-
+				
 				self._updateKeyframes(implementationObj, keyframeId);
-
 				extend(stateObj, implementationObj.params);
-				//stateObj._params = implementationObj.params;
 
 				// Calculate and update the number of seconds this animation will run for
 				self._animationDuration =
@@ -431,8 +565,7 @@ function kapi(canvas, params, events) {
 				newStateId = this._keyframeIds[i];
 				newStateObj = this._keyframes[newStateId][keyframedObjId];
 
-
-				if (prevStateId) {
+				if (typeof prevStateId !== 'undefined') {
 					prevStateObj = this._keyframes[prevStateId][keyframedObjId];
 					extend(newStateObj, prevStateObj);
 				}
