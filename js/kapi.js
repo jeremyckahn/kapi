@@ -6,8 +6,6 @@
 
 
 // kapi works by augmenting the Canvas element on the DOM.
-
-
 function kapi(canvas, params, events) {
 
 	var version = '0.0.1',
@@ -179,6 +177,16 @@ function kapi(canvas, params, events) {
 				t -= 2;
 				return c/2 * (Math.sqrt(1 - t*t) + 1) + b;
 			}
+		},
+		calcKeyframe = {
+			'ms': function(num) {
+				return (num * this._params.fRate) / 1000;
+			},
+			
+			's': function(num) {
+				return num * this._params.fRate;
+			}
+				
 		};
 
 	/* Define some useful methods that are private to Kapi. */
@@ -512,6 +520,13 @@ function kapi(canvas, params, events) {
 					implementationObj.id =
 					implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
 				}
+				
+				try {
+					keyframeId = self._getRealKeyframe(keyframeId);
+				} catch (ex) {
+					console.log(ex);
+					return;
+				}
 
 				// If this keyframe does not already exist, create it
 				if (typeof self._keyframes[keyframeId] == 'undefined') {
@@ -521,7 +536,10 @@ function kapi(canvas, params, events) {
 				// If this keyframe does not already have state info for this object, create it
 				self._keyframes[keyframeId][implementationObj.id] = stateObj;
 				
+				// Perform necessary maintenance upon all of the keyframes in the animation
 				self._updateKeyframes(implementationObj, keyframeId);
+				
+				// Copy over any "missing" parameters for this keyframe from the original object definition
 				extend(stateObj, implementationObj.params);
 
 				// Calculate and update the number of seconds this animation will run for
@@ -532,6 +550,44 @@ function kapi(canvas, params, events) {
 			};
 
 			return implementationObj;
+		},
+		
+		// Calculates the "real" keyframe from `identifier`.
+		// This means that you can speicify keyframes from things other than plain integers.
+		// For example, you can calculate the real keyframe that will run at a certain period of time.
+		// Valid formats:
+		// 
+		// x : keyframe integer
+		// xms : kayframe at an amount of milliseconds
+		// xs : kayframe at an amount of seconds
+		_getRealKeyframe: function(identifier) {
+			var quantifier, unit, calculatedKeyframe;
+			
+			if (typeof identifier === 'number') {
+				return parseInt(identifier, 10);
+			} else if (typeof identifier === 'string') {
+				// Strip spaces
+				identifier = identifier.replace(/\s/g, '');
+				
+				quantifier = /^(\d|\.)+/.exec(identifier)[0];
+				unit = /\D+$/.exec(identifier);
+				
+				// The quantifier was passed as a string... just return it as a number
+				if (!unit) {
+					return parseInt(quantifier, 10);
+				}
+				
+				if (calcKeyframe[unit]) {
+					calculatedKeyframe = calcKeyframe[unit].call(this, quantifier);
+				} else {
+					throw 'Invalid keyframe identifier unit!';
+				}
+				
+				return calculatedKeyframe;
+			} else {
+				throw 'Invalid keyframe identifier type!';
+			}
+			
 		},
 
 		_updateKeyframes: function (implementationObj, keyframeId) {

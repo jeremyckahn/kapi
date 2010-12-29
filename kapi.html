@@ -88,7 +88,7 @@
 		var canvas = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fRate : 20,
+				fRate : 60,
 				styles : {
 					'height':  '300px',
 					'width': '500px',
@@ -127,14 +127,14 @@
 			currFrameOutput = $('#currentFrame span');
 			
 		// Testing the API.
-		circle1.keyframe(0, {
+		circle1.keyframe('0s', {
 			x : 0,
 			color : '#00ff00'
-		}).keyframe(30, {
+		}).keyframe('2s', {
 			x : 50,
 			y : 80,
 			color : '#ff00ff'
-		}).keyframe(45, {
+		}).keyframe('4s', {
 			x : 200,
 			y : 150,
 			radius : 100,
@@ -145,19 +145,19 @@
 			x : 400,
 			y : 200,
 			radius: 10
-		}).keyframe(45, {
+		}).keyframe('3.5s', {
 			x : 10,
 			y : 10,
 			radius : 100,
 			color: '#123456'
 		});
 		
-		square1.keyframe(0, {
+		square1.keyframe('0', {
 			x : 15
-		}).keyframe(15, {
+		}).keyframe('2s', {
 			x : 300,
 			y : 30
-		}).keyframe(45, {
+		}).keyframe('4000ms', {
 			y : 250,
 			color: '#654321'
 		});
