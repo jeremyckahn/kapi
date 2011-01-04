@@ -88,7 +88,7 @@
 		var canvas = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fRate : 60,
+				fRate : 30,
 				styles : {
 					'height':  '300px',
 					'width': '500px',
@@ -145,9 +145,9 @@
 			x : 400,
 			y : 200,
 			radius: 10
-		}).keyframe('3.5s', {
+		}).keyframe('1s', {
 			x : 10,
-			y : 10,
+			y : 200,
 			radius : 100,
 			color: '#123456'
 		});
@@ -157,7 +157,7 @@
 		}).keyframe('2s', {
 			x : 300,
 			y : 30
-		}).keyframe('4000ms', {
+		}).keyframe('3500ms', {
 			y : 250,
 			color: '#654321'
 		});

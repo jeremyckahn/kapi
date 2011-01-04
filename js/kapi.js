@@ -425,7 +425,11 @@ function kapi(canvas, params, events) {
 					// reached this object's first keyframe
 					if (typeof this._objStateIndex[objStateIndices][0] !== 'undefined' && this._currentFrame >= this._objStateIndex[objStateIndices][0]) {
 						currentFrameStateProperties = this._calculateCurrentFrameStateProperties(objStateIndices);
-						currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
+						
+						// If there are no more keyframes for this object, don't draw it.
+						if (currentFrameStateProperties !== null) {
+							currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
+						}
 					}
 				}
 			}
@@ -434,15 +438,27 @@ function kapi(canvas, params, events) {
 		// TODO:  This may in fact be the ugliest function ever written.
 		// Make it faster and easier to follow.
 		_calculateCurrentFrameStateProperties: function (stateObj) {
+			
 			var stateObjKeyframeIndex = this._objStateIndex[stateObj],
 				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
-				nextKeyframeId = this._getNextKeyframeId(stateObjKeyframeIndex, latestKeyframeId),
-				latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj],
-				nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj],
+				nextKeyframeId,
+				latestKeyframeProps,
+				nextKeyframeProps,
 				currentFrameProps = {},
 				keyProp, currProp, nextProp, isColor, isRotation, i, 
-				easing = tween[nextKeyframeProps.easing] ? nextKeyframeProps.easing : 'linear';
-
+				easing;
+				
+			// Do a check to see if any more keyframes remain in the animation loop for this object
+			if (latestKeyframeId === -1) {
+				return null;
+			}	
+				
+			nextKeyframeId = this._getNextKeyframeId(stateObjKeyframeIndex, latestKeyframeId);
+			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj];
+			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj];
+			currentFrameProps = {};
+			easing = tween[nextKeyframeProps.easing] ? nextKeyframeProps.easing : 'linear';
+			
 			for (keyProp in latestKeyframeProps) {
 
 				if (latestKeyframeProps.hasOwnProperty(keyProp)) {
@@ -489,14 +505,15 @@ function kapi(canvas, params, events) {
 
 		_getLatestKeyFrameId: function (lookup) {
 			var i;
+			
+			if (this._currentFrame > lookup[lookup.length - 1]) {
+				// There are no more keyframes left in the animation loop for this object
+				return -1;
+			}
 
 			for (i = lookup.length - 1; i >= 0; i--) {
 				if (lookup[i] < this._currentFrame) {
-					if (i === lookup.length - 1) {
-						return 0;
-					} else {
-						return i;
-					}
+					return i;
 				}
 			}
 
@@ -525,7 +542,7 @@ function kapi(canvas, params, events) {
 					keyframeId = self._getRealKeyframe(keyframeId);
 				} catch (ex) {
 					console.log(ex);
-					return;
+					return undefined;
 				}
 
 				// If this keyframe does not already exist, create it
