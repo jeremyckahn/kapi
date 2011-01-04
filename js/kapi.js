@@ -474,11 +474,6 @@ function kapi(canvas, params, events) {
 							nextProp = hexToRGBArr(nextProp);
 						}
 
-						// Not being used yet... but it will be!
-/*if (typeof currProp === 'number' && (/rotation/i).test(keyProp.toLowerCase())){
-							isRotation = true;
-						}*/
-
 						if (isColor) {
 							// If the property is a color, do some extra logic to
 							// blend it across the keyframes
@@ -535,13 +530,13 @@ function kapi(canvas, params, events) {
 				// Make really really sure the id is unique, if one is not provided
 				if (typeof implementationObj.id === 'undefined') {
 					implementationObj.id =
-					implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
+						implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
 				}
 				
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
 				} catch (ex) {
-					console.log(ex);
+					console.error(ex);
 					return undefined;
 				}
 
