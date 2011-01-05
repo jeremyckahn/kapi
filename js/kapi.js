@@ -381,7 +381,6 @@ function kapi(canvas, params, events) {
 			var self = this;
 
 			this.state.fCount++;
-
 			this._updateHandle = setTimeout(function () {
 
 				self._loopLength = now() - self._loopStartTime;
@@ -437,13 +436,12 @@ function kapi(canvas, params, events) {
 
 		// TODO:  This may in fact be the ugliest function ever written.
 		// Make it faster and easier to follow.
-		_getObjectState: function (stateObj) {
+		_getObjectState: function (stateObjName) {
 			
-			var stateObjKeyframeIndex = this._objStateIndex[stateObj],
+			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
 				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
 				nextKeyframeId, latestKeyframeProps,
-				nextKeyframeProps, currentFrameProps = {},
-				keyProp, currProp, nextProp, isColor, isRotation, i, easing;
+				nextKeyframeProps, easing;
 				
 			// Do a check to see if any more keyframes remain in the animation loop for this object
 			if (latestKeyframeId === -1) {
@@ -451,8 +449,8 @@ function kapi(canvas, params, events) {
 			}	
 				
 			nextKeyframeId = this._getNextKeyframeId(stateObjKeyframeIndex, latestKeyframeId);
-			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObj];
-			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObj];
+			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
+			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
 			currentFrameProps = {};
 			easing = tween[nextKeyframeProps.easing] ? nextKeyframeProps.easing : 'linear';
 			
