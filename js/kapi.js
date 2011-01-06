@@ -191,9 +191,9 @@ function kapi(canvas, params, events) {
 
 	/* Define some useful methods that are private to Kapi. */
 	
-	function applyEase(easing, previousKeyframe, nextKeyframe, currProp, nextProp){
+	function applyEase(easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame){
 		return tween[easing](
-			this._currentFrame - previousKeyframe,
+			(currentFrame || this._currentFrame) - previousKeyframe,
 			currProp,
 			nextProp - currProp,
 			nextKeyframe - previousKeyframe);
@@ -373,7 +373,7 @@ function kapi(canvas, params, events) {
 			inst.draw = implementationFunc;
 			inst.params = initialParams;
 
-			return this._keyframize(inst, initialParams);
+			return this._keyframize(inst);
 		},
 
 		// Handle high-level frame management logic
@@ -414,7 +414,7 @@ function kapi(canvas, params, events) {
 
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
-			var objStateIndices, currentFrameStateProperties;
+			var objStateIndices, currentFrameStateProperties, queuedAction, adjustedProperties;
 
 			for (objStateIndices in this._objStateIndex) {
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
@@ -427,6 +427,16 @@ function kapi(canvas, params, events) {
 						
 						// If there remaining keyframes for this object, draw it.
 						if (currentFrameStateProperties !== null) {
+							// If there is a queued action, apply it
+							if (this._objStateIndex[objStateIndices].queue.length > 0) {
+								if (this._objStateIndex[objStateIndices].queue[0]._internals.fromState === null) {
+									this._objStateIndex[objStateIndices].queue[0]._internals.fromState = currentFrameStateProperties;
+								}
+								
+								adjustedProperties = this._getQueuedActionState(this._objStateIndex[objStateIndices].queue);
+								extend(currentFrameStateProperties, adjustedProperties, true);
+							}
+							
 							currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
 						}
 					}
@@ -434,14 +444,12 @@ function kapi(canvas, params, events) {
 			}
 		},
 
-		// TODO:  This may in fact be the ugliest function ever written.
-		// Make it faster and easier to follow.
 		_getObjectState: function (stateObjName) {
 			
 			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
 				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
 				nextKeyframeId, latestKeyframeProps,
-				nextKeyframeProps, easing;
+				nextKeyframeProps;
 				
 			// Do a check to see if any more keyframes remain in the animation loop for this object
 			if (latestKeyframeId === -1) {
@@ -452,59 +460,91 @@ function kapi(canvas, params, events) {
 			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
 			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
 			currentFrameProps = {};
-			easing = tween[nextKeyframeProps.easing] ? nextKeyframeProps.easing : 'linear';
-			
+					
 			return this._calculateCurrentFrameProps(
-					stateObjKeyframeIndex, 
 					latestKeyframeProps, 
 					nextKeyframeProps, 
-					latestKeyframeId, 
-					easing, 
-					nextKeyframeId);
+					stateObjKeyframeIndex[latestKeyframeId], 
+					stateObjKeyframeIndex[nextKeyframeId], 
+					nextKeyframeProps.easing);
 		},
 		
-		_calculateCurrentFrameProps: function(stateObjKeyframeIndex, latestKeyframeProps, nextKeyframeProps, latestKeyframeId, easing, nextKeyframeId) {
-			var i, keyProp, currProp, nextProp, isColor, currentFrameProps = {};
+		_getQueuedActionState: function(queuedActionsArr) {
+			var currTime = now(),
+				queuedAction = queuedActionsArr[0],
+				internals = queuedAction._internals,
+				tempQueuedAction = {};
 			
-			for (keyProp in latestKeyframeProps) {
+			if (internals.startTime === null) {
+				internals.startTime = currTime;
+			}
+			
+			if (internals.toState === null) {
+				internals.toState = {};
+				extend(internals.toState, internals.fromState);
+				extend(internals.toState, queuedAction.state, true);
+			}
+			
+			internals.currFrame = ( (currTime - internals.startTime) / 1000 ) * this._params.fRate;
+			
+			if (internals.currFrame > queuedAction.duration) {
+				queuedActionsArr.shift();
+			}
+			
+			return this._calculateCurrentFrameProps(
+					internals.fromState, 
+					internals.toState, 
+					0, 
+					+ queuedAction.duration, 
+					queuedAction.easing || internals.fromState.easing, {
+						currentFrame: internals.currFrame
+					});
+		},
+		
+		_calculateCurrentFrameProps: function(fromState, toState, fromKeyframe, toKeyframe, easing, options) {
+			var i, keyProp, fromProp, toProp, isColor, currentFrameProps = {};
+			
+			easing = tween[easing] ? easing : 'linear';
+			options = options || {};
+			
+			for (keyProp in fromState) {
 
-				if (latestKeyframeProps.hasOwnProperty(keyProp)) {
-					currProp = latestKeyframeProps[keyProp];
+				if (fromState.hasOwnProperty(keyProp)) {
+					fromProp = fromState[keyProp];
 
-					if (typeof currProp === 'number' || isColorString(currProp)) {
-						nextProp = nextKeyframeProps[keyProp];
+					if (typeof fromProp === 'number' || isColorString(fromProp)) {
+						toProp = toState[keyProp];
 						isColor = false;
 
-						if (typeof currProp === 'string') {
+						if (typeof fromProp === 'string') {
 							isColor = true;
-							currProp = hexToRGBArr(currProp);
-							nextProp = hexToRGBArr(nextProp);
+							fromProp = hexToRGBArr(fromProp);
+							toProp = hexToRGBArr(toProp);
 						}
 
 						if (isColor) {
 							// If the property is a color, do some extra logic to
-							// blend it across the keyframes
+							// blend it across the states
 							currentFrameProps[keyProp] = 'rgb(';
 
-							for (i = 0; i < currProp.length; i++) {
-								currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp[i], nextProp[i])) + ',';
+							for (i = 0; i < fromProp.length; i++) {
+								currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp[i], toProp[i], options.currentFrame)) + ',';
 							}
 
 							// Swap the last RGB comma for an end-paren
 							currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
 
 						} else {
-							currentFrameProps[keyProp] = applyEase.call(this, easing, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], currProp, nextProp);
-								
+							currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);		
 						}
 					}
 				}
 			}
 
-			extend(currentFrameProps, latestKeyframeProps);
+			extend(currentFrameProps, fromState);
 			return currentFrameProps;
 		},
-		
+				
 		/**
 		 * @param {Array} lookup A lookup array for the internal `_keyframes` object
 		 * 
@@ -533,17 +573,22 @@ function kapi(canvas, params, events) {
 
 		_keyframize: function (implementationObj) {
 			var self = this;
+			
+			// Make really really sure the id is unique, if one is not provided
+			if (typeof implementationObj.id === 'undefined') {
+				implementationObj.id =
+					implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
+			}
+			
+			if (typeof index === 'undefined') {
+				this._objStateIndex[implementationObj.id] = [];
+				this._objStateIndex[implementationObj.id].queue = [];
+			}
 
 			// TODO:  keyframe() blows up if given a keyframeId that is a string.
 			// It should accept strings.
 			implementationObj.keyframe = function (keyframeId, stateObj) {
-				stateObj.prototype = this;
-
-				// Make really really sure the id is unique, if one is not provided
-				if (typeof implementationObj.id === 'undefined') {
-					implementationObj.id =
-						implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
-				}
+				stateObj.prototype = this;				
 				
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
@@ -568,8 +613,26 @@ function kapi(canvas, params, events) {
 
 				// Calculate and update the number of seconds this animation will run for
 				self._animationDuration =
-				1000 * (self._keyframeIds[self._keyframeIds.length - 1] / self._params.fRate);
+					1000 * (self._keyframeIds[self._keyframeIds.length - 1] / self._params.fRate);
 
+				return this;
+			};
+			
+			implementationObj.to = function (duration, stateObj) {
+				var last, queue = self._objStateIndex[implementationObj.id].queue;
+				
+				queue.push({
+					'duration': self._getRealKeyframe(duration),
+					'state': stateObj
+				});
+				
+				last = queue[queue.length - 1];
+				last._internals = {};
+				
+				last._internals.startTime = null;
+				last._internals.fromState = null;
+				last._internals.toState = null;
+				
 				return this;
 			};
 
@@ -668,13 +731,7 @@ function kapi(canvas, params, events) {
 		},
 
 		_updateObjStateIndex: function (implementationObj, params) {
-			var index;
-
-			if (typeof this._objStateIndex[implementationObj.id] === 'undefined') {
-				this._objStateIndex[implementationObj.id] = [];
-			}
-
-			index = this._objStateIndex[implementationObj.id];
+			var index = this._objStateIndex[implementationObj.id];
 
 			if (typeof params.add !== 'undefined') {
 				index.push(params.add);
