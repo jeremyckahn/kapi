@@ -126,7 +126,8 @@
 			}),
 			currFrameOutput = $('#currentFrame span');
 			
-		// Testing the API.
+		// Testing the Keyframe API.
+		//*
 		circle1.keyframe('0s', {
 			x : 0,
 			color : '#00ff00'
@@ -160,18 +161,19 @@
 		}).keyframe('3500ms', {
 			y : 250,
 			color: '#654321'
-		});
-		
-		// Testing...
-		/*circle1.keyframe(0, {x: 100, y:100}).keyframe(1, {x: 100, y:100})
-		.to(15, {
+		});//**/
+/*		
+		// Testing the Immediate Action API...
+		circle1.keyframe(0, {x: 200, y:200})
+		circle1.keyframe(1, {x: 100, y:100})
+		/*.to(15, {
 			x: 200,
 			y: 200
 		}).to('1.5s', {
 			x: 300,
 			y: 50,
 			radius: 145
-		});*/
+		});//**/
 		
 		canvas.kapi.play();
 		
