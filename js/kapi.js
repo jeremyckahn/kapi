@@ -428,12 +428,12 @@ function kapi(canvas, params, events) {
 				} else {
 					self._loopPosition = 0;
 				}
-
+				
 				// Calculate the current frame of the loop
-				self._currentFrame = parseInt(self._loopPosition * self._keyframeIds[self._keyframeIds.length - 1], 10);
+				self._currentFrame = parseInt(self._loopPosition * self._lastKeyframe, 10);
 				
 				prevKeyframe = self._getLatestKeyFrameId(self._keyframeIds);
-				prevKeyframe = prevKeyframe === -1 ? last(self._keyframeIds) : self._keyframeIds[prevKeyframe];
+				prevKeyframe = prevKeyframe === -1 ? self._lastKeyframe : self._keyframeIds[prevKeyframe];
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
 				if (prevKeyframe !== last(self._reachedKeyframes)) {
@@ -448,8 +448,8 @@ function kapi(canvas, params, events) {
 				}
 				
 				// If we have gone past the last keyframe, set the self._currentFrame to the last keyframe
-				if (self._currentFrame > last(self._keyframeIds)) {
-					self._currentFrame = last(self._keyframeIds);
+				if (self._currentFrame > self._lastKeyframe) {
+					self._currentFrame = self._lastKeyframe;
 				}
 				
 				// Clear out the canvas
@@ -468,7 +468,7 @@ function kapi(canvas, params, events) {
 
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
-			var objStateIndices, currentFrameStateProperties, queuedAction, adjustedProperties;
+			var objStateIndices, currentFrameStateProperties, adjustedProperties;
 
 			for (objStateIndices in this._objStateIndex) {
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
@@ -512,7 +512,6 @@ function kapi(canvas, params, events) {
 			nextKeyframeId = this._getNextKeyframeId(stateObjKeyframeIndex, latestKeyframeId);
 			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
 			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
-			currentFrameProps = {};
 
 			return this._calculateCurrentFrameProps(
 			latestKeyframeProps, nextKeyframeProps, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], nextKeyframeProps.easing);
@@ -521,8 +520,7 @@ function kapi(canvas, params, events) {
 		_getQueuedActionState: function (queuedActionsArr) {
 			var currTime = now(),
 				queuedAction = queuedActionsArr[0],
-				internals = queuedAction._internals,
-				tempQueuedAction = {};
+				internals = queuedAction._internals;
 
 			if (internals.startTime === null) {
 				internals.startTime = currTime;
@@ -622,10 +620,10 @@ function kapi(canvas, params, events) {
 			// Make really really sure the id is unique, if one is not provided
 			if (typeof implementationObj.id === 'undefined') {
 				implementationObj.id =
-				implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
+					implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
 			}
 
-			if (typeof index === 'undefined') {
+			if (typeof this._objStateIndex[implementationObj.id] === 'undefined') {
 				this._objStateIndex[implementationObj.id] = [];
 				this._objStateIndex[implementationObj.id].queue = [];
 			}
@@ -741,6 +739,7 @@ function kapi(canvas, params, events) {
 
 			this._keyframeIds.push(keyframeId);
 			sortArrayNumerically(this._keyframeIds);
+			this._lastKeyframe = last(this._keyframeIds);
 		},
 
 		_normalizeObjectAcrossKeyframes: function (keyframedObjId) {
