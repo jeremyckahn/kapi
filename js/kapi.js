@@ -200,11 +200,13 @@ function kapi(canvas, params, events) {
 		return (toStr.call(arr) === '[object Array]');
 	}
 
+	function last (arr) {
+		return arr.length > 0 ? arr[arr.length - 1] : undefined;
+	}
+
 	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
 	// Contains some modifications to improve performance for Kapi, so
 	// just copy pasting this for other implementations is likely not wise.
-
-
 	function extend(child, parents, doOverwrite) {
 		var i, parent, extraParents;
 
@@ -252,8 +254,6 @@ function kapi(canvas, params, events) {
 	}
 
 	// Get UNIX epoch time
-
-
 	function now() {
 		return +new Date();
 	}
@@ -315,7 +315,7 @@ function kapi(canvas, params, events) {
 			// Initialize some internal properties
 			this._keyframeIds = [];
 			this._keyframes = {};
-			this._passedKeyframes = [];
+			this._reachedKeyframes = [];
 			this._objStateIndex = {};
 			this._animationDuration = 0;
 
@@ -406,20 +406,20 @@ function kapi(canvas, params, events) {
 
 			this.state.fCount++;
 			this._updateHandle = setTimeout(function () {
-				var latestKeyframe, resetLoop = false;
+				var reachedKeyframeLastIndex, prevKeyframe;
 
 				// Calculate how long this iteration of the loop has been running for
 				self._loopLength = currTime - self._loopStartTime;
 
 				// Start the loop over if need be.
-				if ( (self._loopLength > self._animationDuration) /*&& self._passedKeyframes.length === self._keyframeIds.length*/) {
+				if ( (self._loopLength > self._animationDuration) && self._reachedKeyframes.length === self._keyframeIds.length) {
 					self._hasHitValidFrame = false;
 	
 					// Reset the loop start time relative to when the animation began,
 					// not to when the final keyframe last completed
 					self._loopStartTime = self._startTime + parseInt((currTime - self._startTime) / (self._animationDuration || 1), 10) * self._animationDuration;
 					self._loopLength -= self._animationDuration || self._loopLength;
-					resetLoop = true;
+					self._reachedKeyframes = [];
 				}
 
 				// Determine where we are in the loop
@@ -432,26 +432,26 @@ function kapi(canvas, params, events) {
 				// Calculate the current frame of the loop
 				self._currentFrame = parseInt(self._loopPosition * self._keyframeIds[self._keyframeIds.length - 1], 10);
 				
-				/*if (self._loopPosition > 1) {
-					self._currentFrame = self._keyframeIds[self._keyframeIds.length - 1];
+				prevKeyframe = self._getLatestKeyFrameId(self._keyframeIds);
+				prevKeyframe = prevKeyframe === -1 ? last(self._keyframeIds) : self._keyframeIds[prevKeyframe];
+				
+				// Maintain a record of keyframes that have been run for this loop iteration
+				if (prevKeyframe !== last(self._reachedKeyframes)) {
+					self._reachedKeyframes.push(prevKeyframe);	
 				}
 				
-				latestKeyframe = self._getLatestKeyFrameId(self._keyframeIds);
-				
-				if (self._passedKeyframes.length === 0 || self._passedKeyframes[self._passedKeyframes.length - 1] !== latestKeyframe) {
-					self._passedKeyframes.push(latestKeyframe);
-				}
-				
-				if (self._keyframeIds.slice(0, self._passedKeyframes.length).toString() !== self._passedKeyframes.toString()) {
-					self._passedKeyframes = self._keyframeIds.slice(0, self._passedKeyframes.length);
-					self._currentFrame = self._keyframeIds[self._passedKeyframes.length - 1];
-					console.log(self._currentFrame)
-				}
-				
-				if (resetLoop) {
-					self._passedKeyframes.length = 0;
-				}*/
+				reachedKeyframeLastIndex = self._reachedKeyframes.length - 1;
 
+				// If a keyframe was skipped, set self._currentFrame to the first skipped keyframe
+				if (self._reachedKeyframes[reachedKeyframeLastIndex] !== self._keyframeIds[reachedKeyframeLastIndex]) {
+					self._currentFrame = self._reachedKeyframes[reachedKeyframeLastIndex] = self._keyframeIds[reachedKeyframeLastIndex];
+				}
+				
+				// If we have gone past the last keyframe, set the self._currentFrame to the last keyframe
+				if (self._currentFrame > last(self._keyframeIds)) {
+					self._currentFrame = last(self._keyframeIds);
+				}
+				
 				// Clear out the canvas
 				self.ctx.clearRect(0, 0, self.el.width, self.el.height);
 
@@ -643,7 +643,7 @@ function kapi(canvas, params, events) {
 				}
 
 				// If this keyframe does not already exist, create it
-				if (typeof self._keyframes[keyframeId] == 'undefined') {
+				if (typeof self._keyframes[keyframeId] === 'undefined') {
 					self._keyframes[keyframeId] = {};
 				}
 
