@@ -192,8 +192,9 @@ function kapi(canvas, params, events) {
 	/* Define some useful methods that are private to Kapi. */
 
 	function applyEase(easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
-		//return tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, nextKeyframe - previousKeyframe);
-		return tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+		if ((currentFrame || this._currentFrame) >= previousKeyframe) {
+			return tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+		}
 	}
 
 	function isArray(arr) {
