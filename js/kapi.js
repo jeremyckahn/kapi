@@ -83,8 +83,6 @@ function kapi(canvas, params, events) {
 
 	// Strip the 'px' from a style string and add it to the element directly
 	// Meant to be called with Function.call()
-
-
 	function setDimensionVal(dim) {
 		this[dim] = this.style[dim].replace(/px/gi, '') || this._params[dim];
 	}
@@ -272,7 +270,8 @@ function kapi(canvas, params, events) {
 				prevKeyframe = prevKeyframe === -1 ? self._lastKeyframe : self._keyframeIds[prevKeyframe];
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
-				if (prevKeyframe !== last(self._reachedKeyframes)) {
+				if (prevKeyframe > (last(self._reachedKeyframes) || 0)) {
+					console.log(prevKeyframe, last(self._reachedKeyframes) || 0, self._reachedKeyframes.toString())
 					self._reachedKeyframes.push(prevKeyframe);	
 				}
 				
@@ -472,8 +471,18 @@ function kapi(canvas, params, events) {
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
 				} catch (ex) {
-					console.error(ex);
+					if (window.console && window.console.error) {
+						console.error(ex);
+					}
 					return undefined;
+				}
+				
+				if (keyframeId < 0) {
+					throw 'keyframe ' + keyframeId + ' is less than zero!';
+				}
+				
+				if (keyframeId > 0 && typeof self._keyframes['0'] === 'undefined') {
+					self._keyframes['0'] = {};
 				}
 
 				// If this keyframe does not already exist, create it
@@ -627,7 +636,7 @@ function kapi(canvas, params, events) {
 	}.init(canvas, params, events);
 }
 
-// Attach tween methods to the `kapi.tween` object to extend it.
+// Attach tween methods to the `kapi.tween` function to extend it.
 kapi.tween = {
 	// All equations are copied from here: http://www.gizma.com/easing/
 	// Originally written by Robert Penner, copied under BSD License (http://www.robertpenner.com/)

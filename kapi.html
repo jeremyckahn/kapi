@@ -89,7 +89,7 @@
 		var canvas = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fRate : 60,
+				fRate : 30,
 				styles : {
 					'height':  '300px',
 					'width': '500px',
@@ -128,7 +128,7 @@
 			
 		// Testing the Keyframe API.
 		//*
-		circle1.keyframe('0s', {
+		circle1.keyframe('.5s', {
 			x : 0,
 			color : '#00ff00'
 		}).keyframe('2s', {
@@ -142,7 +142,7 @@
 			color : '#0000ff'
 		});
 		
-		circle2.keyframe(0, {
+		/*circle2.keyframe(0, {
 			x : 400,
 			y : 200,
 			radius: 10
