@@ -271,19 +271,18 @@ function kapi(canvas, params, events) {
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
 				if (prevKeyframe > (last(self._reachedKeyframes) || 0)) {
-					console.log(prevKeyframe, last(self._reachedKeyframes) || 0, self._reachedKeyframes.toString())
 					self._reachedKeyframes.push(prevKeyframe);	
 				}
 				
-				reachedKeyframeLastIndex = self._reachedKeyframes.length - 1;
+				reachedKeyframeLastIndex = self._reachedKeyframes.length ? self._reachedKeyframes.length - 1 : 0;
 
 				// If a keyframe was skipped, set self._currentFrame to the first skipped keyframe
-				if (self._reachedKeyframes[reachedKeyframeLastIndex] !== self._keyframeIds[reachedKeyframeLastIndex]) {
+				if (self._reachedKeyframes[reachedKeyframeLastIndex] !== self._keyframeIds[reachedKeyframeLastIndex] ) {
 					self._currentFrame = self._reachedKeyframes[reachedKeyframeLastIndex] = self._keyframeIds[reachedKeyframeLastIndex];
 				}
 				
 				// If we have gone past the last keyframe, set the self._currentFrame to the last keyframe
-				if (self._currentFrame > self._lastKeyframe) {
+				if (self._currentFrame > self._lastKeyframe /*&& reachedKeyframeLastIndex !== self._reachedKeyframes.length - 1*/) {
 					self._currentFrame = self._lastKeyframe;
 				}
 				
@@ -348,8 +347,13 @@ function kapi(canvas, params, events) {
 			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
 			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
 
+			// Don't tween past the last keyframe
+			if (stateObjKeyframeIndex[latestKeyframeId] === this._lastKeyframe && this._lastKeyframe > 0) {
+				return null;
+			}
+
 			return this._calculateCurrentFrameProps(
-			latestKeyframeProps, nextKeyframeProps, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], nextKeyframeProps.easing);
+				latestKeyframeProps, nextKeyframeProps, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], nextKeyframeProps.easing);
 		},
 
 		_getQueuedActionState: function (queuedActionsArr) {
@@ -381,7 +385,7 @@ function kapi(canvas, params, events) {
 
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
 			var i, keyProp, fromProp, toProp, isColor, currentFrameProps = {};
-
+			
 			easing = kapi.tween[easing] ? easing : 'linear';
 			options = options || {};
 
@@ -481,8 +485,10 @@ function kapi(canvas, params, events) {
 					throw 'keyframe ' + keyframeId + ' is less than zero!';
 				}
 				
+				// Create if keyframe zero if it was not done so already
 				if (keyframeId > 0 && typeof self._keyframes['0'] === 'undefined') {
 					self._keyframes['0'] = {};
+					self._keyframeIds.unshift(0);
 				}
 
 				// If this keyframe does not already exist, create it

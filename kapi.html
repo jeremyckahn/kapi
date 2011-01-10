@@ -128,7 +128,7 @@
 			
 		// Testing the Keyframe API.
 		//*
-		circle1.keyframe('.5s', {
+		circle1.keyframe('0.5s', {
 			x : 0,
 			color : '#00ff00'
 		}).keyframe('2s', {
@@ -140,9 +140,9 @@
 			y : 150,
 			radius : 100,
 			color : '#0000ff'
-		});
-		
-		/*circle2.keyframe(0, {
+		});//*/
+		//*
+		circle2.keyframe(0, {
 			x : 400,
 			y : 200,
 			radius: 10
@@ -153,7 +153,9 @@
 			color: '#123456'
 		});
 		
-		square1.keyframe('0', {
+		//*
+		// BUG:  If this is first keyframe is zero, the whole thing breaks.
+		square1.keyframe('0.5', {
 			x : 15
 		}).keyframe('2s', {
 			x : 300,
@@ -165,7 +167,7 @@
 /*		
 		// Testing the Immediate Action API...
 		circle1.keyframe(0, {x: 200, y:200})
-		.to(15, {
+		/*.to(15, {
 			x: 200,
 			y: 200
 		}).to('1.5s', {
