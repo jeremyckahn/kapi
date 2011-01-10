@@ -10,6 +10,7 @@
 	<!-- Date: 2010-12-07 -->
 	
 	<script src="js/kapi.js"></script>
+	<script src="js/kapi.tweens.js"></script>
 	<script src="js/jquery.js"></script>
 	
 	<style type="text/css">
@@ -101,8 +102,7 @@
 					currFrameOutput.html(this._currentFrame);
 				}
 			}),
-			kapi = canvas.kapi,
-			circle1 = kapi.add(circle, {	
+			circle1 = canvas.kapi.add(circle, {	
 				name : 'myCircle',
 				x : 0,
 				y : 0,
@@ -110,12 +110,12 @@
 				color : '#00ff00',
 				easing : 'easeInOutQuad'
 			}),
-			circle2 = kapi.add(circle, {
+			circle2 = canvas.kapi.add(circle, {
 				name : 'myCircle2',
 				color : '#ff0000',
 				easing : 'easeInOutQuint'
 			}),
-			square1 = kapi.add(square, {
+			square1 = canvas.kapi.add(square, {
 				name : 'square1',
 				height : 75,
 				width : 75,
