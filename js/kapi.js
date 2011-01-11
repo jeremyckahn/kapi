@@ -282,7 +282,7 @@ function kapi(canvas, params, events) {
 				}
 				
 				// If we have gone past the last keyframe, set the self._currentFrame to the last keyframe
-				if (self._currentFrame > self._lastKeyframe /*&& reachedKeyframeLastIndex !== self._reachedKeyframes.length - 1*/) {
+				if (self._currentFrame > self._lastKeyframe) {
 					self._currentFrame = self._lastKeyframe;
 				}
 				
@@ -347,9 +347,15 @@ function kapi(canvas, params, events) {
 			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
 			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
 
-			// Don't tween past the last keyframe
-			if (stateObjKeyframeIndex[latestKeyframeId] === this._lastKeyframe && this._lastKeyframe > 0) {
-				return null;
+			// If we are on or past the last keyframe
+			if (latestKeyframeId === nextKeyframeId  && this._lastKeyframe > 0) {
+				if (latestKeyframeId === this._lastKeyframe) {
+					// If the most recent keyframe is the last keyframe, just draw the "to" position
+					return nextKeyframeProps;
+				} else {
+					// Otherwise just don't draw anything
+					return null;
+				}
 			}
 
 			return this._calculateCurrentFrameProps(
@@ -450,7 +456,8 @@ function kapi(canvas, params, events) {
 		},
 
 		_getNextKeyframeId: function (lookup, latestKeyframeId) {
-			return latestKeyframeId === lookup.length - 1 ? 0 : latestKeyframeId + 1;
+			//return latestKeyframeId === lookup.length - 1 ? 0 : latestKeyframeId + 1;
+			return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
 		},
 
 		_keyframize: function (implementationObj) {
