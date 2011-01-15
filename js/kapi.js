@@ -120,6 +120,23 @@ function kapi(canvas, params, events) {
 			return [hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2))];
 		}
 	}
+	
+	function getRGBArr (str) {
+		if (typeof str !== 'string') {
+			return str;
+		}
+		
+		if (/^(#|rgb)/.test(str)) {
+			if (/^#/.test(str)) {
+				return hexToRGBArr(str);
+			} else {
+				return str.match(/\d+/g);
+			}
+		} else {
+			// This isn't a valid color string, return it
+			return str;
+		}
+	}
 
 	function hexToRGBStr(hexStr) {
 		if (isRGBString(hexStr)) {
@@ -303,7 +320,7 @@ function kapi(canvas, params, events) {
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
 			var objStateIndices, currentFrameStateProperties, adjustedProperties,
-				objActionQueue;
+				objActionQueue, oldQueueLength;
 
 			for (objStateIndices in this._objStateIndex) {
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
@@ -319,12 +336,18 @@ function kapi(canvas, params, events) {
 							objActionQueue = this._objStateIndex[objStateIndices].queue;
 							
 							// If there is a queued action, apply it
-							if (objActionQueue.length > 0) {
+							if ((oldQueueLength = objActionQueue.length) > 0) {
 								if (objActionQueue[0]._internals.fromState === null) {
 									objActionQueue[0]._internals.fromState = currentFrameStateProperties;
 								}
-
+								
 								adjustedProperties = this._getQueuedActionState(objActionQueue);
+								
+								// If an immediate action finished running and was removed from the queue
+								if (oldQueueLength !== objActionQueue.length) {
+									// Fill this out...
+								}
+								
 								extend(currentFrameStateProperties, adjustedProperties, true);
 							}
 
@@ -413,8 +436,8 @@ function kapi(canvas, params, events) {
 
 						if (typeof fromProp === 'string') {
 							isColor = true;
-							fromProp = hexToRGBArr(fromProp);
-							toProp = hexToRGBArr(toProp);
+							fromProp = getRGBArr(fromProp);
+							toProp = getRGBArr(toProp);
 						}
 
 						if (isColor) {
@@ -662,7 +685,7 @@ kapi.tween = {
 	// Originally written by Robert Penner, copied under BSD License (http://www.robertpenner.com/)
 	//
 	// Params are as follows
-	// c = current time
+	// t = current time
 	// b = start value
 	// c = change in value
 	// d = duration
