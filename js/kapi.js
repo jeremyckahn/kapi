@@ -302,7 +302,8 @@ function kapi(canvas, params, events) {
 
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
-			var objStateIndices, currentFrameStateProperties, adjustedProperties;
+			var objStateIndices, currentFrameStateProperties, adjustedProperties,
+				objActionQueue;
 
 			for (objStateIndices in this._objStateIndex) {
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
@@ -315,13 +316,15 @@ function kapi(canvas, params, events) {
 
 						// If there are remaining keyframes for this object, draw it.
 						if (currentFrameStateProperties !== null) {
+							objActionQueue = this._objStateIndex[objStateIndices].queue;
+							
 							// If there is a queued action, apply it
-							if (this._objStateIndex[objStateIndices].queue.length > 0) {
-								if (this._objStateIndex[objStateIndices].queue[0]._internals.fromState === null) {
-									this._objStateIndex[objStateIndices].queue[0]._internals.fromState = currentFrameStateProperties;
+							if (objActionQueue.length > 0) {
+								if (objActionQueue[0]._internals.fromState === null) {
+									objActionQueue[0]._internals.fromState = currentFrameStateProperties;
 								}
 
-								adjustedProperties = this._getQueuedActionState(this._objStateIndex[objStateIndices].queue);
+								adjustedProperties = this._getQueuedActionState(objActionQueue);
 								extend(currentFrameStateProperties, adjustedProperties, true);
 							}
 
@@ -349,7 +352,7 @@ function kapi(canvas, params, events) {
 
 			// If we are on or past the last keyframe
 			if (latestKeyframeId === nextKeyframeId  && this._lastKeyframe > 0) {
-				if (latestKeyframeId === this._lastKeyframe) {
+				if ( this._keyframeIds[latestKeyframeId] === this._lastKeyframe) {
 					// If the most recent keyframe is the last keyframe, just draw the "to" position
 					return nextKeyframeProps;
 				} else {
@@ -384,9 +387,13 @@ function kapi(canvas, params, events) {
 			}
 
 			return this._calculateCurrentFrameProps(
-			internals.fromState, internals.toState, 0, +queuedAction.duration, queuedAction.easing || internals.fromState.easing, {
-				currentFrame: internals.currFrame
-			});
+				internals.fromState, 
+				internals.toState, 
+				0, 
+				+queuedAction.duration, 
+				(queuedAction.easing || internals.fromState.easing), {
+					currentFrame: internals.currFrame
+				});
 		},
 
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
