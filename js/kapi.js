@@ -335,7 +335,7 @@ function kapi(canvas, params, events) {
 						if (currentFrameStateProperties !== null) {
 							objActionQueue = this._objStateIndex[objStateIndices].queue;
 							
-							// If there is a queued action, apply it
+							// If there is a queued action, apply it to the current frame
 							if ((oldQueueLength = objActionQueue.length) > 0) {
 								if (objActionQueue[0]._internals.fromState === null) {
 									objActionQueue[0]._internals.fromState = currentFrameStateProperties;
@@ -346,6 +346,7 @@ function kapi(canvas, params, events) {
 								// If an immediate action finished running and was removed from the queue
 								if (oldQueueLength !== objActionQueue.length) {
 									// Fill this out...
+									//console.dir(canvas.kapi);
 								}
 								
 								extend(currentFrameStateProperties, adjustedProperties, true);
@@ -377,7 +378,8 @@ function kapi(canvas, params, events) {
 			if (latestKeyframeId === nextKeyframeId  && this._lastKeyframe > 0) {
 				if ( this._keyframeIds[latestKeyframeId] === this._lastKeyframe) {
 					// If the most recent keyframe is the last keyframe, just draw the "to" position
-					return nextKeyframeProps;
+					// Use extend to create a copy of the object and not just a pointer to the actual keyframe data
+					return extend({}, nextKeyframeProps);
 				} else {
 					// Otherwise just don't draw anything
 					return null;
@@ -385,7 +387,11 @@ function kapi(canvas, params, events) {
 			}
 
 			return this._calculateCurrentFrameProps(
-				latestKeyframeProps, nextKeyframeProps, stateObjKeyframeIndex[latestKeyframeId], stateObjKeyframeIndex[nextKeyframeId], nextKeyframeProps.easing);
+				latestKeyframeProps, 
+				nextKeyframeProps, 
+				stateObjKeyframeIndex[latestKeyframeId], 
+				stateObjKeyframeIndex[nextKeyframeId], 
+				nextKeyframeProps.easing);
 		},
 
 		_getQueuedActionState: function (queuedActionsArr) {
