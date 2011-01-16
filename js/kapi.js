@@ -103,8 +103,7 @@ function kapi(canvas, params, events) {
 	}
 
 	function isRGBString(str) {
-		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
-		//return typeof str === 'string' && (/^rgb\(\d+\s*,\d+\s*,\d+\s*\)\s*$/i).test(str);
+		return typeof str === 'string' && (/^rgb\(\d+\s*,\d+\s*,\d+\s*\)\s*$/i).test(str);
 	}
 
 	function isColorString(str) {
@@ -123,6 +122,8 @@ function kapi(canvas, params, events) {
 	}
 	
 	function getRGBArr (str) {
+		var arr;
+		
 		if (typeof str !== 'string') {
 			return str;
 		}
@@ -131,7 +132,8 @@ function kapi(canvas, params, events) {
 			if (/^#/.test(str)) {
 				return hexToRGBArr(str);
 			} else {
-				return str.match(/\d+/g);
+				arr = str.match(/\d+/g);
+				return [+arr[0], +arr[1], +arr[2]];
 			}
 		} else {
 			// This isn't a valid color string, return it
