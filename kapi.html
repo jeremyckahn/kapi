@@ -55,7 +55,7 @@
 			canvas.kapi.stop();
 		});
 				
-		var canvas = kapi(document.getElementById('myCanvas'), 
+		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
 				fRate : 30,
@@ -71,7 +71,7 @@
 					currFrameOutput.html(this._currentFrame);
 				}
 			}),
-			circle1 = canvas.kapi.add(circle, {	
+			circle1 = demo.add(circle, {	
 				name : 'myCircle',
 				x : 0,
 				y : 0,
@@ -79,12 +79,12 @@
 				color : '#00ff00',
 				easing : 'easeInOutQuad'
 			}),
-			circle2 = canvas.kapi.add(circle, {
+			circle2 = demo.add(circle, {
 				name : 'myCircle2',
 				color : '#ff0000',
 				easing : 'easeInOutQuint'
 			}),
-			square1 = canvas.kapi.add(square, {
+			square1 = demo.add(square, {
 				name : 'square1',
 				height : 75,
 				width : 75,
@@ -132,9 +132,9 @@
 			color: '#654321'
 		});
 		
-		canvas.kapi.play();
+		demo.play();
 		
-		console.dir(canvas.kapi);
+		console.dir(demo);
 		
 	</script>
 

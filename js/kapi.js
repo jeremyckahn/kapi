@@ -4,7 +4,6 @@
  * A keyframe interface for the HTML 5 canvas.
  */
 
-// kapi works by augmenting the Canvas element on the DOM.
 function kapi(canvas, params, events) {
 
 	var version = '0.0.1',
@@ -156,12 +155,12 @@ function kapi(canvas, params, events) {
 		init: function (canvas, params, events) {
 			var style, kapi;
 
-			// Augment the canvas element
-			canvas.kapi = this;
-
 			params = params || {};
 			extend(params, defaults);
 			this._params = params;
+			
+			// Save a reference to original canvas object
+			this._params.canvas = canvas;
 			this.events = events;
 			this.el = canvas;
 			this.ctx = canvas.getContext('2d');
@@ -194,7 +193,7 @@ function kapi(canvas, params, events) {
 				}
 			}
 
-			return canvas;
+			return this;
 		},
 
 		getVersion: function () {
