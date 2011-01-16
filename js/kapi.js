@@ -25,13 +25,13 @@ function kapi(canvas, params, events) {
 		};
 
 	/* Define some useful methods that are private to Kapi. */
-	function applyEase(easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
+	function applyEase (easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
 		if ((currentFrame || this._currentFrame) >= previousKeyframe) {
 			return kapi.tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
 		}
 	}
 
-	function isArray(arr) {
+	function isArray (arr) {
 		return (toStr.call(arr) === '[object Array]');
 	}
 
@@ -42,7 +42,7 @@ function kapi(canvas, params, events) {
 	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
 	// Contains some modifications to improve performance for Kapi, so
 	// just copy pasting this for other implementations is likely not wise.
-	function extend(child, parents, doOverwrite) {
+	function extend (child, parents, doOverwrite) {
 		var i, parent, extraParents;
 
 		if (!parents) {
@@ -82,38 +82,38 @@ function kapi(canvas, params, events) {
 
 	// Strip the 'px' from a style string and add it to the element directly
 	// Meant to be called with Function.call()
-	function setDimensionVal(dim) {
+	function setDimensionVal (dim) {
 		this[dim] = this.style[dim].replace(/px/gi, '') || this._params[dim];
 	}
 
 	// Get UNIX epoch time
-	function now() {
+	function now () {
 		return +new Date();
 	}
 
-	function sortArrayNumerically(array) {
+	function sortArrayNumerically (array) {
 		return array.sort(function (a, b) {
 			return a - b;
 		});
 	}
 
-	function isHexString(str) {
+	function isHexString (str) {
 		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
 	}
 
-	function isRGBString(str) {
+	function isRGBString (str) {
 		return typeof str === 'string' && (/^rgb\(\d+\s*,\d+\s*,\d+\s*\)\s*$/i).test(str);
 	}
 
-	function isColorString(str) {
+	function isColorString (str) {
 		return isHexString(str) || isRGBString(str);
 	}
 
-	function hexToDec(hex) {
+	function hexToDec (hex) {
 		return parseInt(hex, 16);
 	}
 
-	function hexToRGBArr(hex) {
+	function hexToRGBArr (hex) {
 		if (typeof hex === 'string') {
 			hex = hex.replace(/#/g, '');
 			return [hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2))];
@@ -140,7 +140,7 @@ function kapi(canvas, params, events) {
 		}
 	}
 
-	function hexToRGBStr(hexStr) {
+	function hexToRGBStr (hexStr) {
 		if (isRGBString(hexStr)) {
 			return hexStr;
 		}
@@ -148,6 +148,14 @@ function kapi(canvas, params, events) {
 		var arr = hexToRGBArr(hexStr);
 
 		return 'rgb(' + arr[0] + ',' + arr[1] + ',' + arr[2] + ')';
+	}
+
+	function isModifierString (str) {
+		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
+	}
+
+	function isKeyframeableProp (prop) {
+		return (typeof prop === 'number' || isColorString(prop) || typeof prop === 'function' || isModifierString(prop));
 	}
 
 	return {
@@ -217,6 +225,8 @@ function kapi(canvas, params, events) {
 				this._startTime = now();
 			}
 
+			// If the animation was previously playing but was then stopped.
+			// adjust for the time that the animation was not runnning.
 			if (this._loopStartTime) {
 				pauseDuration = now() - this._pausedAtTime;
 				this._loopStartTime += pauseDuration;
@@ -238,10 +248,19 @@ function kapi(canvas, params, events) {
 		},
 
 		stop: function () {
+			var obj;
+			
 			clearTimeout(this._updateHandle);
 			delete this._loopStartTime;
 			delete this._pausedAtTime;
 			this._isStopped = true;
+			
+			// Delete any queued Immediate Actions
+			for (obj in this._objStateIndex) {
+				if (this._objStateIndex.hasOwnProperty(obj)) {
+					this._objStateIndex[obj].queue = [];
+				}
+			}
 		},
 
 		add: function (implementationFunc, initialParams) {
@@ -407,14 +426,24 @@ function kapi(canvas, params, events) {
 			if (internals.startTime === null) {
 				internals.startTime = currTime;
 			}
+			
+			if (!internals.pauseBufferUpdated) {
+				internals.pauseBufferUpdated = currTime;
+			}
+			
+			// Account for any animation pauses during the life of the action
+			if (internals.pauseBufferUpdated < this._pausedAtTime) {
+				internals.pauseBuffer += (currTime - this._pausedAtTime);
+				internals.pauseBufferUpdated = currTime;
+			}
 
 			if (internals.toState === null) {
 				internals.toState = {};
 				extend(internals.toState, internals.fromState);
 				extend(internals.toState, queuedAction.state, true);
 			}
-
-			internals.currFrame = ((currTime - internals.startTime) / 1000) * this._params.fRate;
+			
+			internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * this._params.fRate;
 
 			if (internals.currFrame > queuedAction.duration) {
 				queuedActionsArr.shift();
@@ -441,7 +470,7 @@ function kapi(canvas, params, events) {
 				if (fromState.hasOwnProperty(keyProp)) {
 					fromProp = fromState[keyProp];
 
-					if (typeof fromProp === 'number' || isColorString(fromProp)) {
+					if (isKeyframeableProp(fromProp)) {
 						toProp = toState[keyProp];
 						isColor = false;
 
@@ -574,6 +603,8 @@ function kapi(canvas, params, events) {
 				last._internals.startTime = null;
 				last._internals.fromState = null;
 				last._internals.toState = null;
+				last._internals.pauseBuffer = null;
+				last._internals.pauseBufferUpdated = null;
 
 				return this;
 			};

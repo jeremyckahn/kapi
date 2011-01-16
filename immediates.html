@@ -42,17 +42,17 @@
 		// Kapi does not use jQuery.
 		$('#play').click(function(ev){
 			ev.preventDefault();
-			canvas.kapi.play();
+			demo.play();
 		});
 		
 		$('#pause').click(function(ev){
 			ev.preventDefault();
-			canvas.kapi.pause();
+			demo.pause();
 		});
 		
 		$('#stop').click(function(ev){
 			ev.preventDefault();
-			canvas.kapi.stop();
+			demo.stop();
 		});
 				
 		var demo = kapi(document.getElementById('myCanvas'), 
@@ -117,7 +117,7 @@
 		//*
 		.to('1s', {
 			radius: 5,
-			color: '#0f0000'
+			color: '#ff0000'
 		})//*/
 		
 		demo.play();
