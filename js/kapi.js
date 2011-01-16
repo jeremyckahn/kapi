@@ -104,6 +104,7 @@ function kapi(canvas, params, events) {
 
 	function isRGBString(str) {
 		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
+		//return typeof str === 'string' && (/^rgb\(\d+\s*,\d+\s*,\d+\s*\)\s*$/i).test(str);
 	}
 
 	function isColorString(str) {
@@ -320,7 +321,7 @@ function kapi(canvas, params, events) {
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
 			var objStateIndices, currentFrameStateProperties, adjustedProperties,
-				objActionQueue, oldQueueLength;
+				objActionQueue, oldQueueLength, keyframeToModify;
 
 			for (objStateIndices in this._objStateIndex) {
 				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
@@ -342,14 +343,17 @@ function kapi(canvas, params, events) {
 								}
 								
 								adjustedProperties = this._getQueuedActionState(objActionQueue);
+								extend(currentFrameStateProperties, adjustedProperties, true);
 								
 								// If an immediate action finished running and was removed from the queue
 								if (oldQueueLength !== objActionQueue.length) {
-									// Fill this out...
-									//console.dir(canvas.kapi);
+									
+									// Save the modified state to the most recent keyframe for this object
+									keyframeToModify = this._getLatestKeyFrameId(this._objStateIndex[objStateIndices]);
+									this._keyframes[ this._keyframeIds[keyframeToModify] ][objStateIndices] = currentFrameStateProperties;
+									
+									// TODO:  Fire an "action completed" event for the immediate action
 								}
-								
-								extend(currentFrameStateProperties, adjustedProperties, true);
 							}
 
 							currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
