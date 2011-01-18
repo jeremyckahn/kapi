@@ -469,17 +469,30 @@ function kapi(canvas, params, events) {
 
 				if (fromState.hasOwnProperty(keyProp)) {
 					fromProp = fromState[keyProp];
+					
+					// Should functions really be executing every frame like this?  Or should it only run once the loop enters the keyframe?
+					if (typeof fromProp === 'function') {
+						fromProp = fromProp() || 0;
+					}
 
 					if (isKeyframeableProp(fromProp)) {
 						toProp = toState[keyProp];
 						isColor = false;
+						
+						if (typeof toProp === 'function') {
+							toProp = toProp() || 0;
+						}
+						
+						if (!isKeyframeableProp(toProp)) {
+							toProp = fromProp;
+						}
 
 						if (typeof fromProp === 'string') {
 							isColor = true;
 							fromProp = getRGBArr(fromProp);
 							toProp = getRGBArr(toProp);
 						}
-
+						
 						if (isColor) {
 							// If the property is a color, do some extra logic to
 							// blend it across the states
