@@ -9,7 +9,7 @@ function circle(ctx){
 		this.y || 0,
 		this.radius || 0,
 		0,
-		Math.PI*2,
+		Math.PI*2, 
 		true
 		);
 	ctx.fillStyle = this.color || '#f0f';

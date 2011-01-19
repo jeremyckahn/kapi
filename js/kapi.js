@@ -387,7 +387,7 @@ function kapi(canvas, params, events) {
 
 			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
 				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
-				nextKeyframeId, latestKeyframeProps, nextKeyframeProps;
+				nextKeyframeId, latestKeyframeProps, nextKeyframeProps, prop;
 
 			// Do a check to see if any more keyframes remain in the animation loop for this object
 			if (latestKeyframeId === -1) {
@@ -403,7 +403,19 @@ function kapi(canvas, params, events) {
 				if ( this._keyframeIds[latestKeyframeId] === this._lastKeyframe) {
 					// If the most recent keyframe is the last keyframe, just draw the "to" position
 					// Use extend to create a copy of the object and not just a pointer to the actual keyframe data
-					return extend({}, nextKeyframeProps);
+					nextKeyframeProps = extend({}, nextKeyframeProps);
+					
+					// Ensure there any property functions are run
+					for (prop in nextKeyframeProps) {
+						if (nextKeyframeProps.hasOwnProperty(prop)) {
+							if (typeof nextKeyframeProps[prop] === 'function') {
+								nextKeyframeProps[prop] = nextKeyframeProps[prop].call(nextKeyframeProps);
+							}
+						}
+					}
+					
+					return nextKeyframeProps;
+					
 				} else {
 					// Otherwise just don't draw anything
 					return null;
@@ -472,7 +484,7 @@ function kapi(canvas, params, events) {
 					
 					// Should functions really be executing every frame like this?  Or should it only run once the loop enters the keyframe?
 					if (typeof fromProp === 'function') {
-						fromProp = fromProp() || 0;
+						fromProp = fromProp.call(fromState) || 0;
 					}
 
 					if (isKeyframeableProp(fromProp)) {
@@ -480,7 +492,7 @@ function kapi(canvas, params, events) {
 						isColor = false;
 						
 						if (typeof toProp === 'function') {
-							toProp = toProp() || 0;
+							toProp = toProp.call(toState) || 0;
 						}
 						
 						if (!isKeyframeableProp(toProp)) {
