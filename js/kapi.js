@@ -91,6 +91,10 @@ function kapi(canvas, params, events) {
 		return +new Date();
 	}
 
+	function generateUniqueName () {
+		return parseInt(('' + Math.random()).substr(2), 10) + now();
+	}
+
 	function sortArrayNumerically (array) {
 		return array.sort(function (a, b) {
 			return a - b;
@@ -178,6 +182,7 @@ function kapi(canvas, params, events) {
 			this._keyframes = {};
 			this._reachedKeyframes = [];
 			this._objStateIndex = {};
+			this._keyframeCache = {};
 			this._animationDuration = 0;
 
 			this.state = {
@@ -273,6 +278,7 @@ function kapi(canvas, params, events) {
 
 		// Handle high-level frame management logic
 		update: function () {
+			// Abandon all hope, ye who enter here.
 			var self = this,
 				currTime = now();
 
@@ -292,6 +298,9 @@ function kapi(canvas, params, events) {
 					self._loopStartTime = self._startTime + parseInt((currTime - self._startTime) / (self._animationDuration || 1), 10) * self._animationDuration;
 					self._loopLength -= self._animationDuration || self._loopLength;
 					self._reachedKeyframes = [];
+					
+					// Clear out the dynamic keyframe cache
+					self._keyframeCache = {};
 				}
 
 				// Determine where we are in the loop
@@ -340,6 +349,7 @@ function kapi(canvas, params, events) {
 
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
+			// Here be dragons.
 			var objStateIndices, currentFrameStateProperties, adjustedProperties,
 				objActionQueue, oldQueueLength, keyframeToModify;
 
@@ -422,6 +432,13 @@ function kapi(canvas, params, events) {
 					return null;
 				}
 			}
+			
+			if (!this._keyframeCache[stateObjName]) {
+				this._keyframeCache[stateObjName] = {
+					'from': {},
+					'to': {}
+				};
+			}
 
 			return this._calculateCurrentFrameProps(
 				latestKeyframeProps, 
@@ -483,18 +500,26 @@ function kapi(canvas, params, events) {
 
 				if (fromState.hasOwnProperty(keyProp)) {
 					fromProp = fromState[keyProp];
+
+					if (typeof this._keyframeCache[fromState.prototype.id].from[keyProp] !== 'undefined') {
+						fromProp = this._keyframeCache[fromState.prototype.id].from[keyProp];
+					}
 					
-					// Should functions really be executing every frame like this?  Or should it only run once the loop enters the keyframe?
+					// Property is dynamic, update the cache
 					if (typeof fromProp === 'function') {
-						fromProp = fromProp.call(fromState) || 0;
+						this._keyframeCache[fromState.prototype.id].from[keyProp] = fromProp = fromProp.call(fromState) || 0;
 					}
 
 					if (isKeyframeableProp(fromProp)) {
 						toProp = toState[keyProp];
 						isColor = false;
 						
+						if (typeof this._keyframeCache[toState.prototype.id].to[keyProp] !== 'undefined') {
+							toProp = this._keyframeCache[toState.prototype.id].to[keyProp];
+						}
+						
 						if (typeof toProp === 'function') {
-							toProp = toProp.call(toState) || 0;
+							this._keyframeCache[toState.prototype.id].to[keyProp] = toProp = toProp.call(toState) || 0;
 						}
 						
 						if (!isKeyframeableProp(toProp)) {
@@ -566,7 +591,7 @@ function kapi(canvas, params, events) {
 			// Make really really sure the id is unique, if one is not provided
 			if (typeof implementationObj.id === 'undefined') {
 				implementationObj.id =
-					implementationObj.params.id || implementationObj.params.name || parseInt(('' + Math.random()).substr(2), 10) + now();
+					implementationObj.params.id || implementationObj.params.name || generateUniqueName();
 			}
 
 			if (typeof this._objStateIndex[implementationObj.id] === 'undefined') {

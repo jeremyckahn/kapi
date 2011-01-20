@@ -86,7 +86,8 @@
 			color : '#00ff00'
 		}).keyframe('2s', {
 			x : function() {
-				return 50;
+				// FIX:  The circle animates from the wrong place
+				return 500 * Math.random()
 			}
 		}).keyframe('6s', {
 			x : 400,
