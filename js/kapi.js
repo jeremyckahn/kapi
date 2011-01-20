@@ -414,6 +414,7 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
+					// Something dumb must have happened for this code to have been reached.
 					return nextKeyframeProps;
 					
 				} else {
@@ -472,6 +473,7 @@ function kapi(canvas, params, events) {
 		},
 
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
+			// Magic.
 			var i, keyProp, fromProp, toProp, isColor, currentFrameProps = {};
 			
 			easing = kapi.tween[easing] ? easing : 'linear';
@@ -535,6 +537,10 @@ function kapi(canvas, params, events) {
 		 */
 		_getLatestKeyFrameId: function (lookup) {
 			var i;
+			
+			if (this._currentFrame === 0) {
+				return 0;
+			}
 
 			if (this._currentFrame > lookup[lookup.length - 1]) {
 				// There are no more keyframes left in the animation loop for this object
@@ -551,7 +557,6 @@ function kapi(canvas, params, events) {
 		},
 
 		_getNextKeyframeId: function (lookup, latestKeyframeId) {
-			//return latestKeyframeId === lookup.length - 1 ? 0 : latestKeyframeId + 1;
 			return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
 		},
 

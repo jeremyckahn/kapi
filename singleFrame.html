@@ -84,17 +84,8 @@
 		circle1.keyframe('0', {
 			x : 0,
 			color : '#00ff00'
-		}).keyframe('2s', {
-			x : function() {
-				return 50;
-			}
-		}).keyframe('6s', {
-			x : 400,
-			radius : function() {
-				return this.x / 3;
-			},
-			color : '#0000ff'
-		});
+		})
+		.keyframe(30, {});
 		
 		demo.play();
 		
