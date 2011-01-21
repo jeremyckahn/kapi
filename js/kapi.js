@@ -284,7 +284,7 @@ function kapi(canvas, params, events) {
 
 			this.state.fCount++;
 			this._updateHandle = setTimeout(function () {
-				var reachedKeyframeLastIndex, prevKeyframe;
+				var reachedKeyframeLastIndex, prevKeyframe, cachedObject;
 
 				// Calculate how long this iteration of the loop has been running for
 				self._loopLength = currTime - self._loopStartTime;
@@ -318,7 +318,18 @@ function kapi(canvas, params, events) {
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
 				if (prevKeyframe > (last(self._reachedKeyframes) || 0)) {
-					self._reachedKeyframes.push(prevKeyframe);	
+					self._reachedKeyframes.push(prevKeyframe);
+					
+					// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
+					// when transitioning to the new keyframe segment
+					for (cachedObject in self._keyframeCache) {
+						if (self._keyframeCache.hasOwnProperty(cachedObject)) {
+							self._keyframeCache[cachedObject] = {
+								'from': self._keyframeCache[cachedObject].to,
+								'to': {}
+							};
+						}
+					}
 				}
 				
 				reachedKeyframeLastIndex = self._reachedKeyframes.length ? self._reachedKeyframes.length - 1 : 0;
@@ -397,7 +408,10 @@ function kapi(canvas, params, events) {
 
 			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
 				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
-				nextKeyframeId, latestKeyframeProps, nextKeyframeProps, prop;
+				nextKeyframeId, 
+				latestKeyframeProps, 
+				nextKeyframeProps, 
+				prop;
 
 			// Do a check to see if any more keyframes remain in the animation loop for this object
 			if (latestKeyframeId === -1) {
@@ -445,7 +459,8 @@ function kapi(canvas, params, events) {
 				nextKeyframeProps, 
 				stateObjKeyframeIndex[latestKeyframeId], 
 				stateObjKeyframeIndex[nextKeyframeId], 
-				nextKeyframeProps.easing);
+				nextKeyframeProps.easing
+			);
 		},
 
 		_getQueuedActionState: function (queuedActionsArr) {
@@ -484,9 +499,11 @@ function kapi(canvas, params, events) {
 				internals.toState, 
 				0, 
 				+queuedAction.duration, 
-				(queuedAction.easing || internals.fromState.easing), {
+				(queuedAction.easing || internals.fromState.easing), 
+				{
 					currentFrame: internals.currFrame
-				});
+				}
+			);
 		},
 
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
