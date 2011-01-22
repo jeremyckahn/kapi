@@ -21,7 +21,23 @@ function kapi(canvas, params, events) {
 			's': function (num) {
 				return num * this._params.fRate;
 			}
-
+		},
+		modifiers = {
+			'+=': function (original, amount) {
+				return original + amount;
+			},
+			
+			'-=': function (original, amount) {
+				return original - amount;
+			},
+			
+			'*=': function (original, amount) {
+				return original * amount;
+			},
+			
+			'/=': function (original, amount) {
+				return original / amount;
+			}
 		};
 
 	/* Define some useful methods that are private to Kapi. */
@@ -156,6 +172,11 @@ function kapi(canvas, params, events) {
 
 	function isModifierString (str) {
 		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
+	}
+	
+	// This assumes that `str` is a valid modifier string ('+=x', '-=x', '*=x', '/=x')
+	function getModifier (str) {
+		return str.match(/(\+|\-|\*|\/)\=/)[0];
 	}
 
 	function isKeyframeableProp (prop) {
@@ -313,7 +334,7 @@ function kapi(canvas, params, events) {
 				// Calculate the current frame of the loop
 				self._currentFrame = parseInt(self._loopPosition * self._lastKeyframe, 10);
 				
-				prevKeyframe = self._getLatestKeyFrameId(self._keyframeIds);
+				prevKeyframe = self._getLatestKeyframeId(self._keyframeIds);
 				prevKeyframe = prevKeyframe === -1 ? self._lastKeyframe : self._keyframeIds[prevKeyframe];
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
@@ -390,7 +411,7 @@ function kapi(canvas, params, events) {
 								if (oldQueueLength !== objActionQueue.length) {
 									
 									// Save the modified state to the most recent keyframe for this object
-									keyframeToModify = this._getLatestKeyFrameId(this._objStateIndex[objStateIndices]);
+									keyframeToModify = this._getLatestKeyframeId(this._objStateIndex[objStateIndices]);
 									this._keyframes[ this._keyframeIds[keyframeToModify] ][objStateIndices] = currentFrameStateProperties;
 									
 									// TODO:  Fire an "action completed" event for the immediate action
@@ -407,7 +428,7 @@ function kapi(canvas, params, events) {
 		_getObjectState: function (stateObjName) {
 
 			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
-				latestKeyframeId = this._getLatestKeyFrameId(stateObjKeyframeIndex),
+				latestKeyframeId = this._getLatestKeyframeId(stateObjKeyframeIndex),
 				nextKeyframeId, 
 				latestKeyframeProps, 
 				nextKeyframeProps, 
@@ -508,7 +529,16 @@ function kapi(canvas, params, events) {
 
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
 			// Magic.
-			var i, keyProp, fromProp, toProp, isColor, currentFrameProps = {};
+			var i, 
+				keyProp, 
+				fromProp, 
+				toProp, 
+				isColor, 
+				currentFrameProps = {},
+				fromStateId,
+				toStateId,
+				modifier,
+				previousPropVal;
 			
 			easing = kapi.tween[easing] ? easing : 'linear';
 			options = options || {};
@@ -517,26 +547,53 @@ function kapi(canvas, params, events) {
 
 				if (fromState.hasOwnProperty(keyProp)) {
 					fromProp = fromState[keyProp];
+					fromStateId = fromState.prototype.id;
 
-					if (typeof this._keyframeCache[fromState.prototype.id].from[keyProp] !== 'undefined') {
-						fromProp = this._keyframeCache[fromState.prototype.id].from[keyProp];
+					if (typeof this._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
+						fromProp = this._keyframeCache[fromStateId].from[keyProp];
 					}
 					
 					// Property is dynamic, update the cache
-					if (typeof fromProp === 'function') {
-						this._keyframeCache[fromState.prototype.id].from[keyProp] = fromProp = fromProp.call(fromState) || 0;
+					if (typeof fromProp === 'function' || isModifierString(fromProp)) {
+						if (typeof fromProp === 'function') {
+							fromProp = fromProp.call(fromState) || 0;
+						} else if (isModifierString(fromProp)) {
+							modifier = getModifier(fromProp);
+							previousPropVal = this._getPreviousKeyframeId(this._objStateIndex[fromStateId]);
+							
+							// Convert the keyframe ID to its corresponding property value
+							if (previousPropVal === -1) {
+								previousPropVal = 0;
+							} else {
+								previousPropVal = this._keyframes[previousPropVal][fromStateId][keyProp];
+							}
+							
+							// Remove any whitespace from the value string... this can probably be more efficient than calling
+							// `string.replace()` twice.
+							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(modifier, '').replace(/\s/g, ''));
+						}
+						
+						this._keyframeCache[fromStateId].from[keyProp] = fromProp;
 					}
 
 					if (isKeyframeableProp(fromProp)) {
 						toProp = toState[keyProp];
 						isColor = false;
+						toStateId = toState.prototype.id;
 						
-						if (typeof this._keyframeCache[toState.prototype.id].to[keyProp] !== 'undefined') {
-							toProp = this._keyframeCache[toState.prototype.id].to[keyProp];
+						if (typeof this._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
+							toProp = this._keyframeCache[toStateId].to[keyProp];
 						}
 						
-						if (typeof toProp === 'function') {
-							this._keyframeCache[toState.prototype.id].to[keyProp] = toProp = toProp.call(toState) || 0;
+						if (typeof toProp === 'function' || isModifierString(toProp)) {
+							if (typeof toProp === 'function') {
+								toProp = toProp.call(toState) || 0;
+							} else if (isModifierString(toProp)) {
+								modifier = getModifier(toProp);
+								toProp = modifiers[modifier](fromProp, +toProp.replace(modifier, '').replace(/\s/g, ''));
+							}
+							
+							this._keyframeCache[toStateId].to[keyProp] = toProp;
 						}
 						
 						if (!isKeyframeableProp(toProp)) {
@@ -571,13 +628,17 @@ function kapi(canvas, params, events) {
 			extend(currentFrameProps, fromState);
 			return currentFrameProps;
 		},
+		
+		_getPreviousKeyframeId: function (lookup) {
+			return this._getLatestKeyframeId(lookup) - 1;
+		},
 
 		/**
 		 * @param {Array} lookup A lookup array for the internal `_keyframes` object
 		 * 
 		 * @return {Number} The index of the last keyframe that was run in the animation.  Returns `-1` if there are no keyframes remaining for this object in the animation.
 		 */
-		_getLatestKeyFrameId: function (lookup) {
+		_getLatestKeyframeId: function (lookup) {
 			var i;
 			
 			if (this._currentFrame === 0) {
@@ -616,8 +677,6 @@ function kapi(canvas, params, events) {
 				this._objStateIndex[implementationObj.id].queue = [];
 			}
 
-			// TODO:  keyframe() blows up if given a keyframeId that is a string.
-			// It should accept strings.
 			implementationObj.keyframe = function (keyframeId, stateObj) {
 				stateObj.prototype = this;
 
@@ -655,8 +714,7 @@ function kapi(canvas, params, events) {
 				extend(stateObj, implementationObj.params);
 
 				// Calculate and update the number of seconds this animation will run for
-				self._animationDuration =
-				1000 * (self._keyframeIds[self._keyframeIds.length - 1] / self._params.fRate);
+				self._animationDuration = 1000 * (self._keyframeIds[self._keyframeIds.length - 1] / self._params.fRate);
 
 				return this;
 			};
