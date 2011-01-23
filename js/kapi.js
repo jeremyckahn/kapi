@@ -81,12 +81,12 @@ function kapi(canvas, params, events) {
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
 				if (typeof parent[i] === 'object' && i !== 'prototype') {
-					if (!child[i] || doOverwrite) {
+					if (typeof child[i] === 'undefined' || doOverwrite) {
 						child[i] = isArray(parent[i]) ? [] : {};
 					}
 					extend(child[i], parent[i], doOverwrite);
 				} else {
-					if (!child[i] || doOverwrite) {
+					if (typeof child[i] === 'undefined' || doOverwrite) {
 						child[i] = parent[i];
 					}
 				}
@@ -553,7 +553,7 @@ function kapi(canvas, params, events) {
 						fromProp = this._keyframeCache[fromStateId].from[keyProp];
 					}
 					
-					// Property is dynamic, update the cache
+					// Property is dynamic, preprocess it and update the cache
 					if (typeof fromProp === 'function' || isModifierString(fromProp)) {
 						if (typeof fromProp === 'function') {
 							fromProp = fromProp.call(fromState) || 0;
@@ -568,9 +568,8 @@ function kapi(canvas, params, events) {
 								previousPropVal = this._keyframes[previousPropVal][fromStateId][keyProp];
 							}
 							
-							// Remove any whitespace from the value string... this can probably be more efficient than calling
-							// `string.replace()` twice.
-							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(modifier, '').replace(/\s/g, ''));
+							// Convert the value into a number and perform the value modification
+							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(/\D/g, ''));
 						}
 						
 						this._keyframeCache[fromStateId].from[keyProp] = fromProp;
@@ -590,7 +589,7 @@ function kapi(canvas, params, events) {
 								toProp = toProp.call(toState) || 0;
 							} else if (isModifierString(toProp)) {
 								modifier = getModifier(toProp);
-								toProp = modifiers[modifier](fromProp, +toProp.replace(modifier, '').replace(/\s/g, ''));
+								toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
 							}
 							
 							this._keyframeCache[toStateId].to[keyProp] = toProp;
