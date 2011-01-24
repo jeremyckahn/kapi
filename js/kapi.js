@@ -81,12 +81,12 @@ function kapi(canvas, params, events) {
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
 				if (typeof parent[i] === 'object' && i !== 'prototype') {
-					if (typeof child[i] === 'undefined' || doOverwrite) {
+					if (!child[i] || child[i] === 0 || doOverwrite) {
 						child[i] = isArray(parent[i]) ? [] : {};
 					}
 					extend(child[i], parent[i], doOverwrite);
 				} else {
-					if (typeof child[i] === 'undefined' || doOverwrite) {
+					if (!child[i] || child[i] === 0 || doOverwrite) {
 						child[i] = parent[i];
 					}
 				}
@@ -360,19 +360,18 @@ function kapi(canvas, params, events) {
 					self._currentFrame = self._reachedKeyframes[reachedKeyframeLastIndex] = self._keyframeIds[reachedKeyframeLastIndex];
 				}
 				
-				// If we have gone past the last keyframe, set the self._currentFrame to the last keyframe
-				if (self._currentFrame > self._lastKeyframe) {
-					self._currentFrame = self._lastKeyframe;
+				// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
+				if (self._currentFrame <= self._lastKeyframe) {
+					// Clear out the canvas
+					self.ctx.clearRect(0, 0, self.el.width, self.el.height);
+
+					if (typeof self.events.enterFrame === 'function') {
+						self.events.enterFrame.call(self);
+					}
+
+					self._update(self._currentFrame);
 				}
 				
-				// Clear out the canvas
-				self.ctx.clearRect(0, 0, self.el.width, self.el.height);
-
-				if (typeof self.events.enterFrame === 'function') {
-					self.events.enterFrame.call(self);
-				}
-
-				self._update(self._currentFrame);
 				self.update();
 			}, 1000 / this._params.fRate);
 
@@ -563,7 +562,8 @@ function kapi(canvas, params, events) {
 							
 							// Convert the keyframe ID to its corresponding property value
 							if (previousPropVal === -1) {
-								previousPropVal = 0;
+								// This is the first keyframe for this object, so modify the original parameter if it is available.
+								previousPropVal = fromState.prototype.params[keyProp] || 0;
 							} else {
 								previousPropVal = this._keyframes[previousPropVal][fromStateId][keyProp];
 							}

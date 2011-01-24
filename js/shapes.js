@@ -1,7 +1,6 @@
 /**
  * These functions have nothing to do with Kapi core code.  They are just useful for testing it out.
  */
-
 function circle(ctx){
 	ctx.beginPath();
 	ctx.arc(
