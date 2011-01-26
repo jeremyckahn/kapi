@@ -180,7 +180,7 @@ function kapi(canvas, params, events) {
 	}
 
 	function isKeyframeableProp (prop) {
-		return (typeof prop === 'number' || isColorString(prop) || typeof prop === 'function' || isModifierString(prop));
+		return (typeof prop === 'number' || typeof prop === 'function' || isModifierString(prop) || isColorString(prop));
 	}
 
 	return {
@@ -532,12 +532,12 @@ function kapi(canvas, params, events) {
 				keyProp, 
 				fromProp, 
 				toProp, 
-				isColor, 
-				currentFrameProps = {},
+				isColor,
 				fromStateId,
 				toStateId,
 				modifier,
-				previousPropVal;
+				previousPropVal,
+				currentFrameProps = {};
 			
 			easing = kapi.tween[easing] ? easing : 'linear';
 			options = options || {};
@@ -550,13 +550,11 @@ function kapi(canvas, params, events) {
 
 					if (typeof this._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 						fromProp = this._keyframeCache[fromStateId].from[keyProp];
-					}
-					
-					// Property is dynamic, preprocess it and update the cache
-					if (typeof fromProp === 'function' || isModifierString(fromProp)) {
+					} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
+						// If fromProp is dynamic, preprocess it
 						if (typeof fromProp === 'function') {
 							fromProp = fromProp.call(fromState) || 0;
-						} else if (isModifierString(fromProp)) {
+						} else {
 							modifier = getModifier(fromProp);
 							previousPropVal = this._getPreviousKeyframeId(this._objStateIndex[fromStateId]);
 							
@@ -572,22 +570,21 @@ function kapi(canvas, params, events) {
 							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(/\D/g, ''));
 						}
 						
+						// Update the cache
 						this._keyframeCache[fromStateId].from[keyProp] = fromProp;
 					}
-
+					
 					if (isKeyframeableProp(fromProp)) {
-						toProp = toState[keyProp];
 						isColor = false;
+						toProp = toState[keyProp];
 						toStateId = toState.prototype.id;
 						
 						if (typeof this._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
 							toProp = this._keyframeCache[toStateId].to[keyProp];
-						}
-						
-						if (typeof toProp === 'function' || isModifierString(toProp)) {
+						} else if (typeof toProp === 'function' || isModifierString(toProp)) {
 							if (typeof toProp === 'function') {
 								toProp = toProp.call(toState) || 0;
-							} else if (isModifierString(toProp)) {
+							} else {
 								modifier = getModifier(toProp);
 								toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
 							}
@@ -595,30 +592,34 @@ function kapi(canvas, params, events) {
 							this._keyframeCache[toStateId].to[keyProp] = toProp;
 						}
 						
-						if (!isKeyframeableProp(toProp)) {
-							toProp = fromProp;
-						}
-
-						if (typeof fromProp === 'string') {
-							isColor = true;
-							fromProp = getRGBArr(fromProp);
-							toProp = getRGBArr(toProp);
-						}
-						
-						if (isColor) {
-							// If the property is a color, do some extra logic to
-							// blend it across the states
-							currentFrameProps[keyProp] = 'rgb(';
-
-							for (i = 0; i < fromProp.length; i++) {
-								currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp[i], toProp[i], options.currentFrame)) + ',';
+						if (!isKeyframeableProp(toProp) || typeof fromProp !== typeof toProp) {
+							// The toProp isn't valid, so just make the current value for the this frame
+							// the same as the fromProp
+							currentFrameProps[keyProp] = fromProp;
+						} else {
+							if (typeof fromProp === 'string') {
+								isColor = true;
+								fromProp = getRGBArr(fromProp);
+								toProp = getRGBArr(toProp);
 							}
 
-							// Swap the last RGB comma for an end-paren
-							currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
+							// The fromProp and toProp have been validated.
+							// Perform the easing calculation to find the middle value based on the _currentFrame
+							if (isColor) {
+								// If the property is a color, do some logic to
+								// blend it across the states
+								currentFrameProps[keyProp] = 'rgb(';
 
-						} else {
-							currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);
+								for (i = 0; i < fromProp.length; i++) {
+									currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp[i], toProp[i], options.currentFrame)) + ',';
+								}
+
+								// Swap the last RGB comma for an end-paren
+								currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
+
+							} else {
+								currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);
+							}
 						}
 					}
 				}
