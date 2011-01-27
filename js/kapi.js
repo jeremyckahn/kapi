@@ -293,6 +293,8 @@ function kapi(canvas, params, events) {
 			var inst = {};
 			inst.draw = implementationFunc;
 			inst.params = initialParams;
+			inst.constructor = implementationFunc;
+			inst.name = implementationFunc.name;
 
 			return this._keyframize(inst);
 		},
@@ -677,7 +679,7 @@ function kapi(canvas, params, events) {
 				this._objStateIndex[implementationObj.id].queue = [];
 			}
 
-			implementationObj.keyframe = function (keyframeId, stateObj) {
+			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
 				stateObj.prototype = this;
 
 				try {
@@ -712,14 +714,12 @@ function kapi(canvas, params, events) {
 
 				// Copy over any "missing" parameters for this keyframe from the original object definition
 				extend(stateObj, implementationObj.params);
-
-				// Calculate and update the number of seconds this animation will run for
-				self._animationDuration = 1000 * (self._keyframeIds[self._keyframeIds.length - 1] / self._params.fRate);
+				self._updateAnimationDuration();
 
 				return this;
 			};
 
-			implementationObj.to = function (duration, stateObj) {
+			implementationObj.to = function to (duration, stateObj) {
 				var last, queue = self._objStateIndex[implementationObj.id].queue;
 
 				queue.push({
@@ -736,6 +736,73 @@ function kapi(canvas, params, events) {
 				last._internals.pauseBuffer = null;
 				last._internals.pauseBufferUpdated = null;
 
+				return this;
+			};
+
+			/**
+			 * Cleanly removes `implementationObj` from `keyframeId`, as well as all internal references to it.  
+			 * An error is logged if `implementationObj` does not exist at `keyframeId`.
+			 *
+			 * {param} keyframeId The desired keyframe to remove `implementationObj` from.
+			 *
+			 * {returns} `implementationObj` for chaining.
+			 */
+			implementationObj.remove = function remove (keyframeId) {
+				var i,
+					keyframe,
+					keyframeHasObjs = false;
+				
+				keyframeId = self._getRealKeyframe(keyframeId);
+				
+				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
+					
+					delete self._keyframes[keyframeId][implementationObj.id];
+					
+					// Check to see if there's any objects left in the keyframe.
+					// If not, delete the keyframe.
+					for (keyframe in self._keyframes[keyframeId]) {
+						if (self._keyframes[keyframeId].hasOwnProperty(keyframe)) {
+							keyframeHasObjs = true;
+						}
+					}
+					
+					if (!keyframeHasObjs) {
+						
+						delete self._keyframes[keyframeId];
+						
+						for (i = 0; i < self._keyframeIds.length; i++) {
+							if (self._keyframeIds[i] === keyframeId) {
+								self._keyframeIds.splice(i, 1);
+								break;
+							}
+						}
+						
+						for (i = 0; i < self._reachedKeyframes.length; i++) {
+							if (self._reachedKeyframes[i] === keyframeId) {
+								self._reachedKeyframes.splice(i, 1);
+								break;
+							}
+						}
+					}
+					
+					for (i = 0; i < self._objStateIndex[implementationObj.id].length; i++) {
+						if (self._objStateIndex[implementationObj.id][i] === keyframeId) {
+							self._objStateIndex[implementationObj.id].splice(i, 1);
+						}
+					}
+					
+					self._updateAnimationDuration();
+					
+				} else {
+					if (console && console.error) {
+						if (self._keyframes[keyframeId]) {
+							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but ' + implementationObj.id + ' does not exist at that keyframe.');
+						} else {
+							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
+						}
+					}
+				}
+				
 				return this;
 			};
 
@@ -768,7 +835,7 @@ function kapi(canvas, params, events) {
 				}
 
 				if (calcKeyframe[unit]) {
-					calculatedKeyframe = calcKeyframe[unit].call(this, quantifier);
+					calculatedKeyframe = parseInt(calcKeyframe[unit].call(this, quantifier), 10);
 				} else {
 					throw 'Invalid keyframe identifier unit!';
 				}
@@ -799,7 +866,6 @@ function kapi(canvas, params, events) {
 
 			this._keyframeIds.push(keyframeId);
 			sortArrayNumerically(this._keyframeIds);
-			this._lastKeyframe = last(this._keyframeIds);
 		},
 
 		_normalizeObjectAcrossKeyframes: function (keyframedObjId) {
@@ -841,11 +907,12 @@ function kapi(canvas, params, events) {
 				index.push(params.add);
 				sortArrayNumerically(index);
 			}
+		},
 
-			// TODO:  Fill this in and test it!
-			/*if (typeof params.remove !== 'undefined'){
-				
-			}*/
+		_updateAnimationDuration: function () {
+			// Calculate and update the number of seconds this animation will run for
+			this._lastKeyframe = last(this._keyframeIds);
+			this._animationDuration = 1000 * (this._lastKeyframe / this._params.fRate);
 		}
 
 	}.init(canvas, params, events);
