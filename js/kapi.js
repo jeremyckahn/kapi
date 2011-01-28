@@ -681,6 +681,8 @@ function kapi(canvas, params, events) {
 
 			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
 				stateObj.prototype = this;
+				stateObj.prototype.originalStateObj = {};
+				extend(stateObj.prototype.originalStateObj, stateObj);
 
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
@@ -695,7 +697,7 @@ function kapi(canvas, params, events) {
 					throw 'keyframe ' + keyframeId + ' is less than zero!';
 				}
 				
-				// Create if keyframe zero if it was not done so already
+				// Create keyframe zero if it was not done so already
 				if (keyframeId > 0 && typeof self._keyframes['0'] === 'undefined') {
 					self._keyframes['0'] = {};
 					self._keyframeIds.unshift(0);
@@ -706,7 +708,7 @@ function kapi(canvas, params, events) {
 					self._keyframes[keyframeId] = {};
 				}
 
-				// If this keyframe does not already have state info for this object, create it
+				// Create the keyframe state info for this object
 				self._keyframes[keyframeId][implementationObj.id] = stateObj;
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
@@ -799,6 +801,29 @@ function kapi(canvas, params, events) {
 							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but ' + implementationObj.id + ' does not exist at that keyframe.');
 						} else {
 							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
+						}
+					}
+				}
+				
+				return this;
+			};
+
+			implementationObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
+				var keyframeToUpdate;
+				
+				keyframeId = self._getRealKeyframe(keyframeId);
+				
+				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
+					keyframeToUpdate = self._keyframes[keyframeId][implementationObj.id];
+					//extend(keyframeToUpdate, newProps, true)
+					console.log(extend(keyframeToUpdate, newProps, true));
+					implementationObj.keyframe(keyframeId, newProps);
+				} else {
+					if (window.console && window.console.error) {
+						if (!self._keyframes[keyframeId]) {
+							console.error('Keyframe ' + keyframeId + ' does not exist.');
+						} else {
+							console.error('Keyframe ' + keyframeId + ' does not contain ' + implementationObj.id);
 						}
 					}
 				}
