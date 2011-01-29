@@ -9,10 +9,10 @@
 	<meta name="author" content="Jeremy Kahn">
 	<!-- Date: 2010-12-07 -->
 	
-	<script src="js/kapi.js"></script>
-	<script src="js/kapi.tweens.js"></script>
-	<script src="js/jquery.js"></script>
-	<script src="js/shapes.js"></script>
+	<script src="../js/kapi.js"></script>
+	<script src="../js/kapi.tweens.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
 	
 	<style type="text/css">
 		canvas{
@@ -84,6 +84,16 @@
 		circle1.keyframe('0', {
 			x : 0,
 			color : '#00ff00'
+		}).keyframe('2s', {
+			x : function() {
+				return 500 * Math.random()
+			}
+		}).keyframe('6s', {
+			x : 400,
+			radius : function() {
+				return this.x / 3;
+			},
+			color : '#0000ff'
 		});
 		
 		demo.play();

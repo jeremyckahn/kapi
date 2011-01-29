@@ -9,10 +9,10 @@
 	<meta name="author" content="Jeremy Kahn">
 	<!-- Date: 2010-12-07 -->
 	
-	<script src="js/kapi.js"></script>
-	<script src="js/kapi.tweens.js"></script>
-	<script src="js/jquery.js"></script>
-	<script src="js/shapes.js"></script>
+	<script src="../js/kapi.js"></script>
+	<script src="../js/kapi.tweens.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
 	
 	<style type="text/css">
 		canvas{
@@ -72,9 +72,9 @@
 				}
 			}),
 			circle1 = demo.add(circle, {	
-				name : 'myCircle',
-				x : 200,
-				y : 200,
+				//name : 'myCircle',
+				x : 0,
+				y : 0,
 				radius : 50,
 				color : '#00ff00',
 				easing : 'easeInOutQuad'
@@ -84,25 +84,39 @@
 				color : '#ff0000',
 				easing : 'easeInOutQuint'
 			}),
+			square1 = demo.add(square, {
+				name : 'square1',
+				height : 75,
+				width : 75,
+				x : 200,
+				y : 200,
+				color : '#0000ff',
+				easing : 'easeInOutSine'
+			}),
+
 			currFrameOutput = $('#currentFrame span');
-		
-		circle1.keyframe('0s', {
-			x : 0,
-			color : '#00ff00'
-		}).keyframe('1s', {
-			x : 50,
-			y : 80,
-			color : '#ff00ff'
-		}).keyframe('3s', {
-			x : 200,
-			y : 150,
-			radius : 100,
-			color : '#0000ff'
-		});
-		
-		circle1.updateKeyframe('1s', {
-			radius: 10
-		});
+			
+		//*		
+		// Testing the Immediate Action API...
+		circle1.keyframe(0, {x: 200, y:200})
+		//*
+		.to('2s', {
+			x: '+=100',
+			y: 50,
+			color: '#3f0000'
+		})//*/
+		//*
+		.to('5s', {
+			x: 10,
+			y: 10,
+			radius: 145,
+			color: '#0000ff'
+		})//**/
+		//*
+		.to('1s', {
+			radius: 5,
+			color: '#ff0000'
+		})//*/
 		
 		demo.play();
 		

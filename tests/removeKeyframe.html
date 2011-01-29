@@ -9,10 +9,10 @@
 	<meta name="author" content="Jeremy Kahn">
 	<!-- Date: 2010-12-07 -->
 	
-	<script src="js/kapi.js"></script>
-	<script src="js/kapi.tweens.js"></script>
-	<script src="js/jquery.js"></script>
-	<script src="js/shapes.js"></script>
+	<script src="../js/kapi.js"></script>
+	<script src="../js/kapi.tweens.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
 	
 	<style type="text/css">
 		canvas{
@@ -73,28 +73,45 @@
 			}),
 			circle1 = demo.add(circle, {	
 				name : 'myCircle',
-				x : 250,
-				y : 150,
+				x : 200,
+				y : 200,
 				radius : 50,
 				color : '#00ff00',
 				easing : 'easeInOutQuad'
 			}),
+			circle2 = demo.add(circle, {
+				name : 'myCircle2',
+				color : '#ff0000',
+				easing : 'easeInOutQuint'
+			}),
 			currFrameOutput = $('#currentFrame span');
-			
-		circle1.keyframe('0', {
+		
+		circle1.keyframe('0s', {
 			x : 0,
 			color : '#00ff00'
-		}).keyframe('2s', {
-			x : function() {
-				return 500 * Math.random()
-			}
-		}).keyframe('6s', {
-			x : 400,
-			radius : function() {
-				return this.x / 3;
-			},
+		}).keyframe('1s', {
+			x : 50,
+			y : 80,
+			color : '#ff00ff'
+		}).keyframe('3s', {
+			x : 200,
+			y : 150,
+			radius : 100,
 			color : '#0000ff'
 		});
+		
+		circle2.keyframe('0s', {
+			x : 400,
+			y : 200,
+			radius: 10
+		}).keyframe('1s', {
+			x : 10,
+			y : 200,
+			radius : 100,
+			color: '#123456'
+		});
+		
+		circle1.remove('0s')
 		
 		demo.play();
 		
