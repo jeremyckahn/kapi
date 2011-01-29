@@ -1,3 +1,5 @@
+/*global clearTimeout: true, setTimeout: true, window: true, console: true */
+
 /*	Kapi - Keyframe API (for canvas)
  *	jeremyckahn@gmail.com
  * 
@@ -12,7 +14,6 @@ function kapi(canvas, params, events) {
 			fRate: 20
 		},
 		toStr = Object.prototype.toString,
-		DEBUG = true,
 		calcKeyframe = {
 			'ms': function (num) {
 				return (num * this._params.fRate) / 1000;
@@ -80,7 +81,7 @@ function kapi(canvas, params, events) {
 
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
-				if (typeof parent[i] === 'object' && i !== 'prototype' && i !== 'originalStateObj') {
+				if (typeof parent[i] === 'object' && i !== 'prototype') {
 					if (!child[i] || child[i] === 0 || doOverwrite) {
 						child[i] = isArray(parent[i]) ? [] : {};
 					}
@@ -186,7 +187,7 @@ function kapi(canvas, params, events) {
 	return {
 		// init() is called immediately after this object is defined
 		init: function (canvas, params, events) {
-			var style, kapi;
+			var style;
 
 			params = params || {};
 			extend(params, defaults);
@@ -204,6 +205,7 @@ function kapi(canvas, params, events) {
 			this._reachedKeyframes = [];
 			this._objStateIndex = {};
 			this._keyframeCache = {};
+			this._originalStates = {};
 			this._animationDuration = 0;
 
 			this.state = {
@@ -680,8 +682,8 @@ function kapi(canvas, params, events) {
 			}
 
 			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
-				// Save a "safe" copy of the state object - will be used later in this function.
-				// This is done here to prevent the `stateObj.prototype.originalStateObj` being changed
+				// Save a "safe" copy of the state object before modifying it - will be used later in this function.
+				// This is done here to prevent the `_originalStates` property from being changed
 				// by other code that references it.
 				var orig = extend({}, stateObj);
 				
@@ -710,9 +712,16 @@ function kapi(canvas, params, events) {
 				if (typeof self._keyframes[keyframeId] === 'undefined') {
 					self._keyframes[keyframeId] = {};
 				}
+				
+				if (typeof self._originalStates[keyframeId] === 'undefined') {
+					self._originalStates[keyframeId] = {};
+				}
 
 				// Create the keyframe state info for this object
 				self._keyframes[keyframeId][implementationObj.id] = stateObj;
+				
+				// Save a copy of the original `stateObj`.  This is used for updating keyframes after they are created.
+				self._originalStates[keyframeId][implementationObj.id] = orig;
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
 				self._updateKeyframes(implementationObj, keyframeId);
@@ -721,9 +730,6 @@ function kapi(canvas, params, events) {
 				extend(stateObj, implementationObj.params);
 				self._updateAnimationDuration();
 				
-				// Store the original stateObj
-				self._keyframes[keyframeId][implementationObj.id].originalStateObj = orig;
-
 				return this;
 			};
 
@@ -765,6 +771,7 @@ function kapi(canvas, params, events) {
 				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
 					
 					delete self._keyframes[keyframeId][implementationObj.id];
+					delete self._originalStates[keyframeId][implementationObj.id];
 					
 					// Check to see if there's any objects left in the keyframe.
 					// If not, delete the keyframe.
@@ -777,6 +784,7 @@ function kapi(canvas, params, events) {
 					if (!keyframeHasObjs) {
 						
 						delete self._keyframes[keyframeId];
+						delete self._originalStates[keyframeId];
 						
 						for (i = 0; i < self._keyframeIds.length; i++) {
 							if (self._keyframeIds[i] === keyframeId) {
@@ -815,14 +823,16 @@ function kapi(canvas, params, events) {
 			};
 
 			implementationObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
-				var keyframeToUpdate;
+				var keyframeToUpdate,
+					originalState;
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				
 				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
+					originalState = self._originalStates[keyframeId][implementationObj.id];
 					keyframeToUpdate = self._keyframes[keyframeId][implementationObj.id];
-					extend(keyframeToUpdate.originalStateObj, newProps, true);
-					implementationObj.keyframe(keyframeId, keyframeToUpdate.originalStateObj);
+					extend(originalState, newProps, true);
+					implementationObj.keyframe(keyframeId, originalState);
 				} else {
 					if (window.console && window.console.error) {
 						if (!self._keyframes[keyframeId]) {
