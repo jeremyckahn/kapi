@@ -80,7 +80,7 @@ function kapi(canvas, params, events) {
 
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
-				if (typeof parent[i] === 'object' && i !== 'prototype') {
+				if (typeof parent[i] === 'object' && i !== 'prototype' && i !== 'originalStateObj') {
 					if (!child[i] || child[i] === 0 || doOverwrite) {
 						child[i] = isArray(parent[i]) ? [] : {};
 					}
@@ -680,9 +680,12 @@ function kapi(canvas, params, events) {
 			}
 
 			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
+				// Save a "safe" copy of the state object - will be used later in this function.
+				// This is done here to prevent the `stateObj.prototype.originalStateObj` being changed
+				// by other code that references it.
+				var orig = extend({}, stateObj);
+				
 				stateObj.prototype = this;
-				stateObj.prototype.originalStateObj = {};
-				extend(stateObj.prototype.originalStateObj, stateObj);
 
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
@@ -717,6 +720,9 @@ function kapi(canvas, params, events) {
 				// Copy over any "missing" parameters for this keyframe from the original object definition
 				extend(stateObj, implementationObj.params);
 				self._updateAnimationDuration();
+				
+				// Store the original stateObj
+				self._keyframes[keyframeId][implementationObj.id].originalStateObj = orig;
 
 				return this;
 			};
@@ -815,9 +821,8 @@ function kapi(canvas, params, events) {
 				
 				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
 					keyframeToUpdate = self._keyframes[keyframeId][implementationObj.id];
-					//extend(keyframeToUpdate, newProps, true)
-					console.log(extend(keyframeToUpdate, newProps, true));
-					implementationObj.keyframe(keyframeId, newProps);
+					extend(keyframeToUpdate.originalStateObj, newProps, true);
+					implementationObj.keyframe(keyframeId, keyframeToUpdate.originalStateObj);
 				} else {
 					if (window.console && window.console.error) {
 						if (!self._keyframes[keyframeId]) {
