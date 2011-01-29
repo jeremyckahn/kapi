@@ -241,7 +241,8 @@ function kapi(canvas, params, events) {
 		},
 
 		play: function () {
-			var pauseDuration;
+			var pauseDuration,
+				currTime = now();
 
 			if (this.isPlaying()) {
 				return;
@@ -250,20 +251,20 @@ function kapi(canvas, params, events) {
 			this._isStopped = this._isPaused = false;
 
 			if (!this._startTime) {
-				this._startTime = now();
+				this._startTime = currTime;
 			}
 
-			// If the animation was previously playing but was then stopped.
+			// If the animation was previously playing but was then stopped,
 			// adjust for the time that the animation was not runnning.
 			if (this._loopStartTime) {
-				pauseDuration = now() - this._pausedAtTime;
+				pauseDuration = currTime - this._pausedAtTime;
 				this._loopStartTime += pauseDuration;
 
 				// _startTime needs to be adjusted so that the loop doesn't
 				// start somewhere other than the beginning in update()
 				this._startTime += pauseDuration;
 			} else {
-				this._loopStartTime = now();
+				this._loopStartTime = currTime;
 			}
 
 			this.update();
@@ -299,6 +300,32 @@ function kapi(canvas, params, events) {
 			inst.name = implementationFunc.name;
 
 			return this._keyframize(inst);
+		},
+
+		// This is not really designed to work correctly with dynamic keyframes, because 
+		// there is really no good way to ensure accuracy for skipped dynamic keyframes.
+		// This functionality may come in a future release.  Who knows.
+		gotoFrame: function (frame) {
+			var currTime = now();
+			
+			if (this.isPlaying()) {
+				this.stop();
+			}
+			
+			frame = this._getRealKeyframe(frame) % this._lastKeyframe;
+			
+			// Fake a bunch of properties to make `update` properly emulate the desired `frame`
+			this._currentFrame = frame;
+			this._loopStartTime = this._startTime = currTime - (frame * this._params.fRate);
+			this._pausedAtTime = currTime;
+			this._reachedKeyframes = this._keyframeIds.slice(0, this._getLatestKeyframeId(this._keyframeIds));
+			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
+			this._update();
+		},
+		
+		gotoAndPlay: function (frame) {
+			this.gotoFrame(frame);
+			this.play();
 		},
 
 		// Handle high-level frame management logic
