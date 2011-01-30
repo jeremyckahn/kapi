@@ -73,19 +73,37 @@
 			}),
 			circle1 = demo.add(circle, {	
 				name : 'myCircle',
-				x : 250,
-				y : 150,
+				x : 0,
+				y : 0,
 				radius : 50,
 				color : '#00ff00',
 				easing : 'easeInOutQuad'
 			}),
 			currFrameOutput = $('#currentFrame span');
 			
-		circle1.keyframe('0', {
-			
+		// Testing the Keyframe API.
+		circle1.keyframe('0s', {
+			x : 0,
+			y : 0,
+			color : '#00ff00'
+		}).keyframe('1s', {
+			x : 400,
+			y : 150,
+			radius : 100,
+			color : '#0000ff'
+		}).liveCopy('2s', '0s');
+		
+		circle1.updateKeyframe('0s', {
+			radius: 10
 		});
 		
-		demo.play();
+		//circle1.remove('2s')
+		
+		demo.gotoAndPlay(0);
+		
+		
+		
+		window.demo = demo;
 		
 		console.dir(demo);
 		

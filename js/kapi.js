@@ -82,12 +82,12 @@ function kapi(canvas, params, events) {
 		for (i in parent) {
 			if (parent.hasOwnProperty(i)) {
 				if (typeof parent[i] === 'object' && i !== 'prototype') {
-					if (!child[i] || child[i] === 0 || doOverwrite) {
+					if (!child[i] || doOverwrite) {
 						child[i] = isArray(parent[i]) ? [] : {};
 					}
 					extend(child[i], parent[i], doOverwrite);
 				} else {
-					if (!child[i] || child[i] === 0 || doOverwrite) {
+					if (typeof child[i] === 'undefined' || doOverwrite) {
 						child[i] = parent[i];
 					}
 				}
@@ -201,11 +201,12 @@ function kapi(canvas, params, events) {
 
 			// Initialize some internal properties
 			this._keyframeIds = [];
-			this._keyframes = {};
 			this._reachedKeyframes = [];
+			this._keyframes = {};
 			this._objStateIndex = {};
 			this._keyframeCache = {};
 			this._originalStates = {};
+			this._liveCopies = {};
 			this._animationDuration = 0;
 
 			this.state = {
@@ -791,6 +792,7 @@ function kapi(canvas, params, events) {
 			implementationObj.remove = function remove (keyframeId) {
 				var i,
 					keyframe,
+					liveCopy,
 					keyframeHasObjs = false;
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
@@ -808,7 +810,8 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
-					if (!keyframeHasObjs) {
+					// You can't delete keyframe zero!  Logically it must always exist!
+					if (!keyframeHasObjs && keyframeId !== 0) {
 						
 						delete self._keyframes[keyframeId];
 						delete self._originalStates[keyframeId];
@@ -834,6 +837,16 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
+					if (keyframeId in self._liveCopies) {
+						delete self._liveCopies[keyframeId];
+					}
+					
+					for (liveCopy in self._liveCopies) {
+						if (self._liveCopies.hasOwnProperty(liveCopy) && self._liveCopies[liveCopy].copyOf === keyframeId) {
+							implementationObj.remove(liveCopy);
+						}
+					}
+					
 					self._updateAnimationDuration();
 					
 				} else {
@@ -849,6 +862,8 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 
+			// Note!  You cannot update the properties of a keyframe that is a liveCopy.
+			// You can only update the properties of the keyframe that it is copying.
 			implementationObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
 				var keyframeToUpdate,
 					originalState;
@@ -873,9 +888,33 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 
+			implementationObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
+				
+				keyframeId = self._getRealKeyframe(keyframeId);
+				keyframeIdToCopy = self._getRealKeyframe(keyframeIdToCopy);
+				
+				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][implementationObj.id]) {
+					// Maintain an index of liveCopies so that they are updated in `_updateKeyframes`.
+					self._liveCopies[keyframeId] = {
+						'implementationObjId': implementationObj.id,
+						'copyOf': keyframeIdToCopy
+					};
+					
+					implementationObj.keyframe(keyframeId, {});
+				} else {
+					if (window.console && window.console.error) {
+						if (!self._keyframes[keyframeIdToCopy]) {
+							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but keyframe ' + keyframeIdToCopy + ' does not exist.');
+						} else {
+							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + implementationObj.id + ' does not exist at keyframe ' + keyframeId + '.');
+						}
+					}
+				}
+			};
+
 			return implementationObj;
 		},
-
+		
 		// Calculates the "real" keyframe from `identifier`.
 		// This means that you can speicify keyframes from things other than plain integers.
 		// For example, you can calculate the real keyframe that will run at a certain period of time.
@@ -917,6 +956,7 @@ function kapi(canvas, params, events) {
 		_updateKeyframes: function (implementationObj, keyframeId) {
 			this._updateKeyframeIdsList(keyframeId);
 			this._normalizeObjectAcrossKeyframes(implementationObj.id);
+			this._updateLiveCopies();
 			this._updateObjStateIndex(implementationObj, {
 				add: keyframeId
 			});
@@ -936,8 +976,13 @@ function kapi(canvas, params, events) {
 		},
 
 		_normalizeObjectAcrossKeyframes: function (keyframedObjId) {
-			var newStateId, prevStateId, i, length = this._keyframeIds.length,
-				newStateObj, prevStateObj, prop;
+			var newStateId, 
+				prevStateId, 
+				i, 
+				length = this._keyframeIds.length,
+				newStateObj, 
+				prevStateObj, 
+				prop;
 
 			// Traverse all keyframes in the animation
 			for (i = 0; i < length; i++) {
@@ -968,11 +1013,31 @@ function kapi(canvas, params, events) {
 		},
 
 		_updateObjStateIndex: function (implementationObj, params) {
-			var index = this._objStateIndex[implementationObj.id];
+			var index = this._objStateIndex[implementationObj.id],
+				stateAlreadyExists = false,
+				i;
 
 			if (typeof params.add !== 'undefined') {
-				index.push(params.add);
-				sortArrayNumerically(index);
+				for (i = 0; i < index.length; i++) {
+					if (index[i] === params.add) {
+						stateAlreadyExists = true;
+					}
+				}
+				
+				if (!stateAlreadyExists) {
+					index.push(params.add);
+					sortArrayNumerically(index);
+				}
+			}
+		},
+
+		_updateLiveCopies: function () {
+			var liveCopy;
+			
+			for (liveCopy in this._liveCopies) {
+				if (this._liveCopies.hasOwnProperty(liveCopy)) {
+					this._keyframes[liveCopy][this._liveCopies[liveCopy].implementationObjId] = this._keyframes[this._liveCopies[liveCopy].copyOf][this._liveCopies[liveCopy].implementationObjId];
+				}
 			}
 		},
 
