@@ -207,6 +207,7 @@ function kapi(canvas, params, events) {
 			this._keyframeCache = {};
 			this._originalStates = {};
 			this._liveCopies = {};
+			this._currentState = {};
 			this._animationDuration = 0;
 
 			this.state = {
@@ -329,6 +330,10 @@ function kapi(canvas, params, events) {
 			this.play();
 		},
 
+		getState: function () {
+			return this._currentState;
+		},
+
 		// Handle high-level frame management logic
 		update: function () {
 			// Abandon all hope, ye who enter here.
@@ -413,21 +418,25 @@ function kapi(canvas, params, events) {
 		// Handle low-level drawing logic
 		_update: function (currentFrame) {
 			// Here be dragons.
-			var objStateIndices, currentFrameStateProperties, adjustedProperties,
-				objActionQueue, oldQueueLength, keyframeToModify;
+			var objName, 
+				currentFrameStateProperties, 
+				adjustedProperties,
+				objActionQueue, 
+				oldQueueLength, 
+				keyframeToModify;
 
-			for (objStateIndices in this._objStateIndex) {
-				if (this._objStateIndex.hasOwnProperty(objStateIndices)) {
+			for (objName in this._objStateIndex) {
+				if (this._objStateIndex.hasOwnProperty(objName)) {
 
 					// The current object may have a first keyframe greater than 0.
 					// If so, we don't want to calculate or draw it until we have
 					// reached this object's first keyframe
-					if (typeof this._objStateIndex[objStateIndices][0] !== 'undefined' && this._currentFrame >= this._objStateIndex[objStateIndices][0]) {
-						currentFrameStateProperties = this._getObjectState(objStateIndices);
+					if (typeof this._objStateIndex[objName][0] !== 'undefined' && this._currentFrame >= this._objStateIndex[objName][0]) {
+						currentFrameStateProperties = this._getObjectState(objName);
 
 						// If there are remaining keyframes for this object, draw it.
 						if (currentFrameStateProperties !== null) {
-							objActionQueue = this._objStateIndex[objStateIndices].queue;
+							objActionQueue = this._objStateIndex[objName].queue;
 							
 							// If there is a queued action, apply it to the current frame
 							if ((oldQueueLength = objActionQueue.length) > 0) {
@@ -442,16 +451,17 @@ function kapi(canvas, params, events) {
 								if (oldQueueLength !== objActionQueue.length) {
 									
 									// Save the modified state to the most recent keyframe for this object
-									keyframeToModify = this._getLatestKeyframeId(this._objStateIndex[objStateIndices]);
-									this._keyframes[ this._keyframeIds[keyframeToModify] ][objStateIndices] = currentFrameStateProperties;
+									keyframeToModify = this._getLatestKeyframeId(this._objStateIndex[objName]);
+									this._keyframes[ this._keyframeIds[keyframeToModify] ][objName] = currentFrameStateProperties;
 									
 									// TODO:  Fire an "action completed" event for the immediate action
 								}
 							}
-
+		
 							currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
 						}
 					}
+					this._currentState[objName] = currentFrameStateProperties;
 				}
 			}
 		},
@@ -910,6 +920,14 @@ function kapi(canvas, params, events) {
 						}
 					}
 				}
+			};
+
+			implementationObj.getState = function getState () {
+				return self._currentState[implementationObj.id] || {};
+			};
+			
+			implementationObj.get = function get (prop) {
+				return implementationObj.getState()[prop];
 			};
 
 			return implementationObj;
