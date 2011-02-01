@@ -40,6 +40,16 @@ function kapi(canvas, params, events) {
 				return original / amount;
 			}
 		};
+	
+		/**
+		 * @hide
+		 * Returns whether or not `arr` is an Array.
+		 * @param {Array} arr The item to inspect.
+		 * @returns {Boolean} Whether or not `arr` is an Array.
+		 */
+		function isArray (arr) {
+			return (toStr.call(arr) === '[object Array]');
+		}
 
 		/**
 		 * @hide
@@ -129,21 +139,11 @@ function kapi(canvas, params, events) {
 		}
 	}
 
-	/**
-	 * @hide
-	 * Returns whether or not `arr` is an Array.
-	 * @param {Array} arr The item to inspect.
-	 * @returns {Boolean} Whether or not `arr` is an Array.
-	 */
-	function isArray (arr) {
-		return (toStr.call(arr) === '[object Array]');
-	}
-
 	/** 
 	 * @hide
 	 * Return the last element in an array.
 	 * @param {Array} arr The array to get the last item from
-	 * @returns {Object|undefined} If there are no items in the `arr`, this returns `undefined`.
+	 * @returns {Any|undefined} If there are no items in the `arr`, this returns `undefined`.
 	 */
 	function last (arr) {
 		return arr.length > 0 ? arr[arr.length - 1] : undefined;
@@ -168,39 +168,88 @@ function kapi(canvas, params, events) {
 		return +new Date();
 	}
 
+	/**
+	 * @hide
+	 * Create a unique number.
+	 * @returns {Number} A really random number.
+	 */
 	function generateUniqueName () {
 		return parseInt(('' + Math.random()).substr(2), 10) + now();
 	}
 
+	/**
+	 * @hide
+	 * Sorts an array numerically, from smallest to largest.
+	 * @param {Array} array The Array to sort.
+	 * @returns {Array} The sorted Array.
+	 */
 	function sortArrayNumerically (array) {
 		return array.sort(function (a, b) {
 			return a - b;
 		});
 	}
 
+	/**
+	 * @hide
+	 * Determines if a string is a hexadecimal string (`#xxxxxx`)
+	 * @param {String} str The string to test.
+	 * @returns {Boolean}
+	 */
 	function isHexString (str) {
 		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
 	}
 
+	/**
+	 * @hide
+	 * Determines if a string is an RGB string (`rgb(x,x,x)`)
+	 * @param {String} str The string to test.
+	 * @returns {Boolean}
+	 */
 	function isRGBString (str) {
 		return typeof str === 'string' && (/^rgb\(\d+\s*,\d+\s*,\d+\s*\)\s*$/i).test(str);
 	}
 
+	/**
+	 * @hide
+	 * Determines if a string is either a hexadecimal or RGB string
+	 * @param {String} str The string to test.
+	 * @returns {Boolean}
+	 */
 	function isColorString (str) {
 		return isHexString(str) || isRGBString(str);
 	}
 
+	/**
+	 * @hide
+	 * Convert a base-16 number to base-10.
+	 * @param {Number|String} hex The value to convert
+	 * @returns {Number} The base-10 equivalent of `hex`.
+	 */
 	function hexToDec (hex) {
 		return parseInt(hex, 16);
 	}
 
+	/**
+	 * @hide
+	 * Convert a hexadecimal string to an array with three items, one each for the red, blue, and green decimal values.
+	 * @param {String} hex A hexadecimal string.
+	 * @returns {Array} The converted Array of RGB values if `hex` is a valid string, or an Array of three 0's.
+	 */
 	function hexToRGBArr (hex) {
 		if (typeof hex === 'string') {
 			hex = hex.replace(/#/g, '');
 			return [hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2))];
+		} else {
+			return [0, 0, 0];
 		}
 	}
 	
+	/**
+	 * @hide
+	 * Converts a string, which must be either in RGB or hexadecimal format, into an RGB Array.
+	 * @param {String} str A hexadecimal (`#xxxxxx`) or RGB (`rgb(x,x,x)`) string
+	 * @returns {Array|String} The equivalent RGB array (three items) or `str` if it was not in a valid format. 
+	 */
 	function getRGBArr (str) {
 		var arr;
 		
@@ -221,25 +270,51 @@ function kapi(canvas, params, events) {
 		}
 	}
 
+	/**
+	 * @hide
+	 * Convert a hexadecimal formatted string into an RGB string.
+	 * @param {String} hexStr A hexadecimal or RGB string.
+	 * @returns {String} The RGB equivalent of `hexStr`
+	 */
 	function hexToRGBStr (hexStr) {
+		var arr;
+		
 		if (isRGBString(hexStr)) {
 			return hexStr;
 		}
 
-		var arr = hexToRGBArr(hexStr);
+		arr = hexToRGBArr(hexStr);
 
 		return 'rgb(' + arr[0] + ',' + arr[1] + ',' + arr[2] + ')';
 	}
 
+	/**
+	 * @hide
+	 * Determines if a string is keyframe modifier string (`+=x`, `-=x`, `*=x`, `/=x`).
+	 * @param {String} str The string to test.
+	 * @returns {Boolean}
+	 */
 	function isModifierString (str) {
 		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
 	}
 	
 	// This assumes that `str` is a valid modifier string ('+=x', '-=x', '*=x', '/=x')
+	/**
+	 * @hide
+	 * Extract the modifier portion of a keyframe modifier string.
+	 * @param {String} str The string to extract the modifier from
+	 * @returns {String} Either `+=x`, `-=x`, `*=x`, or `/=x`.
+	 */
 	function getModifier (str) {
 		return str.match(/(\+|\-|\*|\/)\=/)[0];
 	}
 
+	/**
+	 * @hide
+	 * Determines if a property can be keyframed.
+	 * @param {Any} prop The property to evaluate.
+	 * @returns {Boolean}
+	 */
 	function isKeyframeableProp (prop) {
 		return (typeof prop === 'number' || typeof prop === 'function' || isModifierString(prop) || isColorString(prop));
 	}
