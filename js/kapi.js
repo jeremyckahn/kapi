@@ -41,69 +41,129 @@ function kapi(canvas, params, events) {
 			}
 		};
 
-	/* Define some useful methods that are private to Kapi. */
+		/**
+		 * @hide
+		 * Copy over properties from `parents` into `child`.  If multiple `parents` are supplied as an Array, `extend` them in order from right to left, and finally onto `child`.
+		 * 
+		 * @codestart
+		 * extend({a:true, b:true}, {c:true});
+		 *   --> {a:true, b:true, c:true}
+		 * @codeend
+		 * 
+		 * @codestart
+		 * extend({a:true}, [{b:true}, {c:true}]);
+		 *   --> {a:true, b:true, c:true}
+		 * @codeend
+		 * 
+		 * Another handy use for this method is to create a new copy of an object, free of any Object references.  You can do this like so:
+		 * @codestart
+		 * extend({}, objToCopy);
+		 * @endcode
+		 * 
+		 * By default, `extend` will not overwrite properties that are present in the objects that it is extending into.  You can force this with `doOverwrite`.
+		 * @codestart
+		 * extend({a:5, c:20}, {a: 10, b:15});
+		 *   --> {a:5, b:15, c:20}
+		 *   
+		 * extend({a:5, c:20}, {a: 10, b:15}, true);
+		 *   --> {a:10, b:15, c:20}
+		 * @codeend
+		 * 
+		 * This is adapted from the book, "JavaScript Patterns" by Stoyan Stefanov.  Contains some modifications to improve performance for Kapi, so just copy/pasting this for other implementations is likely not wise.  
+		 * @param {Object} child The object to extend into.
+		 * @param {Object|Array} parents Either the single parent to extend from, of an Array of Objects to extend from.  If multiple parents are give, they are extended sequentially from right to left, and finally onto `child`.
+		 * @param {Boolean} doOverwrite Force the properties that are present in the parent object into child object, whether or not that property is already defined on the child object.
+		 * @returns {Object} The extended `child`.
+		 */
+		function extend (child, parents, doOverwrite) {
+			var i, parent, extraParents;
+
+			if (!parents) {
+				return child;
+			}
+
+			if (isArray(parents)) {
+				if (!parents.length) {
+					return child;
+				}
+
+				extraParents = parents.slice(1);
+				parent = parents.shift();
+			} else {
+				parent = parents;
+			}
+
+			child = child || {};
+
+			for (i in parent) {
+				if (parent.hasOwnProperty(i)) {
+					if (typeof parent[i] === 'object' && i !== 'prototype') {
+						if (!child[i] || doOverwrite) {
+							child[i] = isArray(parent[i]) ? [] : {};
+						}
+						extend(child[i], parent[i], doOverwrite);
+					} else {
+						if (typeof child[i] === 'undefined' || doOverwrite) {
+							child[i] = parent[i];
+						}
+					}
+				}
+			}
+
+			return extend(child, extraParents, doOverwrite);
+		}
+
+	/**
+	 * @hide
+	 * Applies an easing formula defined in `kapi.tween`.
+	 * @param {String} easing The name of the easing formula to apply.
+	 * @param {Number} previousKeyframe The ID of the keyframe to ease from.
+	 * @param {Number} nextKeyframe The ID of the keyframe to ease to.
+	 * @param {Number} currProp The the current value of the property that is being eased.
+	 * @param {Number} nextProp The value to ease to.
+	 * @param {Number} currentProp The current frame that animation is processing.
+	 */
 	function applyEase (easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
 		if ((currentFrame || this._currentFrame) >= previousKeyframe) {
 			return kapi.tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
 		}
 	}
 
+	/**
+	 * @hide
+	 * Returns whether or not `arr` is an Array.
+	 * @param {Array} arr The item to inspect.
+	 * @returns {Boolean} Whether or not `arr` is an Array.
+	 */
 	function isArray (arr) {
 		return (toStr.call(arr) === '[object Array]');
 	}
 
+	/** 
+	 * @hide
+	 * Return the last element in an array.
+	 * @param {Array} arr The array to get the last item from
+	 * @returns {Object|undefined} If there are no items in the `arr`, this returns `undefined`.
+	 */
 	function last (arr) {
 		return arr.length > 0 ? arr[arr.length - 1] : undefined;
 	}
 
-	// Adapted from the book, "JavaScript Patterns" by Stoyan Stefanov
-	// Contains some modifications to improve performance for Kapi, so
-	// just copy pasting this for other implementations is likely not wise.
-	function extend (child, parents, doOverwrite) {
-		var i, parent, extraParents;
-
-		if (!parents) {
-			return child;
-		}
-
-		if (isArray(parents)) {
-			if (!parents.length) {
-				return child;
-			}
-
-			extraParents = parents.slice(1);
-			parent = parents.shift();
-		} else {
-			parent = parents;
-		}
-
-		child = child || {};
-
-		for (i in parent) {
-			if (parent.hasOwnProperty(i)) {
-				if (typeof parent[i] === 'object' && i !== 'prototype') {
-					if (!child[i] || doOverwrite) {
-						child[i] = isArray(parent[i]) ? [] : {};
-					}
-					extend(child[i], parent[i], doOverwrite);
-				} else {
-					if (typeof child[i] === 'undefined' || doOverwrite) {
-						child[i] = parent[i];
-					}
-				}
-			}
-		}
-
-		return extend(child, extraParents, doOverwrite);
-	}
-
-	// Strip the 'px' from a style string and add it to the element directly
-	// Meant to be called with Function.call()
+	/**
+	 * @hide
+	 * Get a dimension value (height/width) and set it on a DOM element.  This gets the value from the element's CSS and applies it inline.  Useful for changing the `height` and `width` of the `canvas` element, because according to the HTML5 spec, as CSS styles are not the same as the inline dimension values unless specified.
+	 * Note:  This is meant to be called with `Function.call()`.
+	 * @param {String} dim The dimension to set (either "height" or "width")
+	 */
 	function setDimensionVal (dim) {
 		this[dim] = this.style[dim].replace(/px/gi, '') || this._params[dim];
 	}
 
-	// Get UNIX epoch time
+	/**
+	 * @hide
+	 * Get the current UNIX time as an integer
+	 * @returns {Number} An integer representing the current timestamp.
+	 */
 	function now () {
 		return +new Date();
 	}
