@@ -15,14 +15,33 @@ function kapi(canvas, params, events) {
 		},
 		toStr = Object.prototype.toString,
 		calcKeyframe = {
+			/**
+			 * @hide
+			 * Calculates the keyframe based on a given amount of amount of *milliseconds*.  To be invoked with `Function.call`.
+			 * @param {Number} num The amount of milliseconds to determine a keyframe by.
+			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
+			 */
 			'ms': function (num) {
 				return (num * this._params.fRate) / 1000;
 			},
+			/**
+			 * @hide
+			 * Calculates the keyframe based on a given amount of amount of *seconds*.  To be invoked with `Function.call`.
+			 * @param {Number} num The amount of seconds to determine a keyframe by.
+			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
+			 */
 
 			's': function (num) {
 				return num * this._params.fRate;
 			}
 		},
+		/**
+		 * @hide
+		 * These are methods that apply one number to another, based on the operator they represent.
+		 * @param {Number} original The number to change.
+		 * @param {Number} amount The amount to modify `original` by.
+		 * @returns {Number} The result of the operation.
+		 */
 		modifiers = {
 			'+=': function (original, amount) {
 				return original + amount;
@@ -320,11 +339,28 @@ function kapi(canvas, params, events) {
 	}
 
 	return {
-		// init() is called immediately after this object is defined
+		/**
+		 * Called immediately when `kapi()` is invoked, there is no need for the user to invoke it (`init` essentially acts as the Kapi constructor).  Sets up some properties that are used internally, and also sets up the `canvas` element that it acts upon.
+		 * @param {HTMLCanvasElement} canvas The `canvas` element that this instance of Kapi will be controlling.
+		 * @param {Object} params Optional parameters to be set on this instance of Kapi.  They are as follows:
+		 *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
+		 *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object
+		 *     @codestart
+		 *     styles : {
+		 *       'height':  '300px',
+		 *       'width': '500px',
+		 *       'background': '#f0f'
+		 *     }
+		 *     @codeend
+		 * @param {Object} events An object containing events that can be set on this instance of Kapi.
+		 *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.     
+		 */
 		init: function (canvas, params, events) {
 			var style;
 
 			params = params || {};
+			
+			// Fill in any missing parameters
 			extend(params, defaults);
 			this._params = params;
 			
@@ -344,11 +380,11 @@ function kapi(canvas, params, events) {
 			this._liveCopies = {};
 			this._currentState = {};
 			this._animationDuration = 0;
+			
+			// Frame counter.  Is incremented for each frame that is rendered.
+			this.fCount = 0;
 
-			this.state = {
-				fCount: 0
-			};
-
+			// Apply CSS styles specified in `params.styles` to `canvas`.
 			for (style in this._params.styles) {
 				if (this._params.styles.hasOwnProperty(style)) {
 					this.el.style[style] = this._params.styles[style];
@@ -369,14 +405,26 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 
+		/**
+		 * Returns the Kapi version.
+		 * @returns {String} The current Kapi version.
+		 */
 		getVersion: function () {
 			return version;
 		},
 
+		/**
+		 * Determines whether or not the animation is running
+		 * @returns {Boolean}
+		 */
 		isPlaying: function () {
 			return (this._isStopped === false && this._isPaused === false);
 		},
 
+		/**
+		 * Starts the animation if it was not running before, or resumes the animation if it was not running previously.
+		 * @returns {Kapi} The Kapi instance.
+		 */
 		play: function () {
 			var pauseDuration,
 				currTime = now();
@@ -405,14 +453,24 @@ function kapi(canvas, params, events) {
 			}
 
 			this.update();
+			return this;
 		},
 
+		/**
+		 * Pause the animation.  Resuming from the paused state does not start the animation from the beginning, the state of the animation is maintained.
+		 * @returns {Kapi} The Kapi instance.
+		 */
 		pause: function () {
 			clearTimeout(this._updateHandle);
 			this._pausedAtTime = now();
 			this._isPaused = true;
+			return this;
 		},
 
+		/**
+		 * Stops the animation.  When the animation is started again with `play()`, it starts from the beginning of the loop.
+		 * @returns {Kapi} The Kapi instance.
+		 */
 		stop: function () {
 			var obj;
 			
@@ -427,22 +485,42 @@ function kapi(canvas, params, events) {
 					this._objStateIndex[obj].queue = [];
 				}
 			}
+			
+			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
+			return this;
 		},
 
-		add: function (implementationFunc, initialParams) {
+		/**
+		 * Add an "actor," which is just a function that performs drawing logic, to the animation.  This function creates an object with the following properties:
+		 *  - *draw()*: The initial function that contains the drawing logic.
+		 *  - *get(prop)*: Retrieve the current value for `prop`.
+		 *  - *getState()*: Retrieve an object that contains the current state info.
+		 *  - *keyframe(keyframeId, stateObj)*: Create a keyframe state for this actor.
+		 *  - *liveCopy(keyframeId, keyframeIdToCopy)*: Create a clone of `keyframeId` that changes as the original does.
+		 *  - *remove()*: Removes the actor instance from the animation.
+		 *  - *to(duration, stateObj)*: Immediately starts tweening the state of the actor to the state specified in `stateObj` over the course of `duration`.
+		 *  - *updateKeyframe(keyframeId, newProps)*: Update the keyframe for this actor at `keyframeId` with the properties defined in `newProps`.  
+		 *  - *id* The identifier that Kapi uses to address the actor internally.
+		 *  - *params*: A copy of `initialParams`.
+		 *  
+		 *  @param {Function} actorFunc The function that defines the drawing logic for the actor.
+		 *  @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
+		 *  @returns {Object} An Object with the properties described above.
+		 */
+		add: function (actorFunc, initialState) {
 			var inst = {};
-			inst.draw = implementationFunc;
-			inst.params = initialParams;
-			inst.constructor = implementationFunc;
-			inst.name = implementationFunc.name;
+			inst.draw = actorFunc;
+			inst.params = initialState;
+			inst.constructor = actorFunc;
+			inst.name = actorFunc.name;
 
 			return this._keyframize(inst);
 		},
-
-		// This is not really designed to work correctly with dynamic keyframes, because 
-		// there is really no good way to ensure accuracy for skipped dynamic keyframes.
-		// This functionality may come in a future release.  Who knows.
+		
 		gotoFrame: function (frame) {
+			// This is not really designed to work correctly with dynamic keyframes, because 
+			// there is really no good way to ensure accuracy for skipped dynamic keyframes.
+			// This functionality may come in a future release.  Who knows.
 			var currTime = now();
 			
 			if (this.isPlaying()) {
@@ -475,7 +553,7 @@ function kapi(canvas, params, events) {
 			var self = this,
 				currTime = now();
 
-			this.state.fCount++;
+			this.fCount++;
 			this._updateHandle = setTimeout(function () {
 				var reachedKeyframeLastIndex, prevKeyframe, cachedObject;
 
