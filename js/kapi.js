@@ -452,7 +452,7 @@ function kapi(canvas, params, events) {
 				this._loopStartTime = currTime;
 			}
 
-			this.update();
+			this.updateState();
 			return this;
 		},
 
@@ -517,8 +517,13 @@ function kapi(canvas, params, events) {
 			return this._keyframize(inst);
 		},
 		
+		/**
+		 *  Renders a specified frame and upates the internal Kapi state to match that frame.
+		 *   @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
+		 *   @returns {Object} An Object with the properties described above.
+		 */
 		gotoFrame: function (frame) {
-			// This is not really designed to work correctly with dynamic keyframes, because 
+			// This is not designed to work correctly with dynamic keyframes, because 
 			// there is really no good way to ensure accuracy for skipped dynamic keyframes.
 			// This functionality may come in a future release.  Who knows.
 			var currTime = now();
@@ -535,27 +540,47 @@ function kapi(canvas, params, events) {
 			this._pausedAtTime = currTime;
 			this._reachedKeyframes = this._keyframeIds.slice(0, this._getLatestKeyframeId(this._keyframeIds));
 			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
-			this._update();
+			this._updateActors(this._currentFrame);
+			return this;
 		},
 		
+		/**
+		 *  Wraps the `gotoFrame` method and then plays the animation.
+		 *   @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
+		 *   @returns {Object} An Object with the properties described above.
+		 */
 		gotoAndPlay: function (frame) {
 			this.gotoFrame(frame);
-			this.play();
+			return this.play();
 		},
 
+		/**
+		 * Gets the current state of all of the actors in the animation.
+		 * @returns {Object} A container of all of the animation's actors and their states at the time of invokation.
+		 */
 		getState: function () {
 			return this._currentState;
 		},
-
-		// Handle high-level frame management logic
-		update: function () {
+		
+		/**
+		 *  @hide
+		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
+		 *  
+		 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
+		 * 
+		 *  You probably don't want to modify this unless you really know what you're doing.
+		 *  @return {Number} The setTimeout identifier for the timer callback.
+		 */
+		updateState: function () {
 			// Abandon all hope, ye who enter here.
 			var self = this,
 				currTime = now();
 
 			this.fCount++;
 			this._updateHandle = setTimeout(function () {
-				var reachedKeyframeLastIndex, prevKeyframe, cachedObject;
+				var reachedKeyframeLastIndex, 
+					prevKeyframe, 
+					cachedObject;
 
 				// Calculate how long this iteration of the loop has been running for
 				self._loopLength = currTime - self._loopStartTime;
@@ -619,17 +644,21 @@ function kapi(canvas, params, events) {
 						self.events.enterFrame.call(self);
 					}
 
-					self._update(self._currentFrame);
+					self._updateActors(self._currentFrame);
 				}
 				
-				self.update();
+				self.updateState();
 			}, 1000 / this._params.fRate);
 
 			return this._updateHandle;
 		},
 
-		// Handle low-level drawing logic
-		_update: function (currentFrame) {
+		/**
+		 * @hide
+		 * Update the state properties for the all of the actors in the animation.
+		 * @param {Number} currentFrame The deisred frame to process.
+		 */
+		_updateActors: function (currentFrame) {
 			// Here be dragons.
 			var objName, 
 				currentFrameStateProperties, 
@@ -644,7 +673,7 @@ function kapi(canvas, params, events) {
 					// The current object may have a first keyframe greater than 0.
 					// If so, we don't want to calculate or draw it until we have
 					// reached this object's first keyframe
-					if (typeof this._objStateIndex[objName][0] !== 'undefined' && this._currentFrame >= this._objStateIndex[objName][0]) {
+					if (typeof this._objStateIndex[objName][0] !== 'undefined' && currentFrame >= this._objStateIndex[objName][0]) {
 						currentFrameStateProperties = this._getObjectState(objName);
 
 						// If there are remaining keyframes for this object, draw it.
@@ -662,7 +691,6 @@ function kapi(canvas, params, events) {
 								
 								// If an immediate action finished running and was removed from the queue
 								if (oldQueueLength !== objActionQueue.length) {
-									
 									// Save the modified state to the most recent keyframe for this object
 									keyframeToModify = this._getLatestKeyframeId(this._objStateIndex[objName]);
 									this._keyframes[ this._keyframeIds[keyframeToModify] ][objName] = currentFrameStateProperties;
