@@ -719,8 +719,7 @@ function kapi(canvas, params, events) {
 				latestKeyframeId = this._getLatestKeyframeId(actorKeyframeIndex),
 				nextKeyframeId, 
 				latestKeyframeProps, 
-				nextKeyframeProps, 
-				prop;
+				nextKeyframeProps;
 
 			// Do a check to see if any more keyframes remain in the animation loop for this actor
 			if (latestKeyframeId === -1) {
@@ -824,6 +823,7 @@ function kapi(canvas, params, events) {
 				toStateId,
 				modifier,
 				previousPropVal,
+				fromPropType,
 				currentFrameProps = {};
 			
 			easing = kapi.tween[easing] ? easing : 'linear';
@@ -879,7 +879,10 @@ function kapi(canvas, params, events) {
 							this._keyframeCache[toStateId].to[keyProp] = toProp;
 						}
 						
-						if (!isKeyframeableProp(toProp) || typeof fromProp !== typeof toProp) {
+						// Superfluous workaround for a meaningless and nonsensical JSLint error. ("Weird relation")
+						fromPropType = typeof fromProp;
+						
+						if (!isKeyframeableProp(toProp) || fromPropType !== typeof toProp) {
 							// The toProp isn't valid, so just make the current value for the this frame
 							// the same as the fromProp
 							currentFrameProps[keyProp] = fromProp;
@@ -964,21 +967,32 @@ function kapi(canvas, params, events) {
 			return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
 		},
 
-		_keyframize: function (implementationObj) {
+		/**
+		 * @hide
+		 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_keyframize()`.).
+		 * @param {Object} actorObj The object to prep for Kapi use and add properties to.
+		 * @returns {Object} The "decorated" version of `actorObj`. 
+		 */
+		_keyframize: function (actorObj) {
 			var self = this;
 
 			// Make really really sure the id is unique, if one is not provided
-			if (typeof implementationObj.id === 'undefined') {
-				implementationObj.id =
-					implementationObj.params.id || implementationObj.params.name || generateUniqueName();
+			if (typeof actorObj.id === 'undefined') {
+				actorObj.id = actorObj.params.id || actorObj.params.name || generateUniqueName();
 			}
 
-			if (typeof this._actorStateIndex[implementationObj.id] === 'undefined') {
-				this._actorStateIndex[implementationObj.id] = [];
-				this._actorStateIndex[implementationObj.id].queue = [];
+			if (typeof this._actorStateIndex[actorObj.id] === 'undefined') {
+				this._actorStateIndex[actorObj.id] = [];
+				this._actorStateIndex[actorObj.id].queue = [];
 			}
 
-			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
+			/**
+			 * Create a keyframe for an actor.
+			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+			 * @param {Object} stateObj The properties of the keyframed state.  Any missing parameters on this keyframe will be inferred from other keyframes in the animation set for this actor.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
+			actorObj.keyframe = function keyframe (keyframeId, stateObj) {
 				// Save a "safe" copy of the state object before modifying it - will be used later in this function.
 				// This is done here to prevent the `_originalStates` property from being changed
 				// by other code that references it.
@@ -1015,23 +1029,30 @@ function kapi(canvas, params, events) {
 				}
 
 				// Create the keyframe state info for this object
-				self._keyframes[keyframeId][implementationObj.id] = stateObj;
+				self._keyframes[keyframeId][actorObj.id] = stateObj;
 				
 				// Save a copy of the original `stateObj`.  This is used for updating keyframes after they are created.
-				self._originalStates[keyframeId][implementationObj.id] = orig;
+				self._originalStates[keyframeId][actorObj.id] = orig;
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
-				self._updateKeyframes(implementationObj, keyframeId);
+				self._updateKeyframes(actorObj, keyframeId);
 
 				// Copy over any "missing" parameters for this keyframe from the original object definition
-				extend(stateObj, implementationObj.params);
+				extend(stateObj, actorObj.params);
 				self._updateAnimationDuration();
 				
 				return this;
 			};
 
-			implementationObj.to = function to (duration, stateObj) {
-				var last, queue = self._actorStateIndex[implementationObj.id].queue;
+			/**
+			 * Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.
+			 * @param {Number|String} duration The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax ("_x_ms" or "_x_s").  
+			 * @param {Object} stateObj The state to animate the actor to.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
+			actorObj.to = function to (duration, stateObj) {
+				var last, 
+				queue = self._actorStateIndex[actorObj.id].queue;
 
 				queue.push({
 					'duration': self._getRealKeyframe(duration),
@@ -1051,14 +1072,13 @@ function kapi(canvas, params, events) {
 			};
 
 			/**
-			 * Cleanly removes `implementationObj` from `keyframeId`, as well as all internal references to it.  
-			 * An error is logged if `implementationObj` does not exist at `keyframeId`.
-			 *
-			 * {param} keyframeId The desired keyframe to remove `implementationObj` from.
-			 *
-			 * {returns} `implementationObj` for chaining.
+			 * Cleanly removes `actorObj` from `keyframeId`, as well as all internal references to it.
+			 * 
+			 * An error is logged if `actorObj` does not exist at `keyframeId`.
+			 * @param {Number|String} keyframeId The desired keyframe to remove `actorObj` from.
+			 * @returns {Object} The actor Object (for chaining).
 			 */
-			implementationObj.remove = function remove (keyframeId) {
+			actorObj.remove = function remove (keyframeId) {
 				var i,
 					keyframe,
 					liveCopy,
@@ -1066,10 +1086,10 @@ function kapi(canvas, params, events) {
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				
-				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
+				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][actorObj.id]) {
 					
-					delete self._keyframes[keyframeId][implementationObj.id];
-					delete self._originalStates[keyframeId][implementationObj.id];
+					delete self._keyframes[keyframeId][actorObj.id];
+					delete self._originalStates[keyframeId][actorObj.id];
 					
 					// Check to see if there's any objects left in the keyframe.
 					// If not, delete the keyframe.
@@ -1100,9 +1120,9 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
-					for (i = 0; i < self._actorStateIndex[implementationObj.id].length; i++) {
-						if (self._actorStateIndex[implementationObj.id][i] === keyframeId) {
-							self._actorStateIndex[implementationObj.id].splice(i, 1);
+					for (i = 0; i < self._actorStateIndex[actorObj.id].length; i++) {
+						if (self._actorStateIndex[actorObj.id][i] === keyframeId) {
+							self._actorStateIndex[actorObj.id].splice(i, 1);
 						}
 					}
 					
@@ -1112,7 +1132,7 @@ function kapi(canvas, params, events) {
 					
 					for (liveCopy in self._liveCopies) {
 						if (self._liveCopies.hasOwnProperty(liveCopy) && self._liveCopies[liveCopy].copyOf === keyframeId) {
-							implementationObj.remove(liveCopy);
+							actorObj.remove(liveCopy);
 						}
 					}
 					
@@ -1121,9 +1141,9 @@ function kapi(canvas, params, events) {
 				} else {
 					if (console && console.error) {
 						if (self._keyframes[keyframeId]) {
-							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but ' + implementationObj.id + ' does not exist at that keyframe.');
+							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but ' + actorObj.id + ' does not exist at that keyframe.');
 						} else {
-							console.error('Trying to remove ' + implementationObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
+							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
 						}
 					}
 				}
@@ -1131,65 +1151,90 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 
-			// Note!  You cannot update the properties of a keyframe that is a liveCopy.
-			// You can only update the properties of the keyframe that it is copying.
-			implementationObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
+			/**
+			 * Selectively modify the state properties of a keyframe.  Properties that are missing from a call to `updateKeyframe()` are left unmodified in the keyframe it is modifying.
+			 * 
+			 * Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.
+			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+			 * @param {Object} newProps The properties on the keyframe to be updated.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
+			actorObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
 				var keyframeToUpdate,
 					originalState;
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				
-				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][implementationObj.id]) {
-					originalState = self._originalStates[keyframeId][implementationObj.id];
-					keyframeToUpdate = self._keyframes[keyframeId][implementationObj.id];
+				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][actorObj.id]) {
+					originalState = self._originalStates[keyframeId][actorObj.id];
+					keyframeToUpdate = self._keyframes[keyframeId][actorObj.id];
 					extend(originalState, newProps, true);
-					implementationObj.keyframe(keyframeId, originalState);
+					actorObj.keyframe(keyframeId, originalState);
 				} else {
 					if (window.console && window.console.error) {
 						if (!self._keyframes[keyframeId]) {
 							console.error('Keyframe ' + keyframeId + ' does not exist.');
 						} else {
-							console.error('Keyframe ' + keyframeId + ' does not contain ' + implementationObj.id);
+							console.error('Keyframe ' + keyframeId + ' does not contain ' + actorObj.id);
 						}
 					}
 				}
 				
 				return this;
 			};
-
-			implementationObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
+			
+			/**
+			 * Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified, so is the live copy.
+			 * 
+			 * This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.
+			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+			 * @param {Number|String} keyframeIdToCopy The keyframe identifier of the keyframe to copy..  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+			 * @returns {Object} The actor Object (for chaining).  
+			 */
+			actorObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				keyframeIdToCopy = self._getRealKeyframe(keyframeIdToCopy);
 				
-				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][implementationObj.id]) {
+				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][actorObj.id]) {
 					// Maintain an index of liveCopies so that they are updated in `_updateKeyframes`.
 					self._liveCopies[keyframeId] = {
-						'implementationObjId': implementationObj.id,
+						'implementationObjId': actorObj.id,
 						'copyOf': keyframeIdToCopy
 					};
 					
-					implementationObj.keyframe(keyframeId, {});
+					actorObj.keyframe(keyframeId, {});
 				} else {
 					if (window.console && window.console.error) {
 						if (!self._keyframes[keyframeIdToCopy]) {
 							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but keyframe ' + keyframeIdToCopy + ' does not exist.');
 						} else {
-							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + implementationObj.id + ' does not exist at keyframe ' + keyframeId + '.');
+							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + actorObj.id + ' does not exist at keyframe ' + keyframeId + '.');
 						}
 					}
 				}
-			};
-
-			implementationObj.getState = function getState () {
-				return self._currentState[implementationObj.id] || {};
+				
+				return this;
 			};
 			
-			implementationObj.get = function get (prop) {
-				return implementationObj.getState()[prop];
+			/**
+			 * Get the current state of the actor as it exists in Kapi.
+			 * @returns {Object} An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when `getState` is called. 
+			 */
+			actorObj.getState = function getState () {
+				return self._currentState[actorObj.id] || {};
+			};
+			
+			/**
+			 * Get the current value of a single state property from the actor.
+			 * @param {String} prop The state property to retrieve.
+			 * @return {Anything} Whatever the current value for `prop` is. 
+			 */
+			actorObj.get = function get (prop) {
+				return actorObj.getState()[prop];
 			};
 
-			return implementationObj;
+			return actorObj;
 		},
 		
 		// Calculates the "real" keyframe from `identifier`.
