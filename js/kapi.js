@@ -374,7 +374,7 @@ function kapi(canvas, params, events) {
 			this._keyframeIds = [];
 			this._reachedKeyframes = [];
 			this._keyframes = {};
-			this._objStateIndex = {};
+			this._actorStateIndex = {};
 			this._keyframeCache = {};
 			this._originalStates = {};
 			this._liveCopies = {};
@@ -480,9 +480,9 @@ function kapi(canvas, params, events) {
 			this._isStopped = true;
 			
 			// Delete any queued Immediate Actions
-			for (obj in this._objStateIndex) {
-				if (this._objStateIndex.hasOwnProperty(obj)) {
-					this._objStateIndex[obj].queue = [];
+			for (obj in this._actorStateIndex) {
+				if (this._actorStateIndex.hasOwnProperty(obj)) {
+					this._actorStateIndex[obj].queue = [];
 				}
 			}
 			
@@ -667,18 +667,18 @@ function kapi(canvas, params, events) {
 				oldQueueLength, 
 				keyframeToModify;
 
-			for (objName in this._objStateIndex) {
-				if (this._objStateIndex.hasOwnProperty(objName)) {
+			for (objName in this._actorStateIndex) {
+				if (this._actorStateIndex.hasOwnProperty(objName)) {
 
 					// The current object may have a first keyframe greater than 0.
 					// If so, we don't want to calculate or draw it until we have
 					// reached this object's first keyframe
-					if (typeof this._objStateIndex[objName][0] !== 'undefined' && currentFrame >= this._objStateIndex[objName][0]) {
-						currentFrameStateProperties = this._getObjectState(objName);
+					if (typeof this._actorStateIndex[objName][0] !== 'undefined' && currentFrame >= this._actorStateIndex[objName][0]) {
+						currentFrameStateProperties = this._getActorState(objName);
 
 						// If there are remaining keyframes for this object, draw it.
 						if (currentFrameStateProperties !== null) {
-							objActionQueue = this._objStateIndex[objName].queue;
+							objActionQueue = this._actorStateIndex[objName].queue;
 							
 							// If there is a queued action, apply it to the current frame
 							if ((oldQueueLength = objActionQueue.length) > 0) {
@@ -692,7 +692,7 @@ function kapi(canvas, params, events) {
 								// If an immediate action finished running and was removed from the queue
 								if (oldQueueLength !== objActionQueue.length) {
 									// Save the modified state to the most recent keyframe for this object
-									keyframeToModify = this._getLatestKeyframeId(this._objStateIndex[objName]);
+									keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[objName]);
 									this._keyframes[ this._keyframeIds[keyframeToModify] ][objName] = currentFrameStateProperties;
 									
 									// TODO:  Fire an "action completed" event for the immediate action
@@ -707,51 +707,37 @@ function kapi(canvas, params, events) {
 			}
 		},
 
-		_getObjectState: function (stateObjName) {
+		/**
+		 * @hide
+		 * Apply the current keyframe state and any other state modifiers (such as Immediate Actions like `actor.to()`) to an actor.
+		 * @param {String} actorName The identifier string corresponding the desired actor object.
+		 * @returns {Object} The current state properties of `actorName`.  
+		 */
+		_getActorState: function (actorName) {
 
-			var stateObjKeyframeIndex = this._objStateIndex[stateObjName],
-				latestKeyframeId = this._getLatestKeyframeId(stateObjKeyframeIndex),
+			var actorKeyframeIndex = this._actorStateIndex[actorName],
+				latestKeyframeId = this._getLatestKeyframeId(actorKeyframeIndex),
 				nextKeyframeId, 
 				latestKeyframeProps, 
 				nextKeyframeProps, 
 				prop;
 
-			// Do a check to see if any more keyframes remain in the animation loop for this object
+			// Do a check to see if any more keyframes remain in the animation loop for this actor
 			if (latestKeyframeId === -1) {
 				return null;
 			}
 
-			nextKeyframeId = this._getNextKeyframeId(stateObjKeyframeIndex, latestKeyframeId);
-			latestKeyframeProps = this._keyframes[stateObjKeyframeIndex[latestKeyframeId]][stateObjName];
-			nextKeyframeProps = this._keyframes[stateObjKeyframeIndex[nextKeyframeId]][stateObjName];
+			nextKeyframeId = this._getNextKeyframeId(actorKeyframeIndex, latestKeyframeId);
+			latestKeyframeProps = this._keyframes[actorKeyframeIndex[latestKeyframeId]][actorName];
+			nextKeyframeProps = this._keyframes[actorKeyframeIndex[nextKeyframeId]][actorName];
 
 			// If we are on or past the last keyframe
 			if (latestKeyframeId === nextKeyframeId  && this._lastKeyframe > 0) {
-				if ( this._keyframeIds[latestKeyframeId] === this._lastKeyframe) {
-					// If the most recent keyframe is the last keyframe, just draw the "to" position
-					// Use extend to create a copy of the object and not just a pointer to the actual keyframe data
-					nextKeyframeProps = extend({}, nextKeyframeProps);
-					
-					// Ensure there any property functions are run
-					for (prop in nextKeyframeProps) {
-						if (nextKeyframeProps.hasOwnProperty(prop)) {
-							if (typeof nextKeyframeProps[prop] === 'function') {
-								nextKeyframeProps[prop] = nextKeyframeProps[prop].call(nextKeyframeProps);
-							}
-						}
-					}
-					
-					// Something dumb must have happened for this code to have been reached.
-					return nextKeyframeProps;
-					
-				} else {
-					// Otherwise just don't draw anything
-					return null;
-				}
+				return null;
 			}
 			
-			if (!this._keyframeCache[stateObjName]) {
-				this._keyframeCache[stateObjName] = {
+			if (!this._keyframeCache[actorName]) {
+				this._keyframeCache[actorName] = {
 					'from': {},
 					'to': {}
 				};
@@ -760,12 +746,18 @@ function kapi(canvas, params, events) {
 			return this._calculateCurrentFrameProps(
 				latestKeyframeProps, 
 				nextKeyframeProps, 
-				stateObjKeyframeIndex[latestKeyframeId], 
-				stateObjKeyframeIndex[nextKeyframeId], 
+				actorKeyframeIndex[latestKeyframeId], 
+				actorKeyframeIndex[nextKeyframeId], 
 				nextKeyframeProps.easing
 			);
 		},
 
+		/**
+		 * @hide
+		 * Gets the current state of the queued-up Immediate Action.  Also updates the Immediate Actions queue if necessary.
+		 * @param {Array} queuedActionsArr The queue of Immediate Actions to be applied.
+		 * @returns {Object} An Object containing the current properties of the queued Immediate Action. 
+		 */
 		_getQueuedActionState: function (queuedActionsArr) {
 			var currTime = now(),
 				queuedAction = queuedActionsArr[0],
@@ -809,6 +801,18 @@ function kapi(canvas, params, events) {
 			);
 		},
 
+		/**
+		 * @hide
+		 * Calculate an actor's properties for the current frame.
+		 * @param {Object} fromState An object containing all of the properties that defined the keyframe to animate _from_.  This can be considered the "starting state."
+		 * @param {Object} toState An object containing all of the properties that defined the keyframe to animate _to_.  This can be considered the "ending state."
+		 * @param {Number} fromKeyframe The Kapi keyframe ID that corresponds to `fromState`.
+		 * @param {Number} toKeyframe The Kapi keyframe ID that corresponds to `toState`.
+		 * @param {String} easing The easing formula to use.  Kapi comes prepackaged with "linear," but Kapi be extended with more easing formulas.  If `easing` is not valid, this method defaults to `linear`.
+		 * @param {Object} options Extra, non-necessary options to set.  They include:
+		 *   @param {Number} currentFrame If present, `currentFrame` overrides the internally maintained '_currentFrame' property.
+		 * @returns {Object}
+		 */
 		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
 			// Magic.
 			var i, 
@@ -839,7 +843,7 @@ function kapi(canvas, params, events) {
 							fromProp = fromProp.call(fromState) || 0;
 						} else {
 							modifier = getModifier(fromProp);
-							previousPropVal = this._getPreviousKeyframeId(this._objStateIndex[fromStateId]);
+							previousPropVal = this._getPreviousKeyframeId(this._actorStateIndex[fromStateId]);
 							
 							// Convert the keyframe ID to its corresponding property value
 							if (previousPropVal === -1) {
@@ -912,14 +916,21 @@ function kapi(canvas, params, events) {
 			return currentFrameProps;
 		},
 		
+		/**
+		 * @hide
+		 * Look up the ID of the last keyframe that was completed in the current animation loop.
+		 * @param {Array} lookup The list of keyframes to check against.
+		 * @returns {Number}    
+		 */
 		_getPreviousKeyframeId: function (lookup) {
 			return this._getLatestKeyframeId(lookup) - 1;
 		},
 
 		/**
-		 * @param {Array} lookup A lookup array for the internal `_keyframes` object
-		 * 
-		 * @return {Number} The index of the last keyframe that was run in the animation.  Returns `-1` if there are no keyframes remaining for this object in the animation.
+		 * @hide
+		 * Lookup the ID of the most recent keyframe that was started, but not completed.
+		 * @param {Array} lookup The list of keyframes to check against.
+		 * @returns {Number} The index of the latest keyframe.  Returns `-1` if there are no keyframes remaining for `lookup` in the current loop.
 		 */
 		_getLatestKeyframeId: function (lookup) {
 			var i;
@@ -942,6 +953,13 @@ function kapi(canvas, params, events) {
 			return lookup.length - 1;
 		},
 
+		/**
+		 * @hide
+		 * Get the ID of the next keyframe that has not been started yet.
+		 * @param {Array} lookup The list of keyframes to check against.
+		 * @param {Number} latestKeyframeId The ID of the most recent keyframe to have started.  Find this with `_getLatestKeyframeId()`.
+		 * @returns {Number}
+		 */
 		_getNextKeyframeId: function (lookup, latestKeyframeId) {
 			return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
 		},
@@ -955,9 +973,9 @@ function kapi(canvas, params, events) {
 					implementationObj.params.id || implementationObj.params.name || generateUniqueName();
 			}
 
-			if (typeof this._objStateIndex[implementationObj.id] === 'undefined') {
-				this._objStateIndex[implementationObj.id] = [];
-				this._objStateIndex[implementationObj.id].queue = [];
+			if (typeof this._actorStateIndex[implementationObj.id] === 'undefined') {
+				this._actorStateIndex[implementationObj.id] = [];
+				this._actorStateIndex[implementationObj.id].queue = [];
 			}
 
 			implementationObj.keyframe = function keyframe (keyframeId, stateObj) {
@@ -1013,7 +1031,7 @@ function kapi(canvas, params, events) {
 			};
 
 			implementationObj.to = function to (duration, stateObj) {
-				var last, queue = self._objStateIndex[implementationObj.id].queue;
+				var last, queue = self._actorStateIndex[implementationObj.id].queue;
 
 				queue.push({
 					'duration': self._getRealKeyframe(duration),
@@ -1082,9 +1100,9 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
-					for (i = 0; i < self._objStateIndex[implementationObj.id].length; i++) {
-						if (self._objStateIndex[implementationObj.id][i] === keyframeId) {
-							self._objStateIndex[implementationObj.id].splice(i, 1);
+					for (i = 0; i < self._actorStateIndex[implementationObj.id].length; i++) {
+						if (self._actorStateIndex[implementationObj.id][i] === keyframeId) {
+							self._actorStateIndex[implementationObj.id].splice(i, 1);
 						}
 					}
 					
@@ -1272,7 +1290,7 @@ function kapi(canvas, params, events) {
 		},
 
 		_updateObjStateIndex: function (implementationObj, params) {
-			var index = this._objStateIndex[implementationObj.id],
+			var index = this._actorStateIndex[implementationObj.id],
 				stateAlreadyExists = false,
 				i;
 
