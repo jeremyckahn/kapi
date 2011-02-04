@@ -1199,7 +1199,7 @@ function kapi(canvas, params, events) {
 				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][actorObj.id]) {
 					// Maintain an index of liveCopies so that they are updated in `_updateKeyframes`.
 					self._liveCopies[keyframeId] = {
-						'implementationObjId': actorObj.id,
+						'actorId': actorObj.id,
 						'copyOf': keyframeIdToCopy
 					};
 					
@@ -1237,16 +1237,21 @@ function kapi(canvas, params, events) {
 			return actorObj;
 		},
 		
-		// Calculates the "real" keyframe from `identifier`.
-		// This means that you can speicify keyframes from things other than plain integers.
-		// For example, you can calculate the real keyframe that will run at a certain period of time.
-		// Valid formats:
-		// 
-		// x : keyframe integer
-		// xms : kayframe at an amount of milliseconds
-		// xs : kayframe at an amount of seconds
+		/**
+		 * @hide
+		 * Calculates the "real" keyframe from `identifier`.  This means that you can speicify keyframes from things other than plain integers.  For example, you can calculate the real keyframe that will run at a certain period of time.
+		 * 
+		 * Valid formats:
+		 * - x : keyframe integer
+		 * - "xms" : keyframe at an amount of milliseconds
+		 * - "xs" : keyframe at an amount of seconds
+		 * @param {Number|String} identifier A value like the ones described above.
+		 * @returns {Number} A valid keyframe identifier equivalent to `identifier`  
+		 */
 		_getRealKeyframe: function (identifier) {
-			var quantifier, unit, calculatedKeyframe;
+			var quantifier, 
+				unit, 
+				calculatedKeyframe;
 
 			if (typeof identifier === 'number') {
 				return parseInt(identifier, 10);
@@ -1275,15 +1280,26 @@ function kapi(canvas, params, events) {
 
 		},
 
-		_updateKeyframes: function (implementationObj, keyframeId) {
+		/**
+		 * @hide
+		 * A maintenance function that calls a collection of other methods that, in turn, update and modify the animation keyframes.
+		 * @param actor An actor Object.
+		 * @param keyframeId The ID of the keyframe that a new state for `actor` is being placed. 
+		 */
+		_updateKeyframes: function (actor, keyframeId) {
 			this._updateKeyframeIdsList(keyframeId);
-			this._normalizeObjectAcrossKeyframes(implementationObj.id);
+			this._normalizeActorAcrossKeyframes(actor.id);
 			this._updateLiveCopies();
-			this._updateObjStateIndex(implementationObj, {
+			this._updateActorStateIndex(actor, {
 				add: keyframeId
 			});
 		},
 
+		/**
+		 * @hide
+		 * Create a unique entry for a keyframe ID in the internal `_keyframeIds` list and sort it.
+		 * @param {Number} keyframeId The keyframe ID to add.
+		 */
 		_updateKeyframeIdsList: function (keyframeId) {
 			var i;
 
@@ -1297,23 +1313,29 @@ function kapi(canvas, params, events) {
 			sortArrayNumerically(this._keyframeIds);
 		},
 
-		_normalizeObjectAcrossKeyframes: function (keyframedObjId) {
+		/**
+		 * @hide
+		 * Validate a actor's state across all of the keyframe.  Essentially, this function fills in the gaps for keyframes that were missing parameters when created.  If a parameter is present for an actor in one keyframe, it is present in all of them.
+		 * 
+		 * Missing parameters are inferred from other keyframes.  Specifically, a keyframe missing parameter X will simply copy parameter X from the previous keyframe.  This "inheritance" will go all the way to the first keyframe, which inherited its parameters from when the actor was `kapi.add`ed.
+		 * @param {Object} actorId The ID of the actor to normalize.
+		 */
+		_normalizeActorAcrossKeyframes: function (actorId) {
 			var newStateId, 
 				prevStateId, 
-				i, 
 				length = this._keyframeIds.length,
 				newStateObj, 
 				prevStateObj, 
-				prop;
+				prop,
+				i;
 
 			// Traverse all keyframes in the animation
 			for (i = 0; i < length; i++) {
-
 				newStateId = this._keyframeIds[i];
-				newStateObj = this._keyframes[newStateId][keyframedObjId];
+				newStateObj = this._keyframes[newStateId][actorId];
 
 				if (typeof prevStateId !== 'undefined') {
-					prevStateObj = this._keyframes[prevStateId][keyframedObjId];
+					prevStateObj = this._keyframes[prevStateId][actorId];
 					extend(newStateObj, prevStateObj);
 				}
 
@@ -1327,15 +1349,23 @@ function kapi(canvas, params, events) {
 					}
 				}
 
-				// Only store the prevState if keyframedObjId actually exists in this keyframe 
+				// Only store the prevState if actorId actually exists in this keyframe 
 				if (newStateObj) {
 					prevStateId = newStateId;
 				}
 			}
 		},
 
-		_updateObjStateIndex: function (implementationObj, params) {
-			var index = this._actorStateIndex[implementationObj.id],
+		/**
+		 * @hide
+		 * Performs the actions specified in `params` in the internal state record for `actor`
+		 * @param {Object} actor The actor to update the internal Kapi state of.
+		 * @param {Object} params A description of the actions to perform on `actor`:
+		 *   @param {Number} add The keyframe ID that `actor` is being placed into.
+		 */
+		_updateActorStateIndex: function (actor, params) {
+			// TODO:  This method should be used for removing keyframes as well.  Currently this is being performed in `actorObj.remove`.
+			var index = this._actorStateIndex[actor.id],
 				stateAlreadyExists = false,
 				i;
 
@@ -1353,16 +1383,23 @@ function kapi(canvas, params, events) {
 			}
 		},
 
+		/**
+		 * @hide
+		 * Synchronize any liveCopy keyframes with the keyframe they are liveCopying.  This is done by updating the keyframe reference on the liveCopy to the original.  
+		 */
 		_updateLiveCopies: function () {
 			var liveCopy;
 			
 			for (liveCopy in this._liveCopies) {
 				if (this._liveCopies.hasOwnProperty(liveCopy)) {
-					this._keyframes[liveCopy][this._liveCopies[liveCopy].implementationObjId] = this._keyframes[this._liveCopies[liveCopy].copyOf][this._liveCopies[liveCopy].implementationObjId];
+					this._keyframes[liveCopy][this._liveCopies[liveCopy].actorId] = this._keyframes[this._liveCopies[liveCopy].copyOf][this._liveCopies[liveCopy].actorId];
 				}
 			}
 		},
 
+		/**
+		 * Recalculate and internally store the length of time that the animation will run for.
+		 */
 		_updateAnimationDuration: function () {
 			// Calculate and update the number of seconds this animation will run for
 			this._lastKeyframe = last(this._keyframeIds);
@@ -1372,18 +1409,19 @@ function kapi(canvas, params, events) {
 	}.init(canvas, params, events);
 }
 
-// Attach tween methods to the `kapi.tween` function to extend it.
+/**
+ * This object contains all of the tweens available to Kapi.  It is extendable - simply attach properties to this Object following the same format at `linear`.
+ * 
+ * This pattern was copied from Robert Penner, under BSD License (http://www.robertpenner.com/)
+ * 
+ * @param t The current time
+ * @param b Start value
+ * @param c Change in value (delta)
+ * @param d Duration of the tween
+ */
 kapi.tween = {
-	// All equations are copied from here: http://www.gizma.com/easing/
-	// Originally written by Robert Penner, copied under BSD License (http://www.robertpenner.com/)
-	//
-	// Params are as follows
-	// t = current time
-	// b = start value
-	// c = change in value
-	// d = duration
-	// no easing, no acceleration
 	linear: function (t, b, c, d) {
+		// no easing, no acceleration
 		return c * t / d + b;
 	}
 };
