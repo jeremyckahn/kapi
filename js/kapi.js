@@ -388,6 +388,7 @@ function kapi(canvas, params, events) {
 			var style;
 
 			params = params || {};
+			events = events || {};
 			
 			// Fill in any missing parameters
 			extend(params, defaults);
