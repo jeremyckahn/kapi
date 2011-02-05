@@ -1,14 +1,53 @@
 /*global clearTimeout: true, setTimeout: true, window: true, console: true */
 
-/*	Kapi - Keyframe API (for canvas)
- *	jeremyckahn@gmail.com
+/**
+ * Kapi - A keyframe API
+ * v0.1
+ * by Jeremy Kahn - jeremyckahn@gmail.com
+ * hosted at: https://github.com/jeremyckahn/kapi
  * 
- * A keyframe interface for the HTML 5 canvas.
+ * Kapi streamlines animation development for the HTML 5 canvas by providing a keyframing API.  It manages timing and tweening so you don't have to.   
+ * 
+ * Kapi is distributed under the MIT license.
+ * Learn more about keyframes: http://en.wikipedia.org/wiki/Key_frame
+ * 
+ * Please use, distribute and enjoy.
  */
 
+/**
+ * The Kapi constructor.  This function sets up the `canvas` to be used with the returned `kapi` object.
+ * 
+ * @param {HTMLCanvasElement} canvas The canvas element to be used with Kapi.
+ * @param {Object} params Parameters to set on the new Kapi instance. They are as follows:
+ *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
+ *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object
+ * @param {Object} events An object containing events that can be set on this instance of Kapi.
+ *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.     
+ * 
+ * @codestart
+ * var myKapi = kapi(document.getElementsByTagName('canvas')[0], 
+ *   // params
+ *   {
+ *     fRate : 30,
+ *     styles : {
+ *       'height':  '300px',
+ *       'width': '500px',
+ *       'background': '#000'
+ *     }
+ *   },
+ *   // events
+ *   {
+ *     enterFrame: function(){
+ *       console.log(this._currentFrame);
+ *     }
+ *   });
+ * @codeend
+ * 
+ * @returns {Object} A `kapi` instance.
+ */
 function kapi(canvas, params, events) {
 
-	var version = '0.0.1',
+	var version = '0.1',
 		defaults = {
 			fillColor: '#f0f',
 			fRate: 20
@@ -341,19 +380,9 @@ function kapi(canvas, params, events) {
 	return {
 		/**
 		 * Called immediately when `kapi()` is invoked, there is no need for the user to invoke it (`init` essentially acts as the Kapi constructor).  Sets up some properties that are used internally, and also sets up the `canvas` element that it acts upon.
-		 * @param {HTMLCanvasElement} canvas The `canvas` element that this instance of Kapi will be controlling.
-		 * @param {Object} params Optional parameters to be set on this instance of Kapi.  They are as follows:
-		 *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
-		 *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object
-		 *     @codestart
-		 *     styles : {
-		 *       'height':  '300px',
-		 *       'width': '500px',
-		 *       'background': '#f0f'
-		 *     }
-		 *     @codeend
-		 * @param {Object} events An object containing events that can be set on this instance of Kapi.
-		 *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.     
+		 * 
+		 * Not meant to be used directly - it is called automatically by the `kapi` constructor.  The parameters are identical, please see the constructor for use info. 
+		 * @returns {Object} A `kapi` object (for chaining).
 		 */
 		init: function (canvas, params, events) {
 			var style;
@@ -1277,7 +1306,6 @@ function kapi(canvas, params, events) {
 			} else {
 				throw 'Invalid keyframe identifier type!';
 			}
-
 		},
 
 		/**
