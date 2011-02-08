@@ -1,4 +1,4 @@
-**Kapi - A keyframing API for the HTML 5 Canvas
+* Kapi - A keyframing API for the HTML 5 Canvas
 
 What Kapi does
 
