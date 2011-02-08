@@ -1,8 +1,7 @@
-Kapi - A keyframing API for the HTML 5 Canvas
-=============================================
+**Kapi - A keyframing API for the HTML 5 Canvas
 
 What Kapi does
---------------
+
 
 Kapi is a keyframing API for the HTML 5 canvas.  It streamlines animation development by providing a simple interface for defining “actors” and their changing states over time.
 
@@ -19,8 +18,7 @@ is brittle, because it will lose accuracy.  System resource availability will af
 
 The important thing to understand is that Kapi is simply a timing layer for your animations.  It is designed to be modular, so you can use whatever drawing layer you prefer.
 
-How Kapi works
---------------
+**How Kapi works
 
 At a high level, using Kapi comes down to five steps:
 Create a Kapi instance.
@@ -58,8 +56,7 @@ Kapi only does one thing - it manages values based on the passage of time.  It p
 
 Using Kapi
 
-Setting up your animation
--------------------------
+***Setting up your animation
 
 The first step is to create an instance of the Kapi object.  This can be done as simply as:
 
@@ -88,8 +85,7 @@ A few important things to note:  If you do not specify a `name` property, one wi
 
 You can add as many actors as you like with this approach.  Also, you can mix and match the actor types as you please (you can have multiple `circle`s.)
 
-Defining states
----------------
+***Defining states
 
 Now that you have set up your actors and your stage, you can define keyframed states.
 
@@ -122,8 +118,7 @@ myCircle.keyframe(0, {
 });
 #+END_SRC
 
-Immediate actions
-
+***Immediate actions
 
 Another way to move your actors around is to use an Immediate Action.  Currently the only Immediate Action is `actor.to().`  Immediate actions work a little differently that keyframes.  Keyframes, collectively, form an animation loop that will repeat itself.  Immediate Actions, on the other hand, are executed immediately, and are executed only once and then discarded.  If multiple Immediate Actions are created for an actor, they are placed into a queue and fire in the order that they were created.
 
@@ -156,8 +151,7 @@ myCircle.keyframe(0, {
 
 This snippet defines keyframe zero, and adds two Immediate Actions to the queue.  In total, this animation will run for 3 seconds and then just stop.
 
-Controlling Kapi
-----------------
+***Controlling Kapi
 
 Once you have set up your stage and actors, you can start and stop the animation.  Additionally, you can specify any point in the animation’s timeline that you’d like to view and play from.  Using our `myKapi` instance from before, we can call the following methods:
 
@@ -193,14 +187,12 @@ myKapi.gotoAndPlay(desiredFrame);
 
 This simply calls  “gotoFrame()” and then “play()”.
 
-Tweening
---------
+***Tweening
 
 There is only one tweening method built into Kapi - Linear.  Tweens are extensible; just add methods to the global `kapi.tween` object.  Please consult the docs for more info regarding this.
 
 If you want more tweens than Linear, you are in luck.  The file `shapes.js` is included in the Kapi repository, which contains a collection of tweening methods.  All you have to do is include `shapes.js` in your page to use all the fun tweens.
 
-More info
----------
+***More info
 
 More technical documentation can be found within the `kapi.js` source file itself.  Each method has an explanation of the expected parameters and output.
