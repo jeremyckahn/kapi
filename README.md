@@ -54,6 +54,7 @@ The stage is a place for actors to do what they do.  In the literal sense, the s
 Kapi only does one thing - it manages values based on the passage of time.  It passes those values to your actors, and your actors can do whatever you want them to with the values.
 
 Using Kapi
+==========
 
 Setting up your animation
 -------------------------------------
