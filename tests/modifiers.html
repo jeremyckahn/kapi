@@ -82,7 +82,8 @@
 			currFrameOutput = $('#currentFrame span');
 			
 		circle1.keyframe('0', {
-			color : '#00ff00' , x: '-=0' // BUG!  There's a weird flash when this line is uncommented.
+			color : '#00ff00', 
+			x: '-=0'
 		}).keyframe('1s', {
 			x : '-=100'
 		}).keyframe('6s', {
@@ -93,7 +94,6 @@
 		});
 		
 		demo.gotoAndPlay(0);
-		window.demo = demo;
 		
 		console.dir(demo);
 		

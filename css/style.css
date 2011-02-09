@@ -51,6 +51,7 @@ table {
 
 html, body {
 	font-family: helvetica, arial;
+	padding: 0px 0px 24px;
 }
 
 a,
@@ -114,4 +115,13 @@ canvas {
 
 pre {
 	font-family: courier;
+}
+
+ul.demo-list {
+	list-style-type: disc;
+	padding: 0px 32px 22px;
+}
+
+ul.demo-list li {
+	margin: 0px 0px 6px;
 }
