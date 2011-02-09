@@ -17,7 +17,13 @@
 	<script type="text/javascript" src="js/kapi.js"></script> 
 	<script type="text/javascript" src="js/kapi.tweens.js"></script> 
 	<script type="text/javascript" src="js/shapes.js"></script> 
-	<script type="text/javascript" src="js/demo_runner.js"></script> 
+	
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shCore.js"></script> 
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shBrushJScript.js"></script> 
+	
+	<script type="text/javascript" src="js/demo_runner.js"></script>
+	
+	<link type="text/css" rel="stylesheet" href="js/syntaxhighlighter/styles/shCoreDefault.css"/>
     
 	<!-- Meta tags --> 
 	<meta name="description" content="" /> 
@@ -38,11 +44,50 @@
 				<li><a href="https://github.com/jeremyckahn/kapi" target="_blank">Github repo</a> - fork 'n follow!</li>
 			</ul>
 			
-			<p>Kapi is a tool that helps you make fun animations on the web.  It completely manages animation timing and provides a user-friendly API to define keyframe states.  This page contains some demos that show what Kapi can do, and it also serves as a home for the full API documentation.  For a tutorial on how to get started with Kapi, please consult the <a href="https://github.com/jeremyckahn/kapi/blob/master/README.md" target="_blank">README</a>.</p>
+			<p>Kapi is a tool that helps you make fun animations on the web.  It completely manages animation timing and provides a user-friendly API to define keyframe states.  This page contains some demos that show what Kapi can do.  A full API reference is coming very soon (although the <a href="https://github.com/jeremyckahn/kapi/blob/master/js/kapi.js" target="_blank">source</a> is fully documented if you just can't wait).  For a tutorial on how to get started with Kapi, please consult the <a href="https://github.com/jeremyckahn/kapi/blob/master/README.md" target="_blank">README</a>.</p>
 			
-			<p>Kapi is free and open source software (<a href="http://en.wikipedia.org/wiki/MIT_License" target="_blank">MIT License</a>).  You are completely free to use, distribute, and modify the code - all I ask is that you credit me appropriately.</p>
+			<p>Kapi is free and open source software (<a href="http://en.wikipedia.org/wiki/MIT_License" target="_blank">MIT license</a>).  You are completely free to use, distribute, and modify the code - all I ask is that you credit me appropriately.</p>
 			
 			<canvas id="demo1">IE sucks.</canvas>
+			
+			<p>Here's the code that generated what you see above:</p>
+			
+			<pre class="brush: js;">
+var myKapi,
+	circle1;
+
+myKapi = kapi(document.getElementById('demo1'), {
+	fRate: 30,
+	// Set up some basic styles for the canvas
+	styles: {
+		height: '400px',
+		width: '500px',
+		background: '#333'
+	}
+}).play(); // Start the animation
+
+// The actor `circle` is defined in shapes.js
+circle1 = myKapi.add(circle, {
+	name: 'circle1',
+	x: 70,
+	y: 70,
+	radius: 50,
+	color: '#00ffaa',
+	easing : 'easeInOutQuint'
+}).keyframe(0, {
+	// Blank, defining keyframe zero as the same as the initial state
+}).keyframe('3s', {
+	x: 300,
+	y: 300
+}).liveCopy('3.25s', 
+	'3s'
+).keyframe('6s', {
+	x: '+=50',
+	y: 100
+}).liveCopy('8s', 
+	0);
+			</pre>
+			
 		</div>
     </body> 
  

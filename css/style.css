@@ -107,6 +107,11 @@ ul {
 }
 
 canvas {
+	cursor: pointer;
 	display: block;
 	margin: 16px auto 22px;
+}
+
+pre {
+	font-family: courier;
 }
