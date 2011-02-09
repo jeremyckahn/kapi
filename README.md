@@ -157,7 +157,7 @@ Pauses the animation, but does not clear the canvas.  The state of the animation
 
     myKapi.stop();
 
-Stops the animation, clears, the canvas, and resets the state back to the beginning of the animation loop.
+Stops the animation, clears the canvas, and resets the state back to the beginning of the animation loop.
 
 If you would like to go to a specific point in the timeline of the animation, you can do so with 
 
@@ -172,9 +172,9 @@ This simply calls  `gotoFrame()` and then `play()`.
 Tweening
 --------------
 
-There is only one tweening method built into Kapi - Linear.  Tweens are extensible; just add methods to the global `kapi.tween` object.  Please consult the docs for more info regarding this.
+There is only one tweening method built into Kapi - `linear`.  Tweens are extensible; just add methods to the global `kapi.tween` object.  Please consult the docs for more info regarding this.
 
-If you want more tweens than Linear, you are in luck.  The file `shapes.js` is included in the Kapi repository, which contains a collection of tweening methods.  All you have to do is include `shapes.js` in your page to use all the fun tweens.
+If you want more tweens than `linear`, you are in luck.  The file `shapes.js` is included in the Kapi repository, which contains a collection of tweening methods.  All you have to do is include `shapes.js` in your page to use all the fun tweens.
 
 More info
 -------------
