@@ -20,7 +20,7 @@
  * @param {HTMLCanvasElement} canvas The canvas element to be used with Kapi.
  * @param {Object} params Parameters to set on the new Kapi instance. They are as follows:
  *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
- *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object
+ *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplied as an object
  * @param {Object} events An object containing events that can be set on this instance of Kapi.
  *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.     
  * 
@@ -586,7 +586,7 @@ function kapi(canvas, params, events) {
 
 		/**
 		 * Gets the current state of all of the actors in the animation.
-		 * @returns {Object} A container of all of the animation's actors and their states at the time of invokation.
+		 * @returns {Object} A container of all of the animation's actors and their states at the time of invocation.
 		 */
 		getState: function () {
 			return this._currentState;
