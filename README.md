@@ -76,9 +76,11 @@ The next step is to add actor instances.  You have complete freedom on how to yo
         easing : 'easeInOutQuad'
      });
 
-`kapi.add()` defines the initial state of an actor - which is done in the second parameter with an object.  The properties of this object will be present in all keyframes of myCircle.  If there is a property that will be used anywhere by this actor in the animation, you need to define it in `kapi.add().`
+`kapi.add()` defines the initial state of an actor within the `kapi` instance - this is done in the second parameter with an object.  The properties of this object will be present in all keyframes of myCircle.  If there is a property that will be used anywhere by this actor in the animation, you need to define it in `kapi.add().`
 
 A few important things to note:  If you do not specify a `name` property, one will be randomly generated for you.  It does need to have the same name as the variable that gets assigned the reference of the returned object from `kapi.add().`
+
+A word about `kapi.add()`:  This is a factory method that produces an `actor` object.  All `actor` objects have a number of methods that are set up as soon as they are created, including `draw()`, `keyframe()`, `to()`, and more.  Please consult the API docs for a detailed description of all the `actor` methods.
 
 You can add as many actors as you like with this approach.  Also, you can mix and match the actor types as you please (you can have multiple `circle`s.)
 
