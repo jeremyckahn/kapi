@@ -43,6 +43,7 @@
 			<ul>
 				<li><a href="https://github.com/jeremyckahn/kapi" target="_blank">Github repo</a> - fork 'n follow!</li>
 				<li><a href="index.html">Main page</a></li>
+				<li><a href="actor_doc.html">Actor object reference</a></li>
 			</ul>
 			
 			<h2>Kapi constructor</h2>
@@ -60,13 +61,13 @@
 			<p>Optional parameters you may pass to the kapi instance.  You can pass:</p>
 			
 			<ul class="params">
-				<li><strong>fRate:</strong>The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.</li>
-				<li><strong>styles:</strong>CSS styles to be set upon <code>canvas</code>.  They are to be supplied as an object.</li>
+				<li><strong>fRate:</strong>String or number.  The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.</li>
+				<li><strong>styles:</strong>Object.  CSS styles to be set upon <code>canvas</code>.</li>
 			</ul>
 			
 			<h5>events:</h5>
 			
-			<p>An object containing events that can be set on this instance of Kapi.  Available events:</p>
+			<p>An object containing events that can be set on this instance of Kapi.  Supply event handlers as functions.  Available events:</p>
 			
 			<ul class="params">
 				<li><strong>enterFrame:</strong>This event fires each time a new frame is processed, before it is rendered.</li>
@@ -104,7 +105,7 @@
 			
 			<pre class="func-def"><em>kapiInstance</em>.pause()</pre>
 			
-			<p>Resuming from the paused state does not start the animation from the beginning, the state of the animation is maintained.</p>
+			<p>Freeze the animation at its current state.  Resuming from the paused state does not start the animation from the beginning, the state of the animation is maintained.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
@@ -113,7 +114,7 @@
 			
 			<pre class="func-def"><em>kapiInstance</em>.stop()</pre>
 			
-			<p>Stops the animation.  When the animation is started again with `play()`, it starts from the beginning of the loop.</p>
+			<p>Stops the animation.  When the animation is started again with <code>play()</code>, it starts from the beginning of the loop.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
@@ -194,7 +195,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			
 			<h3>getState()</h3>
 			
-			<pre class="func-def"><em>kapiInstance</em>.getState( frame )</pre>
+			<pre class="func-def"><em>kapiInstance</em>.getState()</pre>
 			
 			<p>Gets the current state of all of the actors in the animation as an object.</p>
 			

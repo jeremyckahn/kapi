@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+ 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">    
+ 
+    <head> 
+ 
+ 
+	<!-- Title --> 
+	<title></title> 
+	
+	<link rel = "stylesheet" type = "text/css" href = "css/style.css" /> 
+	
+	<!-- JavaScript includes --> 
+	
+	<script type="text/javascript" src="js/jquery.js"></script> 
+	<script type="text/javascript" src="js/kapi.js"></script> 
+	<script type="text/javascript" src="js/kapi.tweens.js"></script> 
+	<script type="text/javascript" src="js/shapes.js"></script> 
+	
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shCore.js"></script> 
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shBrushJScript.js"></script> 
+	
+	<script type="text/javascript" src="js/demo_runner.js"></script>
+	
+	<link type="text/css" rel="stylesheet" href="js/syntaxhighlighter/styles/shCoreDefault.css"/>
+    
+	<!-- Meta tags --> 
+	<meta name="description" content="" /> 
+	<meta name="keywords" content="" /> 
+	<meta name="author" content="" /> 
+ 
+	</head> 
+  
+	<body class="api"> 
+		<div class="container">
+	 		<h1>Kapi</h1>
+
+			<h3>A keyframing API for the HTML 5 canvas</h3>
+			
+			<h4>A JavaScript framework by <a href="http://www.jeremyckahn.com" target="_blank">Jeremy Kahn</a></h4>
+			
+			<ul>
+				<li><a href="https://github.com/jeremyckahn/kapi" target="_blank">Github repo</a> - fork 'n follow!</li>
+				<li><a href="index.html">Main page</a></li>
+				<li><a href="kapi_doc.html">Kapi constructor and object reference</a></li>
+			</ul>
+			
+			<h2>Actor methods</h2>
+			
+			<p>Actors are produced from <code>kapiInstance.add()</code>.</p>
+			
+			<h3>keyframe()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.keyframe( keyframeId, stateObj )</pre>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid Kapi time format string (see documentation for <code>gotoFrame()</code>).</p>
+			
+			<h5>stateObj:</h5>
+			
+			<p>Object. The properties of this keyframed state.  Any missing parameters on this keyframe will be inferred from previous keyframes in the animation set for this actor.</p>
+			
+			<div class="ret"><strong>Returns:</strong>The actor Object (for chaining).</div>
+			
+					
+			<h3>to()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.to( duration, stateObj )</pre>
+			
+			<p>Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.</p>
+			
+			<h5>duration:</h5>
+			
+			<p>String or number.  The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax (see documentation for <code>gotoFrame()</code>).</p>
+			
+			<h5>stateObj:</h5>
+			
+			<p>Object. The state to animate the actor to.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			
+			<h3>remove()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.remove( keyframeId )</pre>
+			
+			<p>Cleanly removes <code>actorObj</code> from <code>keyframeId</code>, as well as all internal references to it.  An error is logged in the JavaScript console if <code>actorObj</code> does not exist at <code>keyframeId</code>.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			
+			<h3>updateKeyframe()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.updateKeyframe( keyframeId, newProps )</pre>
+			
+			<p>Selectively modify the state properties of a keyframe.  Properties that are missing from a call to <code>updateKeyframe()</code> are left unmodified in the keyframe it is modifying.  Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			
+			<h5>newprops:</h5>
+			
+			<p>Object.  The properties on the keyframe to be updated and their values.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			
+			<h3>liveCopy()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.liveCopy( keyframeId, keyframeIdToCopy )</pre>
+			
+			<p>Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified or removed, so is the liveCopy.  This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The keyframe identifier of the keyframe to copy.  Expressed in Kapi time syntax.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			
+			<h3>getState()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.getState()</pre>
+			
+			<p>Get the current state of the actor as it exists in Kapi.</p>
+			
+			<div class="ret"><strong>Returns:</strong>An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when <code>getState</code> is called.</div>
+			
+			
+			<h3>get()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.get( prop )</pre>
+			
+			<p>Get the current value of a single state property from the actor.</p>
+			
+			<h5>prop:</h5>
+			
+			<p>String.  The state property to retrieve.</p>
+			
+			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
+					
+		</div>
+		
+    </body> 
+ 
+</html>

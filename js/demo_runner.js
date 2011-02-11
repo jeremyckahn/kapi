@@ -2,6 +2,10 @@ $(function () {
 	
 	SyntaxHighlighter.all();
 	
+	if (!$('canvas').length) {
+		return;
+	}
+	
 	/* Demo 1 ******************************************/
 	(function () {
 		var myKapi,
