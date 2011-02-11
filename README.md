@@ -63,7 +63,7 @@ The first step is to create an instance of the Kapi object.  This can be done as
 
     var myKapi = kapi(document.getElementsByTagName('canvas')[0]);
 
-`myKapi` is the object by which you will interface with the canvas.  There are optional parameters and events that you can pass along to the `kapi` constructor to configure the instance - please consult the public API documentation for more info.
+`myKapi` is the object by which you will interface with the canvas.  There are optional parameters and events that you can pass along to the `kapi` constructor to configure the instance - please consult the public [API documentation](http://jeremyckahn.github.com/kapi/) for more info.
 
 The next step is to add actor instances.  You have complete freedom on how to you want to define your actors.  They are simply doing stuff with their instance variables, which are accessed with the JavaScript `this` keyword.  Let’s use the “circle” example actor defined earlier.  To add an instance of “circle” to Kapi, simply use `.add()`:
 
