@@ -232,7 +232,7 @@ function kapi(canvas, params, events) {
 	 * @returns {Number} A really random number.
 	 */
 	function generateUniqueName () {
-		return parseInt(('' + Math.random()).substr(2), 10) + now();
+		return parseInt((Math.random().toString()).substr(2), 10) + now();
 	}
 
 	/**
@@ -403,6 +403,7 @@ function kapi(canvas, params, events) {
 			// Initialize some internal properties
 			this._keyframeIds = [];
 			this._reachedKeyframes = [];
+			this._layerIndex = [];
 			this._keyframes = {};
 			this._actorStateIndex = {};
 			this._keyframeCache = {};
@@ -690,50 +691,50 @@ function kapi(canvas, params, events) {
 		 */
 		_updateActors: function (currentFrame) {
 			// Here be dragons.
-			var objName, 
-				currentFrameStateProperties, 
+			var actorName,
+				currentFrameStateProperties,
 				adjustedProperties,
-				objActionQueue, 
-				oldQueueLength, 
-				keyframeToModify;
+				objActionQueue,
+				oldQueueLength,
+				keyframeToModify,
+				i;
 
-			for (objName in this._actorStateIndex) {
-				if (this._actorStateIndex.hasOwnProperty(objName)) {
+			for (i = 0; i < this._layerIndex.length; i++) {				
+				actorName = this._layerIndex[i];
 
-					// The current object may have a first keyframe greater than 0.
-					// If so, we don't want to calculate or draw it until we have
-					// reached this object's first keyframe
-					if (typeof this._actorStateIndex[objName][0] !== 'undefined' && currentFrame >= this._actorStateIndex[objName][0]) {
-						currentFrameStateProperties = this._getActorState(objName);
+				// The current object may have a first keyframe greater than 0.
+				// If so, we don't want to calculate or draw it until we have
+				// reached this object's first keyframe
+				if (typeof this._actorStateIndex[actorName][0] !== 'undefined' && currentFrame >= this._actorStateIndex[actorName][0]) {
+					currentFrameStateProperties = this._getActorState(actorName);
 
-						// If there are remaining keyframes for this object, draw it.
-						if (currentFrameStateProperties !== null) {
-							objActionQueue = this._actorStateIndex[objName].queue;
-							
-							// If there is a queued action, apply it to the current frame
-							if ((oldQueueLength = objActionQueue.length) > 0) {
-								if (objActionQueue[0]._internals.fromState === null) {
-									objActionQueue[0]._internals.fromState = currentFrameStateProperties;
-								}
-								
-								adjustedProperties = this._getQueuedActionState(objActionQueue);
-								extend(currentFrameStateProperties, adjustedProperties, true);
-								
-								// If an immediate action finished running and was removed from the queue
-								if (oldQueueLength !== objActionQueue.length) {
-									// Save the modified state to the most recent keyframe for this object
-									keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[objName]);
-									this._keyframes[ this._keyframeIds[keyframeToModify] ][objName] = currentFrameStateProperties;
-									
-									// TODO:  Fire an "action completed" event for the immediate action
-								}
+					// If there are remaining keyframes for this object, draw it.
+					if (currentFrameStateProperties !== null) {
+						objActionQueue = this._actorStateIndex[actorName].queue;
+						
+						// If there is a queued action, apply it to the current frame
+						if ((oldQueueLength = objActionQueue.length) > 0) {
+							if (objActionQueue[0]._internals.fromState === null) {
+								objActionQueue[0]._internals.fromState = currentFrameStateProperties;
 							}
-		
-							currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
+							
+							adjustedProperties = this._getQueuedActionState(objActionQueue);
+							extend(currentFrameStateProperties, adjustedProperties, true);
+							
+							// If an immediate action finished running and was removed from the queue
+							if (oldQueueLength !== objActionQueue.length) {
+								// Save the modified state to the most recent keyframe for this object
+								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
+								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
+								
+								// TODO:  Fire an "action completed" event for the immediate action
+							}
 						}
+	
+						currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
 					}
-					this._currentState[objName] = currentFrameStateProperties;
 				}
+				this._currentState[actorName] = currentFrameStateProperties;
 			}
 		},
 
@@ -868,7 +869,7 @@ function kapi(canvas, params, events) {
 					if (typeof this._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 						fromProp = this._keyframeCache[fromStateId].from[keyProp];
 					} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
-						// If fromProp is dynamic, preprocess it
+						// If fromProp is dynamic, preprocess it (by invoking it)
 						if (typeof fromProp === 'function') {
 							fromProp = fromProp.call(fromState) || 0;
 						} else {
@@ -1015,6 +1016,8 @@ function kapi(canvas, params, events) {
 				this._actorStateIndex[actorObj.id] = [];
 				this._actorStateIndex[actorObj.id].queue = [];
 			}
+			
+			this._layerIndex.push(actorObj.id);
 
 			/**
 			 * Create a keyframe for an actor.
@@ -1153,6 +1156,20 @@ function kapi(canvas, params, events) {
 					for (i = 0; i < self._actorStateIndex[actorObj.id].length; i++) {
 						if (self._actorStateIndex[actorObj.id][i] === keyframeId) {
 							self._actorStateIndex[actorObj.id].splice(i, 1);
+							break;
+						}
+					}
+					
+					// If there are no more states in the animation for this actor, remove it from the index.
+					if (self._actorStateIndex[actorObj.id].length === 0) {
+						delete self._actorStateIndex[actorObj.id];
+						
+						// Also remove its layer from the index.
+						for (i = 0; i < self._layerIndex.length; i++) {
+							if (self._layerIndex[i] === actorObj.id) {
+								self._layerIndex.splice(i, 1);
+								break;
+							}
 						}
 					}
 					
@@ -1262,6 +1279,10 @@ function kapi(canvas, params, events) {
 			 */
 			actorObj.get = function get (prop) {
 				return actorObj.getState()[prop];
+			};
+
+			actorObj.moveToLayer = function moveToLayer (layerId) {
+				
 			};
 
 			return actorObj;
