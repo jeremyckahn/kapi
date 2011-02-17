@@ -405,6 +405,7 @@ function kapi(canvas, params, events) {
 			this._reachedKeyframes = [];
 			this._layerIndex = [];
 			this._keyframes = {};
+			this._actors = {};
 			this._actorStateIndex = {};
 			this._keyframeCache = {};
 			this._originalStates = {};
@@ -1017,6 +1018,7 @@ function kapi(canvas, params, events) {
 				this._actorStateIndex[actorObj.id].queue = [];
 			}
 			
+			this._actors[actorObj.id] = actorObj;
 			this._layerIndex.push(actorObj.id);
 			actorObj.params.layer = this._layerIndex.length - 1;
 
@@ -1282,8 +1284,6 @@ function kapi(canvas, params, events) {
 				return actorObj.getState()[prop];
 			};
 
-
-			// Is broken!  Is broken!
 			actorObj.moveToLayer = function moveToLayer (layerId) {
 				var splicedLayerId;
 				
@@ -1294,7 +1294,7 @@ function kapi(canvas, params, events) {
 				if (layerId > -1 && layerId < self._layerIndex.length) {
 					splicedLayerId = self._layerIndex.splice(actorObj.params.layer, 1)[0];
 					self._layerIndex.splice(layerId, 0, splicedLayerId);
-					actorObj.params.layer = layerId;
+					self._updateLayers();
 					
 				} else {
 					// TODO: Make this error message more useful.
@@ -1360,6 +1360,7 @@ function kapi(canvas, params, events) {
 			this._updateActorStateIndex(actor, {
 				add: keyframeId
 			});
+			this._updateLayers();
 		},
 
 		/**
@@ -1447,6 +1448,14 @@ function kapi(canvas, params, events) {
 					index.push(params.add);
 					sortArrayNumerically(index);
 				}
+			}
+		},
+		
+		_updateLayers: function () {
+			var i;
+			
+			for (i = 0; i < this._layerIndex.length; i++) {
+				this._actors[this._layerIndex[i]].params.layer = i;
 			}
 		},
 
