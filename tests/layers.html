@@ -115,6 +115,20 @@
 		window.circle2 = circle2;
 		window.square1 = square1;
 		
+		function testLayer() {
+		
+			setTimeout(function () {
+				try {
+					circle1.moveToLayer(circle1.get('layer') - 1);
+				} catch (ex) {
+					circle1.moveToLayer(2);
+				}
+			
+				testLayer();
+			}, 250);
+		}
+		
+		testLayer();
 		
 		demo.gotoAndPlay(0);
 		

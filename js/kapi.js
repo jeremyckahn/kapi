@@ -586,6 +586,10 @@ function kapi(canvas, params, events) {
 			return this.play();
 		},
 
+		getNumberOfLayers: function () {
+			return this._layerIndex.length;
+		},
+
 		/**
 		 * Gets the current state of all of the actors in the animation.
 		 * @returns {Object} A container of all of the animation's actors and their states at the time of invokation.
@@ -1277,28 +1281,35 @@ function kapi(canvas, params, events) {
 			
 			/**
 			 * Get the current value of a single state property from the actor.
-			 * @param {String} prop The state property to retrieve.
+			 * @param {String} prop The state property to retrieve.  If `prop` is "layer," this function will return the layer that this actor is currently in.
 			 * @return {Anything} Whatever the current value for `prop` is. 
 			 */
 			actorObj.get = function get (prop) {
-				return actorObj.getState()[prop];
+				// Currently returning the wrong layer!!!
+				return prop.toLowerCase === 'layer' ? actorObj.params.layer : actorObj.getState()[prop];
 			};
-
+			
+			/**
+			 * Change the layer that the actor is currently in.  Valid parameters are any layer between 0 and the max number of layers (inclusive).  You can get the upper bound by calling `kapiInstance.getNumberOfLayers()`.
+			 * @param {Number} layerId The layer to move the actor to.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
 			actorObj.moveToLayer = function moveToLayer (layerId) {
-				var splicedLayerId;
+				var slicedId;
 				
 				if (typeof layerId !== 'number') {
 					throw 'moveToLayer requires a number specifying which layer to move ' + this.id + ' to.'
 				}
 				
+				// Drop any decimal if the user for some reason passed in a float
+				layerId = parseInt(layerId, 10);
+				
 				if (layerId > -1 && layerId < self._layerIndex.length) {
-					splicedLayerId = self._layerIndex.splice(actorObj.params.layer, 1)[0];
-					self._layerIndex.splice(layerId, 0, splicedLayerId);
+					slicedId = self._layerIndex.splice(actorObj.params.layer, 1)[0];
+					self._layerIndex.splice(layerId, 0, slicedId);
 					self._updateLayers();
-					
 				} else {
-					// TODO: Make this error message more useful.
-					throw 'layerId is out of bounds.'
+					throw '"' + layerId + '" is out of bounds.  There are only ' + self._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + self._layerIndex.length;
 				}
 			};
 
@@ -1451,6 +1462,10 @@ function kapi(canvas, params, events) {
 			}
 		},
 		
+		/**
+		 * @hide
+		 * Refresh the `layer` property on each actor.  Actors sync to the internal `_layerIndex` property.
+		 */
 		_updateLayers: function () {
 			var i;
 			
