@@ -58,7 +58,7 @@
 		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fRate : 30,
+				fRate : 3,
 				styles : {
 					'height':  '300px',
 					'width': '500px',
@@ -69,6 +69,13 @@
 			{
 				enterFrame: function(){
 					currFrameOutput.html(this._currentFrame);
+					
+					try {
+						circle1.moveToLayer(circle1.get('layer') + 1);
+					} catch (ex) {
+						console.log('Successfully caught error: ' + ex)
+						circle1.moveToLayer(0);
+					}
 				}
 			}),
 			circle1 = demo.add(circle, {	
@@ -109,26 +116,11 @@
 		square1.keyframe('0', {
 			x: 50,
 			y: 150
-		}).moveToLayer(0);
+		})//.moveToLayer(0);
 		
 		window.circle1 = circle1;
 		window.circle2 = circle2;
 		window.square1 = square1;
-		
-		function testLayer() {
-		
-			setTimeout(function () {
-				try {
-					circle1.moveToLayer(circle1.get('layer') - 1);
-				} catch (ex) {
-					circle1.moveToLayer(2);
-				}
-			
-				testLayer();
-			}, 250);
-		}
-		
-		testLayer();
 		
 		demo.gotoAndPlay(0);
 		

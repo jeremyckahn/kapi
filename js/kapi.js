@@ -1079,6 +1079,11 @@ function kapi(canvas, params, events) {
 
 				// Copy over any "missing" parameters for this keyframe from the original object definition
 				extend(stateObj, actorObj.params);
+				
+				// The `lqyer` property does not belong in the keyframe states, as it is part of the actor object itself
+				// and can be changed at any time by other parts of the API.
+				delete stateObj.layer;
+				
 				self._updateAnimationDuration();
 				
 				return this;
@@ -1285,8 +1290,7 @@ function kapi(canvas, params, events) {
 			 * @return {Anything} Whatever the current value for `prop` is. 
 			 */
 			actorObj.get = function get (prop) {
-				// Currently returning the wrong layer!!!
-				return prop.toLowerCase === 'layer' ? actorObj.params.layer : actorObj.getState()[prop];
+				return prop.toLowerCase() === 'layer' ? self._actors[actorObj.id].params.layer : actorObj.getState()[prop];
 			};
 			
 			/**
