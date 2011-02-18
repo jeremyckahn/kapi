@@ -1302,7 +1302,7 @@ function kapi(canvas, params, events) {
 				var slicedId;
 				
 				if (typeof layerId !== 'number') {
-					throw 'moveToLayer requires a number specifying which layer to move ' + this.id + ' to.'
+					throw 'moveToLayer requires a number specifying which layer to move ' + this.id + ' to.';
 				}
 				
 				// Drop any decimal if the user for some reason passed in a float
