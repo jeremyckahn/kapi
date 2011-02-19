@@ -146,9 +146,22 @@
 			
 			<h5>prop:</h5>
 			
-			<p>String.  The state property to retrieve.</p>
+			<p>String.  The state property to retrieve.  If <code>prop</code> is "layer," this function will return the layer that this actor is currently in.</p>
 			
 			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
+			
+			
+			<h3>moveToLayer()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.moveToLayer( layerId )</pre>
+			
+			<p>Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling <code><em>kapiInstance</em>.getNumberOfLayers()</code>.</p>
+			
+			<h5>layerId:</h5>
+			
+			<p>Number.  The layer to move the actor to.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 					
 		</div>
 		

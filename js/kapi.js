@@ -585,7 +585,11 @@ function kapi(canvas, params, events) {
 			this.gotoFrame(frame);
 			return this.play();
 		},
-
+		
+		/**
+		 * Gets the number of layers currently in the Kapi instance.  Note:  This is also the same as the number of actors in the animation.
+		 * @returns {Number}
+		 */
 		getNumberOfLayers: function () {
 			return this._layerIndex.length;
 		},
@@ -1294,7 +1298,7 @@ function kapi(canvas, params, events) {
 			};
 			
 			/**
-			 * Change the layer that the actor is currently in.  Valid parameters are any layer between 0 and the max number of layers (inclusive).  You can get the upper bound by calling `kapiInstance.getNumberOfLayers()`.
+			 * Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling `kapiInstance.getNumberOfLayers()`.
 			 * @param {Number} layerId The layer to move the actor to.
 			 * @returns {Object} The actor Object (for chaining).
 			 */
