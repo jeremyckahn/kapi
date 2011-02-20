@@ -156,6 +156,7 @@ function kapi(canvas, params, events) {
 				}
 
 				extraParents = parents.slice(1);
+				// HUGE BUG.  What if the object we are extending has an property that is an array?
 				parent = parents.shift();
 			} else {
 				parent = parents;
@@ -547,6 +548,45 @@ function kapi(canvas, params, events) {
 			inst.name = actorFunc.name;
 
 			return this._keyframize(inst);
+		},
+		
+		framerate: function (newFramerate) {
+			var originalStatesCopy;
+			
+			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
+				this._params.fRate = parseInt(newFramerate, 10);
+				
+				// Need to update a bunch of indexes.
+				// Do this by removing every keyframe in the animation and re-add them after changing the fRate.
+				// Also need to remove and re-add all of the immediate actions.
+				// Then, gotoKeyframe at the new "current" frame.
+				
+				this.removeAllKeyframes()
+			}
+			
+			return this._params.fRate;
+		},
+		
+		removeAllKeyframes: function () {
+			var originalStatesCopy = {},
+				currActor,
+				i, j;
+				
+			// This doesn't work... becuase apparently there's a bug in extend??
+			// Bug is noted in extend.  Must be fixed before anything else.
+			extend(originalStatesCopy, this._actorStateIndex);
+			
+			for (currActor in this._actorStateIndex) {
+				if (this._actorStateIndex.hasOwnProperty(currActor)) {
+					
+					while (this._actorStateIndex[currActor] && this._actorStateIndex[currActor].length) {
+						this._actors[currActor].remove(last(this._actorStateIndex[currActor]));
+					}
+				}
+				
+			}
+			
+			return originalStatesCopy;
 		},
 		
 		/**
@@ -1100,22 +1140,22 @@ function kapi(canvas, params, events) {
 			 * @returns {Object} The actor Object (for chaining).
 			 */
 			actorObj.to = function to (duration, stateObj) {
-				var last, 
-				queue = self._actorStateIndex[actorObj.id].queue;
+				var newestAction, 
+					queue = self._actorStateIndex[actorObj.id].queue;
 
-				queue.push({
-					'duration': self._getRealKeyframe(duration),
-					'state': stateObj
-				});
+					queue.push({
+						'duration': self._getRealKeyframe(duration),
+						'state': stateObj
+					});
+				
+				newestAction = last(queue);
+				newestAction._internals = {};
 
-				last = queue[queue.length - 1];
-				last._internals = {};
-
-				last._internals.startTime = null;
-				last._internals.fromState = null;
-				last._internals.toState = null;
-				last._internals.pauseBuffer = null;
-				last._internals.pauseBufferUpdated = null;
+				newestAction._internals.startTime = null;
+				newestAction._internals.fromState = null;
+				newestAction._internals.toState = null;
+				newestAction._internals.pauseBuffer = null;
+				newestAction._internals.pauseBufferUpdated = null;
 
 				return this;
 			};
