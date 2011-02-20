@@ -143,25 +143,14 @@ function kapi(canvas, params, events) {
 		 * @param {Boolean} doOverwrite Force the properties that are present in the parent object into child object, whether or not that property is already defined on the child object.
 		 * @returns {Object} The extended `child`.
 		 */
-		function extend (child, parents, doOverwrite) {
-			var i, parent, extraParents;
+		function extend (child, parent, doOverwrite) {
+			var i, 
+				extraParents;
 
-			if (!parents) {
+			if (!parent) {
 				return child;
 			}
-
-			if (isArray(parents)) {
-				if (!parents.length) {
-					return child;
-				}
-
-				extraParents = parents.slice(1);
-				// HUGE BUG.  What if the object we are extending has an property that is an array?
-				parent = parents.shift();
-			} else {
-				parent = parents;
-			}
-
+			
 			child = child || {};
 
 			for (i in parent) {
@@ -550,30 +539,10 @@ function kapi(canvas, params, events) {
 			return this._keyframize(inst);
 		},
 		
-		framerate: function (newFramerate) {
-			var originalStatesCopy;
-			
-			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
-				this._params.fRate = parseInt(newFramerate, 10);
-				
-				// Need to update a bunch of indexes.
-				// Do this by removing every keyframe in the animation and re-add them after changing the fRate.
-				// Also need to remove and re-add all of the immediate actions.
-				// Then, gotoKeyframe at the new "current" frame.
-				
-				this.removeAllKeyframes()
-			}
-			
-			return this._params.fRate;
-		},
-		
 		removeAllKeyframes: function () {
 			var originalStatesCopy = {},
-				currActor,
-				i, j;
-				
-			// This doesn't work... becuase apparently there's a bug in extend??
-			// Bug is noted in extend.  Must be fixed before anything else.
+				currActor;
+			
 			extend(originalStatesCopy, this._actorStateIndex);
 			
 			for (currActor in this._actorStateIndex) {
@@ -582,11 +551,53 @@ function kapi(canvas, params, events) {
 					while (this._actorStateIndex[currActor] && this._actorStateIndex[currActor].length) {
 						this._actors[currActor].remove(last(this._actorStateIndex[currActor]));
 					}
+				}				
+			}
+			
+			return this;
+		},
+		
+		framerate: function (newFramerate) {
+			// Works great for keyframes, but breaks immediates.
+			var oldFRate,
+				fRateChange,
+				originalStatesIndexCopy = {},
+				originalStatesCopy = {},
+				originalReachedKeyframeCopy,
+				index,
+				i;
+			
+			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
+				oldFRate = this._params.fRate;
+				fRateChange = newFramerate / oldFRate;
+				this._params.fRate = parseInt(newFramerate, 10);
+				
+				// Need to update a bunch of indexes.
+				// Do this by removing every keyframe in the animation and re-add them after changing the fRate.
+				// Also need to remove and re-add all of the immediate actions.
+				// Then, gotoKeyframe at the new "current" frame.
+				
+				extend(originalStatesIndexCopy, this._actorStateIndex);
+				extend(originalStatesCopy, this._originalStates);
+				originalReachedKeyframeCopy = this._reachedKeyframes.slice(0);
+				this.removeAllKeyframes();
+				
+				for (index in originalStatesIndexCopy) {
+					if (originalStatesIndexCopy.hasOwnProperty(index)) {
+
+						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
+							this._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+						}
+					}
+				}
+				
+				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
+					this._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fRateChange;
 				}
 				
 			}
 			
-			return originalStatesCopy;
+			return this._params.fRate;
 		},
 		
 		/**
@@ -1217,7 +1228,9 @@ function kapi(canvas, params, events) {
 					}
 					
 					// If there are no more states in the animation for this actor, remove it from the index.
-					if (self._actorStateIndex[actorObj.id].length === 0) {
+					// NOTE!  Commenting this out for now - it belongs in kapi.remove(), which does not yet exist.
+					// kapi.remove will remove an actor from kapi entirely.
+					/*if (self._actorStateIndex[actorObj.id].length === 0) {
 						delete self._actorStateIndex[actorObj.id];
 						
 						// Also remove its layer from the index.
@@ -1227,8 +1240,9 @@ function kapi(canvas, params, events) {
 								break;
 							}
 						}
-					}
+					}*/
 					
+					// Delete any liveCopies.
 					if (keyframeId in self._liveCopies) {
 						delete self._liveCopies[keyframeId];
 					}
