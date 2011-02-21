@@ -587,6 +587,11 @@ function kapi(canvas, params, events) {
 						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
 							this._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
 						}
+						
+						// Update the durations on the Immediate Actions.
+						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
+							this._actorStateIndex[index].queue[i].duration *= fRateChange;
+						}
 					}
 				}
 				
@@ -876,7 +881,7 @@ function kapi(canvas, params, events) {
 			if (internals.currFrame > queuedAction.duration) {
 				queuedActionsArr.shift();
 			}
-
+			
 			return this._calculateCurrentFrameProps(
 				internals.fromState, 
 				internals.toState, 
