@@ -1132,9 +1132,6 @@ function kapi(canvas, params, events) {
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
 				self._updateKeyframes(actorObj, keyframeId);
-
-				// Copy over any "missing" parameters for this keyframe from the original actor definition
-				extend(stateObj, actorObj.params);
 				
 				// The `layer` property does not belong in the keyframe states, as it is part of the actor object itself
 				// and can be changed at any time by other parts of the API.
