@@ -63,7 +63,7 @@ The first step is to create an instance of the Kapi object.  This can be done as
 
     var myKapi = kapi(document.getElementsByTagName('canvas')[0]);
 
-`myKapi` is the object by which you will interface with the canvas.  There are optional parameters and events that you can pass along to the `kapi` constructor to configure the instance - please consult the public API documentation for more info.
+`myKapi` is the object by which you will interface with the canvas.  There are optional parameters and events that you can pass along to the `kapi` constructor to configure the instance - please consult the public [API documentation](http://jeremyckahn.github.com/kapi/) for more info.
 
 The next step is to add actor instances.  You have complete freedom on how to you want to define your actors.  They are simply doing stuff with their instance variables, which are accessed with the JavaScript `this` keyword.  Let’s use the “circle” example actor defined earlier.  To add an instance of “circle” to Kapi, simply use `.add()`:
 
@@ -80,7 +80,7 @@ The next step is to add actor instances.  You have complete freedom on how to yo
 
 A few important things to note:  If you do not specify a `name` property, one will be randomly generated for you.  It does need to have the same name as the variable that gets assigned the reference of the returned object from `kapi.add().`
 
-A word about `kapi.add()`:  This is a factory method that produces an `actor` object.  All `actor` objects have a number of methods that are set up as soon as they are created, including `draw()`, `keyframe()`, `to()`, and more.  Please consult the API docs for a detailed description of all the `actor` methods.
+A word about `kapi.add()`:  This is a factory method that produces an `actor` object.  All `actor` objects have a number of methods that are set up as soon as they are created, including `draw()`, `keyframe()`, `to()`, and more.  Please consult the [API docs](http://jeremyckahn.github.com/kapi/) for a detailed description of all the `actor` methods.
 
 You can add as many actors as you like with this approach.  Also, you can mix and match the actor types as you please (you can have multiple `circle`s.)
 
