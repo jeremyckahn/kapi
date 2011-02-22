@@ -564,7 +564,9 @@ function kapi(canvas, params, events) {
 				originalStatesIndexCopy = {},
 				originalStatesCopy = {},
 				originalReachedKeyframeCopy,
+				originalLiveCopies = {},
 				index,
+				liveCopy,
 				i;
 			
 			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
@@ -572,12 +574,10 @@ function kapi(canvas, params, events) {
 				fRateChange = newFramerate / oldFRate;
 				this._params.fRate = parseInt(newFramerate, 10);
 				
-				// Need to update a bunch of indexes.
-				// Do this by removing every keyframe in the animation and re-add them after changing the fRate.
-				// Also need to remove and re-add all of the immediate actions.
-				
+				// Make safe copies of a number of things that have to be re-processed after the framerate change.
 				extend(originalStatesIndexCopy, this._actorStateIndex);
 				extend(originalStatesCopy, this._originalStates);
+				extend(originalLiveCopies, this._liveCopies);
 				originalReachedKeyframeCopy = this._reachedKeyframes.slice(0);
 				this.removeAllKeyframes();
 				
@@ -592,6 +592,13 @@ function kapi(canvas, params, events) {
 						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
 							this._actorStateIndex[index].queue[i].duration *= fRateChange;
 						}
+					}
+				}
+				
+				// Recreate all of the liveCopies
+				for (liveCopy in originalLiveCopies) {
+					if (originalLiveCopies.hasOwnProperty(liveCopy)) {
+						this._actors[originalLiveCopies[liveCopy].actorId].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopy].copyOf);
 					}
 				}
 				
