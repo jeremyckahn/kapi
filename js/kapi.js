@@ -575,7 +575,6 @@ function kapi(canvas, params, events) {
 				// Need to update a bunch of indexes.
 				// Do this by removing every keyframe in the animation and re-add them after changing the fRate.
 				// Also need to remove and re-add all of the immediate actions.
-				// Then, gotoKeyframe at the new "current" frame.
 				
 				extend(originalStatesIndexCopy, this._actorStateIndex);
 				extend(originalStatesCopy, this._originalStates);
@@ -588,13 +587,17 @@ function kapi(canvas, params, events) {
 						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
 							this._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
 						}
+						
+						// Update the durations on the Immediate Actions.
+						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
+							this._actorStateIndex[index].queue[i].duration *= fRateChange;
+						}
 					}
 				}
 				
 				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
 					this._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fRateChange;
 				}
-				
 			}
 			
 			return this._params.fRate;
@@ -878,7 +881,7 @@ function kapi(canvas, params, events) {
 			if (internals.currFrame > queuedAction.duration) {
 				queuedActionsArr.shift();
 			}
-
+			
 			return this._calculateCurrentFrameProps(
 				internals.fromState, 
 				internals.toState, 
@@ -1092,8 +1095,6 @@ function kapi(canvas, params, events) {
 				// This is done here to prevent the `_originalStates` property from being changed
 				// by other code that references it.
 				var orig = extend({}, stateObj);
-				
-				stateObj.prototype = this;
 
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
@@ -1131,9 +1132,6 @@ function kapi(canvas, params, events) {
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
 				self._updateKeyframes(actorObj, keyframeId);
-
-				// Copy over any "missing" parameters for this keyframe from the original object definition
-				extend(stateObj, actorObj.params);
 				
 				// The `layer` property does not belong in the keyframe states, as it is part of the actor object itself
 				// and can be changed at any time by other parts of the API.
@@ -1428,11 +1426,11 @@ function kapi(canvas, params, events) {
 		 */
 		_updateKeyframes: function (actor, keyframeId) {
 			this._updateKeyframeIdsList(keyframeId);
-			this._normalizeActorAcrossKeyframes(actor.id);
-			this._updateLiveCopies();
 			this._updateActorStateIndex(actor, {
 				add: keyframeId
 			});
+			this._normalizeActorAcrossKeyframes(actor.id);
+			this._updateLiveCopies();
 			this._updateLayers();
 		},
 
@@ -1464,22 +1462,26 @@ function kapi(canvas, params, events) {
 		_normalizeActorAcrossKeyframes: function (actorId) {
 			var newStateId, 
 				prevStateId, 
-				length = this._keyframeIds.length,
 				newStateObj, 
 				prevStateObj, 
 				prop,
+				stateCopy,
 				i;
 
-			// Traverse all keyframes in the animation
-			for (i = 0; i < length; i++) {
-				newStateId = this._keyframeIds[i];
-				newStateObj = this._keyframes[newStateId][actorId];
-
-				if (typeof prevStateId !== 'undefined') {
-					prevStateObj = this._keyframes[prevStateId][actorId];
-					extend(newStateObj, prevStateObj);
+			for (i = 0; i < this._actorStateIndex[actorId].length; i++) {
+				newStateId = this._actorStateIndex[actorId][i];
+				
+				if (typeof prevStateId === 'undefined') {
+					stateCopy = extend({}, this._actors[actorId].params);
+				} else {
+					stateCopy = extend({}, prevStateObj);
 				}
-
+				
+				newStateObj = extend(stateCopy, this._originalStates[newStateId][actorId], true);
+				newStateObj.prototype = this._actors[actorId];
+				
+				this._keyframes[newStateId][actorId] = newStateObj;
+				
 				// Find any hex color strings and convert them to rgb(x, x, x) format.
 				// More overhead for keyframe setup, but makes for faster frame processing later
 				for (prop in newStateObj) {
@@ -1489,11 +1491,9 @@ function kapi(canvas, params, events) {
 						}
 					}
 				}
-
-				// Only store the prevState if actorId actually exists in this keyframe 
-				if (newStateObj) {
-					prevStateId = newStateId;
-				}
+				
+				prevStateId = newStateId;
+				prevStateObj = newStateObj;
 			}
 		},
 
