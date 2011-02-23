@@ -567,6 +567,8 @@ function kapi(canvas, params, events) {
 				originalLiveCopies = {},
 				index,
 				liveCopy,
+				liveCopyData,
+				tempLiveCopy,
 				i;
 			
 			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
@@ -595,10 +597,17 @@ function kapi(canvas, params, events) {
 					}
 				}
 				
-				// Recreate all of the liveCopies
-				for (liveCopy in originalLiveCopies) {
-					if (originalLiveCopies.hasOwnProperty(liveCopy)) {
-						this._actors[originalLiveCopies[liveCopy].actorId].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopy].copyOf);
+				// Recreate all of the liveCopies				
+				for (liveCopyData in originalLiveCopies) {
+					if (originalLiveCopies.hasOwnProperty(liveCopyData)) {
+						this._liveCopies[liveCopyData] = {};
+						for (liveCopy in originalLiveCopies[liveCopyData]) {
+							if (originalLiveCopies[liveCopyData].hasOwnProperty(liveCopy)) {
+								tempLiveCopy = originalLiveCopies[liveCopyData][liveCopy];
+								this._actors[liveCopyData].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
+							}
+						}
+						
 					}
 				}
 				
@@ -1088,6 +1097,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			this._actors[actorObj.id] = actorObj;
+			this._liveCopies[actorObj.id] = {};
 			this._layerIndex.push(actorObj.id);
 			actorObj.params.layer = this._layerIndex.length - 1;
 
@@ -1187,6 +1197,7 @@ function kapi(canvas, params, events) {
 				var i,
 					keyframe,
 					liveCopy,
+					liveCopiesRemain,
 					keyframeHasObjs = false;
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
@@ -1249,13 +1260,18 @@ function kapi(canvas, params, events) {
 					
 					// Delete any liveCopies.
 					if (keyframeId in self._liveCopies) {
-						delete self._liveCopies[keyframeId];
+						delete self._liveCopies[actorObj.id][keyframeId];
 					}
 					
-					for (liveCopy in self._liveCopies) {
-						if (self._liveCopies.hasOwnProperty(liveCopy) && self._liveCopies[liveCopy].copyOf === keyframeId) {
+					for (liveCopy in self._liveCopies[actorObj.id]) {
+						if (self._liveCopies[actorObj.id].hasOwnProperty(liveCopy) && self._liveCopies[actorObj.id][liveCopy].copyOf === keyframeId) {
 							actorObj.remove(liveCopy);
+							liveCopiesRemain = true;
 						}
+					}
+					
+					if (!liveCopiesRemain) {
+						delete self._liveCopies[actorObj.id];
 					}
 					
 					self._updateAnimationDuration();
@@ -1320,7 +1336,12 @@ function kapi(canvas, params, events) {
 				
 				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][actorObj.id]) {
 					// Maintain an index of liveCopies so that they are updated in `_updateKeyframes`.
-					self._liveCopies[keyframeId] = {
+					/*self._liveCopies[keyframeId] = {
+						'actorId': actorObj.id,
+						'copyOf': keyframeIdToCopy
+					};*/
+					
+					self._liveCopies[actorObj.id][keyframeId] = {
 						'actorId': actorObj.id,
 						'copyOf': keyframeIdToCopy
 					};
@@ -1548,11 +1569,21 @@ function kapi(canvas, params, events) {
 		 * Synchronize any liveCopy keyframes with the keyframe they are liveCopying.  This is done by updating the keyframe reference on the liveCopy to the original.  
 		 */
 		_updateLiveCopies: function () {
-			var liveCopy;
+			var liveCopyData,
+				actorId,
+				tempLiveCopy;
 			
-			for (liveCopy in this._liveCopies) {
-				if (this._liveCopies.hasOwnProperty(liveCopy)) {
-					this._keyframes[liveCopy][this._liveCopies[liveCopy].actorId] = this._keyframes[this._liveCopies[liveCopy].copyOf][this._liveCopies[liveCopy].actorId];
+			for (actorId in this._liveCopies) {
+				if (this._liveCopies.hasOwnProperty(actorId)) {
+					tempLiveCopy = this._liveCopies[actorId];
+					
+					for (liveCopyData in tempLiveCopy) {
+						if (tempLiveCopy.hasOwnProperty(liveCopyData)) {
+							// OH MY GOD WTF IS WITH THIS LINE
+							this._keyframes[liveCopyData][tempLiveCopy[liveCopyData].actorId] = this._keyframes[this._liveCopies[actorId][liveCopyData].copyOf][tempLiveCopy[liveCopyData].actorId];
+							// IS THIS A JOKE
+						}
+					}
 				}
 			}
 		},
