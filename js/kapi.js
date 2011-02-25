@@ -1119,7 +1119,7 @@ function kapi(canvas, params, events) {
 				for (prop in stateObj) {
 					if (stateObj.hasOwnProperty(prop)) {
 						// Yeah it's ugly.  But it's fast and DRY.
-						if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi))) + '' ) {
+						if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi, ''))).toString() ) {
 							stateObj[prop] = digits;
 						}
 					}
