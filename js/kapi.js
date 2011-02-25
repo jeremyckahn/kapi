@@ -1111,7 +1111,21 @@ function kapi(canvas, params, events) {
 				// Save a "safe" copy of the state object before modifying it - will be used later in this function.
 				// This is done here to prevent the `_originalStates` property from being changed
 				// by other code that references it.
-				var orig = extend({}, stateObj);
+				var orig,
+					prop,
+					digits;
+				
+				// If any number values were passed as strings, convert them to numbers.
+				for (prop in stateObj) {
+					if (stateObj.hasOwnProperty(prop)) {
+						// Yeah it's ugly.  But it's fast and DRY.
+						if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi))) + '' ) {
+							stateObj[prop] = digits;
+						}
+					}
+				}
+				
+				orig = extend({}, stateObj);
 
 				try {
 					keyframeId = self._getRealKeyframe(keyframeId);
