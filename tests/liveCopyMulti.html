@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>kapi</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Jeremy Kahn">
+	<!-- Date: 2010-12-07 -->
+	
+	<script src="../js/kapi.js"></script>
+	<script src="../js/kapi.tweens.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
+	
+	<style type="text/css">
+		canvas{
+			float: left;
+		}
+	
+		ul{
+			float: left;
+		}
+	</style>
+	
+</head>
+<body>
+
+	<canvas id="myCanvas">Plz stop using IE.</canvas>
+	
+	<ul>
+		<li id="currentFrame">Current frame <span></span></li>
+		<li><a id="play" href="javascript:void(0);">Play</a></li>
+		<li><a id="pause" href="javascript:void(0);">Pause</a></li>
+		<li><a id="stop" href="javascript:void(0);">Stop</a></li>
+	</ul>
+	
+	<script type="text/javascript">
+	
+		// Note:  jQuery is here just to make the demo quicker to make.
+		// Kapi does not use jQuery.
+		$('#play').click(function(ev){
+			ev.preventDefault();
+			demo.play();
+		});
+		
+		$('#pause').click(function(ev){
+			ev.preventDefault();
+			demo.pause();
+		});
+		
+		$('#stop').click(function(ev){
+			ev.preventDefault();
+			demo.stop();
+		});
+				
+		var demo = kapi(document.getElementById('myCanvas'), 
+			// params
+			{
+				fRate : 30,
+				styles : {
+					'height':  '300px',
+					'width': '500px',
+					'background': '#000'
+				}
+			},
+			// events
+			{
+				enterFrame: function(){
+					currFrameOutput.html(this._currentFrame);
+				}
+			}),
+			circle1 = demo.add(circle, {	
+				name : 'myCircle1',
+				x : 0,
+				y : 0,
+				radius : 50,
+				color : '#00ff00',
+				easing : 'easeInOutQuad'
+			}),
+			circle2 = demo.add(circle, {	
+				name : 'myCircle2',
+				x : 450,
+				y : 0,
+				radius : 50,
+				color : '#00ff00',
+				easing : 'easeInOutQuad'
+			}),
+			currFrameOutput = $('#currentFrame span');
+		
+		//*	
+		circle1.keyframe('0s', {
+			x : 0,
+			y : 0,
+			color : '#00ff00'
+		}).keyframe('1s', {
+			x : '+=400',
+			y : '+=150',
+			radius : 100,
+			color : '#0000ff'
+		}).liveCopy('2s', '0s');//*/
+		
+		circle2.keyframe('0s', {
+
+		}).keyframe(31, {
+			x : '-=400',
+			y : '+=150',
+			radius : 100,
+			color : '#0000ff'
+		}).liveCopy('2s', '0s');
+		
+		/*circle1.updateKeyframe('0s', {
+			radius: 10
+		});*/
+		
+		demo.gotoAndPlay(0);
+		
+		console.dir(demo);
+		
+	</script>
+
+</body>
+</html>

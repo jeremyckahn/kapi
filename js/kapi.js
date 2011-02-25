@@ -1342,7 +1342,7 @@ function kapi(canvas, params, events) {
 					};*/
 					
 					self._liveCopies[actorObj.id][keyframeId] = {
-						'actorId': actorObj.id,
+						//'actorId': actorObj.id,
 						'copyOf': keyframeIdToCopy
 					};
 					
@@ -1582,7 +1582,7 @@ function kapi(canvas, params, events) {
 					for (liveCopyData in tempLiveCopy) {
 						if (tempLiveCopy.hasOwnProperty(liveCopyData)) {
 							// OH MY GOD WTF IS WITH THIS LINE
-							this._keyframes[liveCopyData][tempLiveCopy[liveCopyData].actorId] = this._keyframes[this._liveCopies[actorId][liveCopyData].copyOf][tempLiveCopy[liveCopyData].actorId];
+							this._keyframes[liveCopyData][actorId] = this._keyframes[this._liveCopies[actorId][liveCopyData].copyOf][actorId];
 							// IS THIS A JOKE
 						}
 					}
