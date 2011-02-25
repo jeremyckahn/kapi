@@ -1399,6 +1399,8 @@ function kapi(canvas, params, events) {
 				} else {
 					throw '"' + layerId + '" is out of bounds.  There are only ' + self._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + self._layerIndex.length;
 				}
+				
+				return actorObj;
 			};
 
 			return actorObj;
