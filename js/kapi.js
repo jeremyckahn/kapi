@@ -607,7 +607,6 @@ function kapi(canvas, params, events) {
 								this._actors[liveCopyData].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
 							}
 						}
-						
 					}
 				}
 				
@@ -689,8 +688,7 @@ function kapi(canvas, params, events) {
 			this.fCount++;
 			this._updateHandle = setTimeout(function () {
 				var reachedKeyframeLastIndex, 
-					prevKeyframe, 
-					cachedObject;
+					prevKeyframe;
 
 				// Calculate how long this iteration of the loop has been running for
 				self._loopLength = currTime - self._loopStartTime;

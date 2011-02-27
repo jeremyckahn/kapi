@@ -59,7 +59,7 @@
 		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fRate : 30,
+				fRate : 20,
 				styles : {
 					'height':  '300px',
 					'width': '500px',
@@ -92,8 +92,7 @@
 		
 		circle1.keyframe('0s', {
 			
-		}).keyframe(30, {
-
+		}).keyframe('1s', {
 			y : '+=150',
 			radius : 100,
 			color : '#0000ff'
@@ -101,8 +100,7 @@
 				
 		circle2.keyframe('0s', {
  
-		}).keyframe(40, {
-
+		}).keyframe('1.5s', {
 			y : '+=150',
 			radius : 100,
 			color : '#0000ff'
