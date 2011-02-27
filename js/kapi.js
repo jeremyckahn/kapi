@@ -725,17 +725,6 @@ function kapi(canvas, params, events) {
 				// Maintain a record of keyframes that have been run for this loop iteration
 				if (prevKeyframe > (last(self._reachedKeyframes) || 0)) {
 					self._reachedKeyframes.push(prevKeyframe);
-					
-					// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
-					// when transitioning to the new keyframe segment
-					for (cachedObject in self._keyframeCache) {
-						if (self._keyframeCache.hasOwnProperty(cachedObject)) {
-							self._keyframeCache[cachedObject] = {
-								'from': self._keyframeCache[cachedObject].to,
-								'to': {}
-							};
-						}
-					}
 				}
 				
 				reachedKeyframeLastIndex = self._reachedKeyframes.length ? self._reachedKeyframes.length - 1 : 0;
@@ -780,11 +769,12 @@ function kapi(canvas, params, events) {
 
 			for (i = 0; i < this._layerIndex.length; i++) {				
 				actorName = this._layerIndex[i];
-
+				
 				// The current object may have a first keyframe greater than 0.
 				// If so, we don't want to calculate or draw it until we have
 				// reached this object's first keyframe
 				if (typeof this._actorStateIndex[actorName][0] !== 'undefined' && currentFrame >= this._actorStateIndex[actorName][0]) {
+					
 					currentFrameStateProperties = this._getActorState(actorName);
 
 					// If there are remaining keyframes for this object, draw it.
@@ -829,7 +819,8 @@ function kapi(canvas, params, events) {
 				latestKeyframeId = this._getLatestKeyframeId(actorKeyframeIndex),
 				nextKeyframeId, 
 				latestKeyframeProps, 
-				nextKeyframeProps;
+				nextKeyframeProps,
+				lastRecordedKeyframe;
 
 			// Do a check to see if any more keyframes remain in the animation loop for this actor
 			if (latestKeyframeId === -1) {
@@ -845,11 +836,28 @@ function kapi(canvas, params, events) {
 				return null;
 			}
 			
+			// Manage the actor cache
+			lastRecordedKeyframe = last(this._actorStateIndex[actorName].reachedKeyframes) || 0;
+			
 			if (!this._keyframeCache[actorName]) {
 				this._keyframeCache[actorName] = {
 					'from': {},
 					'to': {}
 				};
+				this._actorStateIndex[actorName].reachedKeyframes = [];
+			}
+			
+			// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
+			// when transitioning to the new keyframe segment
+			if (latestKeyframeId !== lastRecordedKeyframe) {
+				if (latestKeyframeId > lastRecordedKeyframe) {
+					this._actorStateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
+					
+					this._keyframeCache[actorName] = {
+						'from': this._keyframeCache[actorName].to,
+						'to': {}
+					};	
+				}
 			}
 
 			return this._calculateCurrentFrameProps(
@@ -1094,6 +1102,7 @@ function kapi(canvas, params, events) {
 			if (typeof this._actorStateIndex[actorObj.id] === 'undefined') {
 				this._actorStateIndex[actorObj.id] = [];
 				this._actorStateIndex[actorObj.id].queue = [];
+				this._actorStateIndex[actorObj.id].reachedKeyframes = [];
 			}
 			
 			this._actors[actorObj.id] = actorObj;
