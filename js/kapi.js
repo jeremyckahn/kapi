@@ -540,10 +540,7 @@ function kapi(canvas, params, events) {
 		},
 		
 		removeAllKeyframes: function () {
-			var originalStatesCopy = {},
-				currActor;
-			
-			extend(originalStatesCopy, this._actorStateIndex);
+			var currActor;
 			
 			for (currActor in this._actorStateIndex) {
 				if (this._actorStateIndex.hasOwnProperty(currActor)) {
@@ -594,6 +591,9 @@ function kapi(canvas, params, events) {
 						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
 							this._actorStateIndex[index].queue[i].duration *= fRateChange;
 						}
+						
+						// Restore the actor's reachedKeyframes list.
+						this._actorStateIndex[index].reachedKeyframes = originalStatesIndexCopy[index].reachedKeyframes.splice(0);
 					}
 				}
 				
@@ -842,6 +842,7 @@ function kapi(canvas, params, events) {
 					'from': {},
 					'to': {}
 				};
+				
 				this._actorStateIndex[actorName].reachedKeyframes = [];
 			}
 			
@@ -1260,6 +1261,11 @@ function kapi(canvas, params, events) {
 					for (i = 0; i < self._actorStateIndex[actorObj.id].length; i++) {
 						if (self._actorStateIndex[actorObj.id][i] === keyframeId) {
 							self._actorStateIndex[actorObj.id].splice(i, 1);
+							
+							if (i <= self._actorStateIndex[actorObj.id].reachedKeyframes.length) {
+								self._actorStateIndex[actorObj.id].reachedKeyframes.pop();
+							}
+							
 							break;
 						}
 					}
