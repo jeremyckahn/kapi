@@ -539,6 +539,36 @@ function kapi(canvas, params, events) {
 			return this._keyframize(inst);
 		},
 		
+		/**
+		 * Get a specific actor object.
+		 * @param {String} actorName The name of the actor to fetch
+		 * @returns {Object} An actor object.
+		 */
+		getActor: function (actorName) {
+			return this._actors[actorName];
+		},
+		
+		/**
+		 * Returns a list of all the actors currently registered with this Kapi instance.
+		 * @returns {Array} A list of all the string names of the actors that can be accessed with `kapi.getActor()`.
+		 */
+		getActorList: function () {
+			var arr = [],
+				actor;
+			
+			for (actor in this._actors) {
+				if (this._actors.hasOwnProperty(actor)) {
+					arr.push(actor);
+				}
+			}
+			
+			return arr;
+		},
+		
+		/**
+		 * Remove all of the keyframes for all of the actors in the inimation.  Aside from the fact that `add`ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.
+		 * @returns {Object} The Kapi object (for chaining)
+		 */
 		removeAllKeyframes: function () {
 			var currActor;
 			
@@ -554,6 +584,12 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 		
+		/**
+		 * Gets or sets the framerate that Kapi updates at.  The current framerate is always returned, but if an argument is specified, Kapi's framerate is set to that number.
+		 * @param {Number|null} newFramerate The framerate to set.
+		 * @returns {Number} The current framerate.  If `newFramerate` is an integer and greater than 0, this number is the same as `newFramerate`.
+		 * 
+		 */
 		framerate: function (newFramerate) {
 			// Works great for keyframes, but breaks immediates.
 			var oldFRate,
