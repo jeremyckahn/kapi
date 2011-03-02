@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.1
+ * v0.2
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -47,7 +47,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.1',
+	var version = '0.2',
 		defaults = {
 			fillColor: '#f0f',
 			fRate: 20
@@ -423,6 +423,9 @@ function kapi(canvas, params, events) {
 					setDimensionVal.call(this.el, 'width');
 				}
 			}
+			
+			// Since `init` only runs once, just delete it.
+			delete this.init;
 
 			return this;
 		},
@@ -474,7 +477,7 @@ function kapi(canvas, params, events) {
 				this._loopStartTime = currTime;
 			}
 
-			this.updateState();
+			this._updateState();
 			return this;
 		},
 
@@ -514,20 +517,20 @@ function kapi(canvas, params, events) {
 
 		/**
 		 * Add an "actor," which is just a function that performs drawing logic, to the animation.  This function creates an object with the following properties:
-		 *  - *draw()*: The initial function that contains the drawing logic.
-		 *  - *get(prop)*: Retrieve the current value for `prop`.
-		 *  - *getState()*: Retrieve an object that contains the current state info.
-		 *  - *keyframe(keyframeId, stateObj)*: Create a keyframe state for this actor.
-		 *  - *liveCopy(keyframeId, keyframeIdToCopy)*: Create a clone of `keyframeId` that changes as the original does.
-		 *  - *remove()*: Removes the actor instance from the animation.
-		 *  - *to(duration, stateObj)*: Immediately starts tweening the state of the actor to the state specified in `stateObj` over the course of `duration`.
-		 *  - *updateKeyframe(keyframeId, newProps)*: Update the keyframe for this actor at `keyframeId` with the properties defined in `newProps`.  
-		 *  - *id* The identifier that Kapi uses to address the actor internally.
-		 *  - *params*: A copy of `initialParams`.
-		 *  
-		 *  @param {Function} actorFunc The function that defines the drawing logic for the actor.
-		 *  @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
-		 *  @returns {Object} An Object with the properties described above.
+		 * - *draw()*: The initial function that contains the drawing logic.
+		 * - *get(prop)*: Retrieve the current value for `prop`.
+		 * - *getState()*: Retrieve an object that contains the current state info.
+		 * - *keyframe(keyframeId, stateObj)*: Create a keyframe state for this actor.
+		 * - *liveCopy(keyframeId, keyframeIdToCopy)*: Create a clone of `keyframeId` that changes as the original does.
+		 * - *remove()*: Removes the actor instance from the animation.
+		 * - *to(duration, stateObj)*: Immediately starts tweening the state of the actor to the state specified in `stateObj` over the course of `duration`.
+		 * - *updateKeyframe(keyframeId, newProps)*: Update the keyframe for this actor at `keyframeId` with the properties defined in `newProps`.  
+		 * - *id* The identifier that Kapi uses to address the actor internally.
+		 * - *params*: A copy of `initialParams`.
+		 * 
+		 * @param {Function} actorFunc The function that defines the drawing logic for the actor.
+		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
+		 * @returns {Object} An actor Object with the properties described above.
 		 */
 		add: function (actorFunc, initialState) {
 			var inst = {};
@@ -566,8 +569,8 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * Remove all of the keyframes for all of the actors in the inimation.  Aside from the fact that `add`ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.
-		 * @returns {Object} The Kapi object (for chaining)
+		 * Remove all of the keyframes for all of the actors in the animation.  Aside from the fact that `add`ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.
+		 * @returns {Object} The Kapi object (for chaining).
 		 */
 		removeAllKeyframes: function () {
 			var currActor;
@@ -586,7 +589,7 @@ function kapi(canvas, params, events) {
 		
 		/**
 		 * Gets or sets the framerate that Kapi updates at.  The current framerate is always returned, but if an argument is specified, Kapi's framerate is set to that number.
-		 * @param {Number|null} newFramerate The framerate to set.
+		 * @param {Number|null} newFramerate The new framerate to set.
 		 * @returns {Number} The current framerate.  If `newFramerate` is an integer and greater than 0, this number is the same as `newFramerate`.
 		 * 
 		 */
@@ -655,9 +658,9 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 *  Renders a specified frame and upates the internal Kapi state to match that frame.
-		 *   @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
-		 *   @returns {Object} An Object with the properties described above.
+		 * Renders a specified frame and upates the internal Kapi state to match that frame.
+		 * @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
+		 * @returns {Object} An Object with the properties described above.
 		 */
 		gotoFrame: function (frame) {
 			// This is not designed to work correctly with dynamic keyframes, because 
@@ -709,14 +712,15 @@ function kapi(canvas, params, events) {
 		
 		/**
 		 *  @hide
-		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
+		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
 		 *  
 		 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
 		 * 
 		 *  You probably don't want to modify this unless you really know what you're doing.
+		 *
 		 *  @return {Number} The setTimeout identifier for the timer callback.
 		 */
-		updateState: function () {
+		_updateState: function () {
 			// Abandon all hope, ye who enter here.
 			var self = this,
 				currTime = now();
@@ -780,7 +784,7 @@ function kapi(canvas, params, events) {
 					self._updateActors(self._currentFrame);
 				}
 				
-				self.updateState();
+				self._updateState();
 			}, 1000 / this._params.fRate);
 
 			return this._updateHandle;

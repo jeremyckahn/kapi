@@ -163,7 +163,7 @@ myCircle = myKapi.add(circle, {
 	easing: 'easeInOutQuint'
 });</pre>
 			
-			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to kapi.</div>
+			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to Kapi.</div>
 			
 			
 			<h3>gotoFrame()</h3>
@@ -209,6 +209,50 @@ myKapi.gotoFrame('1.5s');</pre>
 			<p>Gets the number of layers currently in the Kapi instance.  Note:  This is also the same as the number of actors in the animation.</p>
 			
 			<div class="ret"><strong>Returns:</strong> A number.</div>
+			
+			
+			<h3>getActor()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.getActor( actorName )</pre>
+			
+			<p>Get a specific actor object.</p>
+			
+			<h5>actorName:</h5>
+			
+			<p>A string representing the name of the actor to fetch.</p>
+			
+			<div class="ret"><strong>Returns:</strong>An actor object.</div>
+			
+			
+			<h3>getActorList()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.getActorList()</pre>
+			
+			<p>Returns a list of all the actors currently registered with this Kapi instance.</p>
+			
+			<div class="ret"><strong>Returns:</strong> An Array of all the string names of the actors that can be accessed with <code>kapi.getActor()</code>.</div>
+			
+			
+			<h3>removeAllKeyframes()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.removeAllKeyframes()</pre>
+			
+			<p>Remove all of the keyframes for all of the actors in the animation.  Aside from the fact that <code>add</code>ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
+			
+			
+			<h3>framerate()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.framerate( newFramerate )</pre>
+			
+			<p>Gets or sets the framerate that Kapi updates at.  The current framerate is always returned, but if an argument is specified, Kapi's framerate is set to that number.</p>
+			
+			<h5>newFramerate:</h5>
+			
+			<p>The new framerate to set.</p>
+			
+			<div class="ret"><strong>Returns:</strong>The current framerate.  If <code>newFramerate</code> is an integer and greater than 0, this number is the same as <code>newFramerate</code>.</div>
 			
 		</div>
 		
