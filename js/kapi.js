@@ -99,77 +99,85 @@ function kapi(canvas, params, events) {
 			}
 		};
 	
-		/**
-		 * @hide
-		 * Returns whether or not `arr` is an Array.
-		 * @param {Array} arr The item to inspect.
-		 * @returns {Boolean} Whether or not `arr` is an Array.
-		 */
-		function isArray (arr) {
-			return (toStr.call(arr) === '[object Array]');
+	/**
+	 * @hide
+	 * Returns whether or not `arr` is an Array.
+	 * @param {Array} arr The item to inspect.
+	 * @returns {Boolean} Whether or not `arr` is an Array.
+	 */
+	function isArray (arr) {
+		return (toStr.call(arr) === '[object Array]');
+	}
+	
+	function removeWhitespace (str) {
+		if (typeof str === 'string') {
+			str = str.replace(/\s/g, '');
 		}
+		
+		return str;
+	}
 
-		/**
-		 * @hide
-		 * Copy over properties from `parents` into `child`.  If multiple `parents` are supplied as an Array, `extend` them in order from right to left, and finally onto `child`.
-		 * 
-		 * @codestart
-		 * extend({a:true, b:true}, {c:true});
-		 *   --> {a:true, b:true, c:true}
-		 * @codeend
-		 * 
-		 * @codestart
-		 * extend({a:true}, [{b:true}, {c:true}]);
-		 *   --> {a:true, b:true, c:true}
-		 * @codeend
-		 * 
-		 * Another handy use for this method is to create a new copy of an object, free of any Object references.  You can do this like so:
-		 * @codestart
-		 * extend({}, objToCopy);
-		 * @endcode
-		 * 
-		 * By default, `extend` will not overwrite properties that are present in the objects that it is extending into.  You can force this with `doOverwrite`.
-		 * @codestart
-		 * extend({a:5, c:20}, {a: 10, b:15});
-		 *   --> {a:5, b:15, c:20}
-		 *   
-		 * extend({a:5, c:20}, {a: 10, b:15}, true);
-		 *   --> {a:10, b:15, c:20}
-		 * @codeend
-		 * 
-		 * This is adapted from the book, "JavaScript Patterns" by Stoyan Stefanov.  Contains some modifications to improve performance for Kapi, so just copy/pasting this for other implementations is likely not wise.  
-		 * @param {Object} child The object to extend into.
-		 * @param {Object|Array} parents Either the single parent to extend from, of an Array of Objects to extend from.  If multiple parents are give, they are extended sequentially from right to left, and finally onto `child`.
-		 * @param {Boolean} doOverwrite Force the properties that are present in the parent object into child object, whether or not that property is already defined on the child object.
-		 * @returns {Object} The extended `child`.
-		 */
-		function extend (child, parent, doOverwrite) {
-			var i, 
-				extraParents;
+	/**
+	 * @hide
+	 * Copy over properties from `parents` into `child`.  If multiple `parents` are supplied as an Array, `extend` them in order from right to left, and finally onto `child`.
+	 * 
+	 * @codestart
+	 * extend({a:true, b:true}, {c:true});
+	 *   --> {a:true, b:true, c:true}
+	 * @codeend
+	 * 
+	 * @codestart
+	 * extend({a:true}, [{b:true}, {c:true}]);
+	 *   --> {a:true, b:true, c:true}
+	 * @codeend
+	 * 
+	 * Another handy use for this method is to create a new copy of an object, free of any Object references.  You can do this like so:
+	 * @codestart
+	 * extend({}, objToCopy);
+	 * @endcode
+	 * 
+	 * By default, `extend` will not overwrite properties that are present in the objects that it is extending into.  You can force this with `doOverwrite`.
+	 * @codestart
+	 * extend({a:5, c:20}, {a: 10, b:15});
+	 *   --> {a:5, b:15, c:20}
+	 *   
+	 * extend({a:5, c:20}, {a: 10, b:15}, true);
+	 *   --> {a:10, b:15, c:20}
+	 * @codeend
+	 * 
+	 * This is adapted from the book, "JavaScript Patterns" by Stoyan Stefanov.  Contains some modifications to improve performance for Kapi, so just copy/pasting this for other implementations is likely not wise.  
+	 * @param {Object} child The object to extend into.
+	 * @param {Object|Array} parents Either the single parent to extend from, of an Array of Objects to extend from.  If multiple parents are give, they are extended sequentially from right to left, and finally onto `child`.
+	 * @param {Boolean} doOverwrite Force the properties that are present in the parent object into child object, whether or not that property is already defined on the child object.
+	 * @returns {Object} The extended `child`.
+	 */
+	function extend (child, parent, doOverwrite) {
+		var i, 
+			extraParents;
 
-			if (!parent) {
-				return child;
-			}
-			
-			child = child || {};
+		if (!parent) {
+			return child;
+		}
+		
+		child = child || {};
 
-			for (i in parent) {
-				if (parent.hasOwnProperty(i)) {
-					if (typeof parent[i] === 'object' && i !== 'prototype') {
-						if (!child[i] || doOverwrite) {
-							child[i] = isArray(parent[i]) ? [] : {};
-						}
-						extend(child[i], parent[i], doOverwrite);
-					} else {
-						if (typeof child[i] === 'undefined' || doOverwrite) {
-							child[i] = parent[i];
-						}
+		for (i in parent) {
+			if (parent.hasOwnProperty(i)) {
+				if (typeof parent[i] === 'object' && i !== 'prototype') {
+					if (!child[i] || doOverwrite) {
+						child[i] = isArray(parent[i]) ? [] : {};
+					}
+					extend(child[i], parent[i], doOverwrite);
+				} else {
+					if (typeof child[i] === 'undefined' || doOverwrite) {
+						child[i] = parent[i];
 					}
 				}
 			}
-
-			return extend(child, extraParents, doOverwrite);
 		}
+
+		return extend(child, extraParents, doOverwrite);
+	}
 
 	/**
 	 * @hide
@@ -409,7 +417,23 @@ function kapi(canvas, params, events) {
 			// Apply CSS styles specified in `params.styles` to `canvas`.
 			for (style in this._params.styles) {
 				if (this._params.styles.hasOwnProperty(style)) {
-					this.el.style[style] = this._params.styles[style];
+
+					// Make the style value a lowercase string
+					this._params.styles[style] = (this._params.styles[style].toString()).toLowerCase();
+
+					// These styles all require a trailing "px"
+					if (style === 'height'
+						|| style === 'width'
+						|| style === 'top'
+						|| style === 'left') {
+						
+						// If the user forgot to supply the aforemontioned "px", kindly add it for them.
+						if (!this._params.styles[style].match(/px/)) {
+							this._params.styles[style] = this._params.styles[style] + 'px';
+						}
+					}
+					
+					this.el.style[style] = removeWhitespace(this._params.styles[style]);
 				}
 			}
 
