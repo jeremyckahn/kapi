@@ -65,7 +65,7 @@ The first step is to create an instance of the Kapi object.  This can be done as
 
 `myKapi` is the object by which you will interface with the canvas.  There are optional parameters and events that you can pass along to the `kapi` constructor to configure the instance - please consult the public [API documentation](http://jeremyckahn.github.com/kapi/) for more info.
 
-The next step is to add actor instances.  You have complete freedom on how to you want to define your actors.  They are simply doing stuff with their instance variables, which are accessed with the JavaScript `this` keyword.  Let’s use the “circle” example actor defined earlier.  To add an instance of “circle” to Kapi, simply use `.add()`:
+The next step is to add actor instances.  You have complete freedom on how to you want to define your actors.  They are simply doing stuff with their instance variables, which are accessed with the JavaScript `this` keyword.  Let’s use the `circle` example actor defined earlier.  To add an instance of 'circle' to Kapi, simply use `.add()`:
 
     var myCircle = myKapi.add(circle, {	
         name : 'myCircle',
@@ -127,7 +127,7 @@ Another way to move your actors around is to use an Immediate Action.  Currently
 
 From the instant this method is called, `myCircle` will move 100 pixels to the right of its current position, to the 50th pixel down in the canvas, and fade to red.  This will happen over the course of two seconds, which is defined by the first parameter.
 
-Immediate Actions, like keyframes, are chainable.  It is easiest to use Immediate Actions with animations that only have one keyframe, defined on keyframe zero.  However, mixing Immediate Actions with keyframe is entirely valid.
+Immediate Actions, like keyframes, are chainable.  It is easiest - and recommended - to use Immediate Actions with animations that only have one keyframe, defined on keyframe zero.  However, mixing Immediate Actions with keyframes is entirely valid.  It's just really hard to achieve the effect you might be going for.
 
     myCircle.keyframe(0, {
       x : 100,
@@ -174,11 +174,11 @@ This simply calls  `gotoFrame()` and then `play()`.
 Tweening
 --------------
 
-There is only one tweening method built into Kapi - Linear.  Tweens are extensible; just add methods to the global `kapi.tween` object.  Please consult the docs for more info regarding this.
+There is only one tweening formula built into Kapi - Linear.  Tweens are extensible; just add methods to the global `kapi.tween` object.  Please consult the docs for more info regarding this.
 
-If you want more tweens than Linear, you are in luck.  The file `shapes.js` is included in the Kapi repository, which contains a collection of tweening methods.  All you have to do is include `shapes.js` in your page to use all the fun tweens.
+If you want more tweens than Linear, you are in luck.  The file `kapi.tweens.js` is included in the Kapi repository, which contains a collection of tweening methods.  All you have to do is include `kapi.tweens.js` in your page after `kapi.js` to use all the fun tweens.
 
 More info
 -------------
 
-More technical documentation can be found within the `kapi.js` source file itself.  Each method has an explanation of the expected parameters and output.
+More technical documentation can be found within the `kapi.js` source file itself.  Each method has an explanation of the expected parameters and output.  If you'd like something you can see more easily in a web browser, the same API docs are available online for the [Kapi object](http://jeremyckahn.github.com/kapi/kapi_doc.html) as well as the [actor object](http://jeremyckahn.github.com/kapi/actor_doc.html).
