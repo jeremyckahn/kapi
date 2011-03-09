@@ -49,8 +49,8 @@ function kapi(canvas, params, events) {
 
 	var version = '0.2.1',
 		defaults = {
-			fillColor: '#f0f',
-			fRate: 20
+			'fRate': 20,
+			'autoclear': true
 		},
 		toStr = Object.prototype.toString,
 		calcKeyframe = {
@@ -390,7 +390,8 @@ function kapi(canvas, params, events) {
 			
 			// Fill in any missing parameters
 			extend(params, defaults);
-			this._params = params;
+			this._params = params;			
+			this.autoclear = !!this._params.autoclear;
 			
 			// Save a reference to original canvas object
 			this._params.canvas = canvas;
@@ -799,7 +800,9 @@ function kapi(canvas, params, events) {
 				// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
 				if (self._currentFrame <= self._lastKeyframe) {
 					// Clear out the canvas
-					self.ctx.clearRect(0, 0, self.el.width, self.el.height);
+					if (self.autoclear !== false) {
+						self.ctx.clearRect(0, 0, self.el.width, self.el.height);
+					}
 
 					if (typeof self.events.enterFrame === 'function') {
 						self.events.enterFrame.call(self);
