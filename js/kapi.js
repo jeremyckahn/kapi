@@ -20,9 +20,10 @@
  * @param {HTMLCanvasElement} canvas The canvas element to be used with Kapi.
  * @param {Object} params Parameters to set on the new Kapi instance. They are as follows:
  *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
- *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object
+ *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object.
+ *   @param {Boolean} autoclear Controls whether or not the `canvas` is cleared out after each frame is rendered.  This is `true` by default.
  * @param {Object} events An object containing events that can be set on this instance of Kapi.
- *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.     
+ *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.
  * 
  * @codestart
  * var myKapi = kapi(document.getElementsByTagName('canvas')[0], 
@@ -109,6 +110,12 @@ function kapi(canvas, params, events) {
 		return (toStr.call(arr) === '[object Array]');
 	}
 	
+	/**
+	* @hide 
+	* Removes any whitespace from a string.
+	* @param {String} str The string to remove whitespace from.
+	* @returns {String}
+	*/
 	function removeWhitespace (str) {
 		if (typeof str === 'string') {
 			str = str.replace(/\s/g, '');
