@@ -564,12 +564,54 @@ function kapi(canvas, params, events) {
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
 		 * @returns {Object} An actor Object with the properties described above.
 		 */
-		add: function (actorFunc, initialState) {
-			var inst = {};
-			inst.draw = actorFunc;
+		add: function (actor, initialState) {
+			var inst = {},
+				validProps = ['setup', 'draw', 'teardown'],
+				i,
+				funcFactory = function () {
+					return function () {
+						// This is a silly workaround for a silly JSLint error.
+					};
+				};
+			
+			// Normalize `actor`, since it can be either a Function or an Object
+			if (actor instanceof Function) {
+				inst = {
+					'setup': function () {
+						
+					},
+					'draw': actor,
+					'teardown': function () {
+						// Uh, this doesn't get used yet...
+					}
+				};
+			} else if (actor instanceof Object) {
+				// Check to see if the Object has a usable `draw()` method
+				if (!(actor.draw instanceof Function)) {
+					if (console && console.error) {
+						console.error('Trying to add an Object as an actor, but it does not have a draw function.');
+					}
+				}
+				
+				for (i = 0; i < validProps.length; i++) {
+					if (actor[validProps[i]] instanceof Function) {
+						inst[validProps[i]] = actor[validProps[i]];
+					} else {
+						// Just attach an empty function if one was not supplied
+						inst[validProps[i]] = funcFactory();
+					}
+				}
+			} else {
+				if (console && console.error) {
+					console.error(actor + ' is not a valid actor Object.');
+				}
+				
+				return;
+			}
+			
 			inst.params = initialState;
-			inst.constructor = actorFunc;
-			inst.name = actorFunc.name;
+			inst.constructor = actor.draw;
+			inst.name = inst.draw.name;
 
 			return this._keyframize(inst);
 		},
@@ -1171,6 +1213,9 @@ function kapi(canvas, params, events) {
 			if (typeof actorObj.id === 'undefined') {
 				actorObj.id = actorObj.params.id || actorObj.params.name || generateUniqueName();
 			}
+			
+			delete actorObj.params.name;
+			delete actorObj.name;
 
 			if (typeof this._actorStateIndex[actorObj.id] === 'undefined') {
 				this._actorStateIndex[actorObj.id] = [];
@@ -1503,6 +1548,9 @@ function kapi(canvas, params, events) {
 				
 				return actorObj;
 			};
+			
+			// Call the actor's `setup` function
+			actorObj.setup(actorObj, this);
 
 			return actorObj;
 		},

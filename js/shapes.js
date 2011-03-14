@@ -1,21 +1,31 @@
 /**
  * These functions have nothing to do with Kapi core code.  They are just useful for testing it out.
+ * Actors can be functions or objects.
  */
-function circle(ctx){
-	ctx.beginPath();
-	ctx.arc(
-		this.x || 0,
-		this.y || 0,
-		this.radius || 0,
-		0,
-		Math.PI*2, 
-		true
-		);
-	ctx.fillStyle = this.color || '#f0f';
-	ctx.fill();
-	ctx.closePath();
-	
-	return this;
+
+
+var circle = {
+	setup: function () {
+		if (console) {
+			console.log('Setting up ', this)
+		}
+	},
+	draw: function circle(ctx){
+		ctx.beginPath();
+		ctx.arc(
+			this.x || 0,
+			this.y || 0,
+			this.radius || 0,
+			0,
+			Math.PI*2, 
+			true
+			);
+		ctx.fillStyle = this.color || '#f0f';
+		ctx.fill();
+		ctx.closePath();
+
+		return this;
+	}
 }
 
 
