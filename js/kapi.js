@@ -611,7 +611,26 @@ function kapi(canvas, params, events) {
 			
 			inst.params = initialState;
 			inst.constructor = actor.draw;
-			inst.name = inst.draw.name;
+			
+			// Make really really sure the id is unique, if one is not provided
+			if (typeof inst.id === 'undefined') {
+				inst.id = inst.params.id || inst.params.name || generateUniqueName();
+			}
+			
+			// This property is only useful for giving an actor a name, and are useless otherwise.
+			// Delete it here to prevent user confusion.
+			delete inst.params.name;
+
+			if (typeof this._actorStateIndex[inst.id] === 'undefined') {
+				this._actorStateIndex[inst.id] = [];
+				this._actorStateIndex[inst.id].queue = [];
+				this._actorStateIndex[inst.id].reachedKeyframes = [];
+			}
+			
+			this._actors[inst.id] = inst;
+			this._liveCopies[inst.id] = {};
+			this._layerIndex.push(inst.id);
+			inst.params.layer = this._layerIndex.length - 1;
 
 			return this._keyframize(inst);
 		},
@@ -1208,25 +1227,6 @@ function kapi(canvas, params, events) {
 		 */
 		_keyframize: function (actorObj) {
 			var self = this;
-
-			// Make really really sure the id is unique, if one is not provided
-			if (typeof actorObj.id === 'undefined') {
-				actorObj.id = actorObj.params.id || actorObj.params.name || generateUniqueName();
-			}
-			
-			delete actorObj.params.name;
-			delete actorObj.name;
-
-			if (typeof this._actorStateIndex[actorObj.id] === 'undefined') {
-				this._actorStateIndex[actorObj.id] = [];
-				this._actorStateIndex[actorObj.id].queue = [];
-				this._actorStateIndex[actorObj.id].reachedKeyframes = [];
-			}
-			
-			this._actors[actorObj.id] = actorObj;
-			this._liveCopies[actorObj.id] = {};
-			this._layerIndex.push(actorObj.id);
-			actorObj.params.layer = this._layerIndex.length - 1;
 
 			/**
 			 * Create a keyframe for an actor.

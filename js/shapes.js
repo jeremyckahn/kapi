@@ -10,7 +10,7 @@ var circle = {
 			console.log('Setting up ', this)
 		}
 	},
-	draw: function circle(ctx){
+	draw: function (ctx){
 		ctx.beginPath();
 		ctx.arc(
 			this.x || 0,
