@@ -25,6 +25,11 @@ var circle = {
 		ctx.closePath();
 
 		return this;
+	},
+	teardown: function () {
+		if (console) {
+			console.log('Tearing down ', this)
+		}
 	}
 }
 

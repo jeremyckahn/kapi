@@ -50,13 +50,14 @@
 			
 			<p>Actors are produced from <code>kapiInstance.add()</code>.</p>
 			
+			<a name="keyframe"></a>
 			<h3>keyframe()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.keyframe( keyframeId, stateObj )</pre>
 			
 			<h5>keyframeId:</h5>
 			
-			<p>String or number.  Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid Kapi time format string (see documentation for <code>gotoFrame()</code>).</p>
+			<p>String or number.  Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid Kapi time format string (see documentation for <code><a href="kapi_doc.html#gotoframe">gotoFrame()</a></code>).</p>
 			
 			<h5>stateObj:</h5>
 			
@@ -64,7 +65,8 @@
 			
 			<div class="ret"><strong>Returns:</strong>The actor Object (for chaining).</div>
 			
-					
+			
+			<a name="to"></a>
 			<h3>to()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.to( duration, stateObj )</pre>
@@ -73,7 +75,7 @@
 			
 			<h5>duration:</h5>
 			
-			<p>String or number.  The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax (see documentation for <code>gotoFrame()</code>).</p>
+			<p>String or number.  The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax (see documentation for <code><a href="kapi_doc.html#gotoframe">gotoFrame()</a></code>).</p>
 			
 			<h5>stateObj:</h5>
 			
@@ -82,6 +84,7 @@
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
 			
+			<a name="remove"></a>
 			<h3>remove()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.remove( keyframeId )</pre>
@@ -90,11 +93,12 @@
 			
 			<h5>keyframeId:</h5>
 			
-			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
 			
+			<a name="updatekeyframe"></a>
 			<h3>updateKeyframe()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.updateKeyframe( keyframeId, newProps )</pre>
@@ -103,7 +107,7 @@
 			
 			<h5>keyframeId:</h5>
 			
-			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
 			
 			<h5>newprops:</h5>
 			
@@ -112,6 +116,7 @@
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
 			
+			<a name="livecopy"></a>
 			<h3>liveCopy()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.liveCopy( keyframeId, keyframeIdToCopy )</pre>
@@ -120,7 +125,7 @@
 			
 			<h5>keyframeId:</h5>
 			
-			<p>String or number.  The desired keyframe to remove <code>actorObj</code> from, expressed in Kapi time syntax.</p>
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
 			
 			<h5>keyframeId:</h5>
 			
@@ -129,6 +134,7 @@
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
 			
+			<a name="getstate"></a>
 			<h3>getState()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.getState()</pre>
@@ -138,6 +144,7 @@
 			<div class="ret"><strong>Returns:</strong>An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when <code>getState</code> is called.</div>
 			
 			
+			<a name="get"></a>
 			<h3>get()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.get( prop )</pre>
@@ -151,6 +158,7 @@
 			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
 			
 			
+			<a name="movetolayer"></a>
 			<h3>moveToLayer()</h3>
 			
 			<pre class="func-def"><em>actorInstance</em>.moveToLayer( layerId )</pre>

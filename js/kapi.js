@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.2.1
+ * v0.2.2
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.2.1',
+	var version = '0.2.2',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -548,7 +548,7 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * Add an "actor," which is just a function that performs drawing logic, to the animation.  This function creates an object with the following properties:
+		 * Add an actor to Kapi.  This method creates an actor object with the following properties:
 		 * - *draw()*: The initial function that contains the drawing logic.
 		 * - *get(prop)*: Retrieve the current value for `prop`.
 		 * - *getState()*: Retrieve an object that contains the current state info.
@@ -556,13 +556,18 @@ function kapi(canvas, params, events) {
 		 * - *liveCopy(keyframeId, keyframeIdToCopy)*: Create a clone of `keyframeId` that changes as the original does.
 		 * - *remove()*: Removes the actor instance from the animation.
 		 * - *to(duration, stateObj)*: Immediately starts tweening the state of the actor to the state specified in `stateObj` over the course of `duration`.
+		 * - *moveToLayer(layerId)*: Change the layer that the actor draws to.  There can only be one actor per layer.
 		 * - *updateKeyframe(keyframeId, newProps)*: Update the keyframe for this actor at `keyframeId` with the properties defined in `newProps`.  
 		 * - *id* The identifier that Kapi uses to address the actor internally.
 		 * - *params*: A copy of `initialParams`.
 		 * 
-		 * @param {Function} actorFunc The function that defines the drawing logic for the actor.
+		 * @param {Function|Object} actor The function or Object that defines an actor.
+		 *   If you are providing an object, you can supply any number of the following properties:
+		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.
+		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
+		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  Note:  This functionality does not exist as of v0.2.1, it will be added in the future.  https://github.com/jeremyckahn/kapi/issues#issue/27
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
-		 * @returns {Object} An actor Object with the properties described above.
+		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
 		add: function (actor, initialState) {
 			var inst = {},
@@ -576,6 +581,8 @@ function kapi(canvas, params, events) {
 			
 			// Normalize `actor`, since it can be either a Function or an Object
 			if (actor instanceof Function) {
+				// Tack on the extra maintenance functions as empty functions, 
+				// since they will be called later.
 				inst = {
 					'setup': function () {
 						
@@ -631,8 +638,13 @@ function kapi(canvas, params, events) {
 			this._liveCopies[inst.id] = {};
 			this._layerIndex.push(inst.id);
 			inst.params.layer = this._layerIndex.length - 1;
+			inst = this._addActorMethods(inst);
+			
+			// Call the actor's `setup` function
+			inst.setup(this);
+			delete inst.setup;
 
-			return this._keyframize(inst);
+			return inst;
 		},
 		
 		/**
@@ -1221,11 +1233,11 @@ function kapi(canvas, params, events) {
 
 		/**
 		 * @hide
-		 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_keyframize()`.).
+		 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_addActorMethods()`.).
 		 * @param {Object} actorObj The object to prep for Kapi use and add properties to.
 		 * @returns {Object} The "decorated" version of `actorObj`. 
 		 */
-		_keyframize: function (actorObj) {
+		_addActorMethods: function (actorObj) {
 			var self = this;
 
 			/**
@@ -1548,9 +1560,6 @@ function kapi(canvas, params, events) {
 				
 				return actorObj;
 			};
-			
-			// Call the actor's `setup` function
-			actorObj.setup(actorObj, this);
 
 			return actorObj;
 		},

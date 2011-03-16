@@ -48,6 +48,7 @@
 			
 			<h2>Kapi constructor</h2>
 			
+			<a name="kapi"></a>
 			<h3>kapi()</h3>
 			
 			<pre class="func-def">kapi( canvas, params, events )</pre>
@@ -79,6 +80,7 @@
 			<h2>Kapi instance methods</h2>
 			
 			
+			<a name="getversion"></a>
 			<h3>getVersion()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.getVersion()</pre>
@@ -86,6 +88,7 @@
 			<div class="ret"><strong>Returns:</strong> String.  The version of Kapi you are using.</div>
 			
 			
+			<a name="isplaying"></a>
 			<h3>isPlaying()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.isPlaying()</pre>
@@ -93,6 +96,7 @@
 			<div class="ret"><strong>Returns:</strong> Boolean.  Whether or not the animation is playing (meaning not paused or stopped).</div>
 			
 			
+			<a name="play"></a>
 			<h3>play()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.play()</pre>
@@ -102,6 +106,7 @@
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="pause"></a>
 			<h3>pause()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.pause()</pre>
@@ -111,6 +116,7 @@
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="stop"></a>
 			<h3>stop()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.stop()</pre>
@@ -120,15 +126,18 @@
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="add"></a>
 			<h3>add()</h3>
 			
-			<pre class="func-def"><em>kapiInstance</em>.add( actorFunc, initialState )</pre>
+			<pre class="func-def"><em>kapiInstance</em>.add( actor, initialState )</pre>
 			
 			<p>Add an actor to the animation.  Importantly, this method returns a reference to the actor that it added to the Kapi instance.</p>
 			
-			<h5>actorFunc:</h5>
+			<h5>actor:</h5>
 			
-			<p>A function.  Logically, this function should draw something to the canvas.  Actor functions access their properties with the <code>this</code> JavaScript keyword.  Actor functions get a reference to the canvas's <code>context</code> as the first parameter.  Here's an example of an actor:</p>
+			<p>A function or object.</p>
+			
+			<p><strong>If you are passing a function:</strong>  Logically, this function should draw something to the canvas.  All actor functions access their state properties with the <code>this</code> JavaScript keyword.  Actor functions get a reference to the canvas's <code>context</code> as the first parameter.  Here's an example of an actor:</p>
 			
 			<pre class="brush: js;">
 function circle(ctx){
@@ -146,6 +155,45 @@ function circle(ctx){
 	ctx.closePath();
 
 	return this;
+}</pre>
+			
+			<p><strong>If you are passing an Object:</strong> You can pass an object with any number of the following properties:</p>
+			
+			<ul>
+				<li><strong>draw:</strong> This is required.  This defines the drawing logic for the actor.  This is actually the same function that you would pass as the first parameter to <code>kapi.add()</code>, so the same rules apply.</li>
+				<li><strong>setup:</strong> This is called once the actor is added to Kapi. Handy for any actor initialization logic.</li>
+				<li><strong>teardown:</strong> This is called after the actor is removed from the Kapi instance (with <code>kapi.removeActor()</code>).  Note:  This functionality does not exist as of v0.2.1, <a href="https://github.com/jeremyckahn/kapi/issues#issue/27" target="_blank">it will be added in the future</a>.</li>
+			</ul>
+			
+			<p>Here's a example of an actor similar to the previous example, but as an object with <code>setup</code> and <code>teardown</code> methods: 
+			<pre class="brush: js;">
+var circle = {
+	setup: function () {
+		if (console) {
+			console.log('Setting up ', this)
+		}
+	},
+	draw: function (ctx){
+		ctx.beginPath();
+		ctx.arc(
+			this.x || 0,
+			this.y || 0,
+			this.radius || 0,
+			0,
+			Math.PI*2, 
+			true
+			);
+		ctx.fillStyle = this.color || '#f0f';
+		ctx.fill();
+		ctx.closePath();
+
+		return this;
+	},
+	teardown: function () {
+		if (console) {
+			console.log('Tearing down ', this)
+		}
+	}
 }</pre>
 			
 			<h5>initialState:</h5>
@@ -167,6 +215,7 @@ myCircle = myKapi.add(circle, {
 			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to Kapi.</div>
 			
 			
+			<a name="gotoframe"></a>
 			<h3>gotoFrame()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.gotoFrame( frame )</pre>
@@ -185,6 +234,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="gotoandplay"></a>
 			<h3>gotoAndPlay()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.gotoAndPlay( frame )</pre>
@@ -194,6 +244,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="getstate"></a>
 			<h3>getState()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.getState()</pre>
@@ -203,6 +254,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> An object.</div>
 			
 			
+			<a name="getnumberoflayers"></a>
 			<h3>getNumberOfLayers()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.getNumberOfLayers()</pre>
@@ -212,6 +264,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> A number.</div>
 			
 			
+			<a name="getactor"></a>
 			<h3>getActor()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.getActor( actorName )</pre>
@@ -225,6 +278,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong>An actor object.</div>
 			
 			
+			<a name="getactorlist"></a>
 			<h3>getActorList()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.getActorList()</pre>
@@ -234,6 +288,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> An Array of all the string names of the actors that can be accessed with <code>kapi.getActor()</code>.</div>
 			
 			
+			<a name="removeallkeyframes"></a>
 			<h3>removeAllKeyframes()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.removeAllKeyframes()</pre>
@@ -243,6 +298,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
 			
+			<a name="framerate"></a>
 			<h3>framerate()</h3>
 			
 			<pre class="func-def"><em>kapiInstance</em>.framerate( newFramerate )</pre>
