@@ -77,12 +77,12 @@
 				x : 0,
 				y : 0,
 				radius : 50,
-				color : '#00ff00',
+				color : '#0f0',
 				easing : 'easeInOutQuad'
 			}),
 			circle2 = demo.add(circle, {
 				name : 'myCircle2',
-				color : '#ff0000',
+				color : '#f00',
 				easing : 'easeInOutQuint'
 			}),
 			square1 = demo.add(square, {
@@ -91,23 +91,23 @@
 				width : 75,
 				x : 200,
 				y : 200,
-				color : '#0000ff',
+				color : '#00f',
 				easing : 'easeInOutSine'
 			}),
 			currFrameOutput = $('#currentFrame span');
 		
 		circle1.keyframe('0.5s', {
 			x : 0,
-			color : '#00ff00'
+			color : '#0f0'
 		}).keyframe('2s', {
 			x : 50,
 			y : 80,
-			color : '#ff00ff'
+			color : '#f0f'
 		}).keyframe('4s', {
 			x : 200,
 			y : 150,
 			radius : 100,
-			color : '#0000ff'
+			color : '#00f'
 		});
 		
 		circle2.keyframe('0s', {

@@ -259,7 +259,7 @@ function kapi(canvas, params, events) {
 	 * @returns {Boolean}
 	 */
 	function isHexString (str) {
-		return typeof str === 'string' && (/^#([0-9]|[a-f]){6}$/i).test(str);
+		return typeof str === 'string' && ((/^#([0-9]|[a-f]){3}$/i).test(str) || (/^#([0-9]|[a-f]){6}$/i).test(str));
 	}
 
 	/**
@@ -301,6 +301,11 @@ function kapi(canvas, params, events) {
 	function hexToRGBArr (hex) {
 		if (typeof hex === 'string') {
 			hex = hex.replace(/#/g, '');
+			
+			// If the string is a shorthand three digit hex notation, normalize it to the standard six digit notation
+			if (hex.length === 3) {
+				hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+			}
 			return [hexToDec(hex.substr(0, 2)), hexToDec(hex.substr(2, 2)), hexToDec(hex.substr(4, 2))];
 		} else {
 			return [0, 0, 0];
@@ -1276,7 +1281,7 @@ function kapi(canvas, params, events) {
 				}
 				
 				if (keyframeId < 0) {
-					throw 'keyframe ' + keyframeId + ' is less than zero!';
+					throw 'Keyframe ' + keyframeId + ' is less than zero!';
 				}
 				
 				// Create keyframe zero if it was not done so already
@@ -1654,6 +1659,7 @@ function kapi(canvas, params, events) {
 				prevStateObj, 
 				prop,
 				stateCopy,
+				tempString,
 				i;
 
 			for (i = 0; i < this._actorStateIndex[actorId].length; i++) {
@@ -1673,9 +1679,11 @@ function kapi(canvas, params, events) {
 				// Find any hex color strings and convert them to rgb(x, x, x) format.
 				// More overhead for keyframe setup, but makes for faster frame processing later
 				for (prop in newStateObj) {
-					if (newStateObj.hasOwnProperty(prop)) {
-						if (isColorString(newStateObj[prop])) {
-							newStateObj[prop] = hexToRGBStr(newStateObj[prop]);
+					if (newStateObj.hasOwnProperty(prop) && typeof newStateObj[prop] === 'string') {
+						// Trim any whitespace and make a temporary string to test
+						tempString = newStateObj[prop].replace(/\s/g, '');
+						if (isColorString(tempString)) {
+							newStateObj[prop] = hexToRGBStr(tempString);
 						}
 					}
 				}
