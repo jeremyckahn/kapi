@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>kapi</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Jeremy Kahn">
+	<!-- Date: 2010-12-07 -->
+	
+	<script src="../js/kapi.js"></script>
+	<script src="../js/kapi.tweens.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
+	
+	<style type="text/css">
+		canvas{
+			float: left;
+		}
+	
+		ul{
+			float: left;
+		}
+	</style>
+	
+</head>
+<body>
+
+	<canvas id="myCanvas">Plz stop using IE.</canvas>
+	
+	<ul>
+		<li id="currentFrame">Current frame <span></span></li>
+		<li><a id="play" href="javascript:void(0);">Play</a></li>
+		<li><a id="pause" href="javascript:void(0);">Pause</a></li>
+		<li><a id="stop" href="javascript:void(0);">Stop</a></li>
+	</ul>
+	
+	<script type="text/javascript">
+	
+		// Note:  jQuery is here just to make the demo quicker to make.
+		// Kapi does not use jQuery.
+		$('#play').click(function(ev){
+			ev.preventDefault();
+			demo.play();
+		});
+		
+		$('#pause').click(function(ev){
+			ev.preventDefault();
+			demo.pause();
+		});
+		
+		$('#stop').click(function(ev){
+			ev.preventDefault();
+			demo.stop();
+		});
+				
+		var demo = kapi(document.getElementById('myCanvas'), 
+			// params
+			{
+				fRate : 30,
+				styles : {
+					'height': '300px',
+					'width': 500,
+					'background': '#000'
+				},
+				autoclear: true
+			},
+			// events
+			{
+				enterFrame: function(){
+					currFrameOutput.html(this._currentFrame);
+				}
+			}),
+			circle1 = demo.add(circle, {	
+				name : 'myCircle',
+				x : 0,
+				y : 0,
+				radius : 50,
+				color : '#0f0',
+				easing : 'easeInOutQuad'
+			}),
+			circle2 = demo.add(circle, {
+				name : 'myCircle2',
+				color : '#f00',
+				easing : 'easeInOutQuint'
+			}),
+			square1 = demo.add(square, {
+				name : 'square1',
+				height : 75,
+				width : 75,
+				x : 200,
+				y : 200,
+				color : '#00f',
+				easing : 'easeInOutSine'
+			}),
+			currFrameOutput = $('#currentFrame span');
+		
+		circle1.keyframe('0', {
+			x : 0,
+			color : '#0f0'
+		}).keyframe('1s', {
+			x : 150,
+			y : 180,
+			color : '#f0f'
+		});
+		
+		demo.iterate(2);
+		
+		console.dir(demo);
+		
+	</script>
+
+</body>
+</html>

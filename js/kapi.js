@@ -423,6 +423,7 @@ function kapi(canvas, params, events) {
 			this._liveCopies = {};
 			this._currentState = {};
 			this._animationDuration = 0;
+			this._repsRemaining = -1;
 			
 			// Frame counter.  Is incremented for each frame that is rendered.
 			this.fCount = 0;
@@ -492,7 +493,7 @@ function kapi(canvas, params, events) {
 				currTime = now();
 
 			if (this.isPlaying()) {
-				return;
+				return this;
 			}
 
 			this._isStopped = this._isPaused = false;
@@ -541,6 +542,9 @@ function kapi(canvas, params, events) {
 			delete this._pausedAtTime;
 			this._isStopped = true;
 			
+			// Allow the animation to run indefinitely if `.play()` is called later.
+			this._repsRemaining = -1;
+			
 			// Delete any queued Immediate Actions
 			for (obj in this._actorStateIndex) {
 				if (this._actorStateIndex.hasOwnProperty(obj)) {
@@ -550,6 +554,23 @@ function kapi(canvas, params, events) {
 			
 			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
 			return this;
+		},
+
+		repeat: function (repetitions) {
+			if (typeof repetitions === 'number' && repetitions >= -1) {
+				this._repsRemaining = parseInt(repetitions, 10) + 1;
+			} else {
+				this._repsRemaining = -1;
+			}
+			return this.play();
+		},
+		
+		iterate: function (iterations) {
+			if (typeof iterations === 'number' && iterations >= -1) {
+				this.repeat(iterations - 1);
+			}
+			
+			return this.play();
 		},
 
 		/**
@@ -843,8 +864,9 @@ function kapi(canvas, params, events) {
 				// Calculate how long this iteration of the loop has been running for
 				self._loopLength = currTime - self._loopStartTime;
 
-				// Start the loop over if need be.
-				if ( (self._loopLength > self._animationDuration) && self._reachedKeyframes.length === self._keyframeIds.length) {
+				// Check to see if the loop is starting over.
+				if ( (self._loopLength > self._animationDuration) && self._reachedKeyframes.length === self._keyframeIds.length ) {
+					// It is!
 					self._hasHitValidFrame = false;
 	
 					// Reset the loop start time relative to when the animation began,
@@ -855,6 +877,19 @@ function kapi(canvas, params, events) {
 					
 					// Clear out the dynamic keyframe cache
 					self._keyframeCache = {};
+					
+					if (self._repsRemaining !== -1) {
+						//if (self._repsRemaining > 0) {
+							self._repsRemaining--;
+						//}
+						
+						if (self._repsRemaining === 0) {
+							self.stop();
+							// Allow the animation to run indefinitely if `.play()` is called later.
+							self._repsRemaining = -1;
+							return;
+						}
+					}
 				}
 
 				// Determine where we are in the loop
