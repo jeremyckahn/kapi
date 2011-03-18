@@ -879,9 +879,7 @@ function kapi(canvas, params, events) {
 					self._keyframeCache = {};
 					
 					if (self._repsRemaining !== -1) {
-						//if (self._repsRemaining > 0) {
-							self._repsRemaining--;
-						//}
+						self._repsRemaining--;
 						
 						if (self._repsRemaining === 0) {
 							self.stop();
