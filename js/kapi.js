@@ -878,7 +878,7 @@ function kapi(canvas, params, events) {
 					// Clear out the dynamic keyframe cache
 					self._keyframeCache = {};
 					
-					if (self._repsRemaining !== -1) {
+					if (self._repsRemaining > -1) {
 						self._repsRemaining--;
 						
 						if (self._repsRemaining === 0) {
