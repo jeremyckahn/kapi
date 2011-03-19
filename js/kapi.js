@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.2.2
+ * v0.3.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.2.2',
+	var version = '0.3.0',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -555,7 +555,12 @@ function kapi(canvas, params, events) {
 			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
 			return this;
 		},
-
+		
+		/**
+		 * Play the animation for set amount of repetitions.  After starting over the specified amount of times, the animation will `stop()`.
+		 * @param {Number} repetitions The number of times to start over.
+		 * @returns {Kapi} The Kapi instance.
+		 */
 		repeat: function (repetitions) {
 			if (typeof repetitions === 'number' && repetitions >= -1) {
 				this._repsRemaining = parseInt(repetitions, 10) + 1;
@@ -565,6 +570,11 @@ function kapi(canvas, params, events) {
 			return this.play();
 		},
 		
+		/**
+		 * Play the animation And let it run for a set amount of iterations.  After running over the specified amount of times, the animation will `stop()`.  This is extremely similar to the functionality of `kapi.repeat()`, but the parameter controls how many times the animation runs for, not how many times it starts over.
+		 * @param {Number} iterations The number of times to run for.
+		 * @returns {Kapi} The Kapi instance.
+		 */
 		iterate: function (iterations) {
 			if (typeof iterations === 'number' && iterations >= -1) {
 				this.repeat(iterations - 1);
