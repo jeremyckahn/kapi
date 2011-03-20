@@ -956,8 +956,10 @@ function kapi(canvas, params, events) {
 				currentFrameStateProperties,
 				adjustedProperties,
 				objActionQueue,
+				objActionEvents,
 				oldQueueLength,
 				keyframeToModify,
+				currentAction,
 				i;
 
 			for (i = 0; i < this._layerIndex.length; i++) {				
@@ -976,8 +978,16 @@ function kapi(canvas, params, events) {
 						
 						// If there is a queued action, apply it to the current frame
 						if ((oldQueueLength = objActionQueue.length) > 0) {
-							if (objActionQueue[0]._internals.fromState === null) {
-								objActionQueue[0]._internals.fromState = currentFrameStateProperties;
+							currentAction = objActionQueue[0];
+							objActionEvents = currentAction.events;
+							
+							if (objActionEvents.start && objActionEvents.start instanceof Function) {
+								objActionEvents.start.call(this._actors[actorName]);
+								delete objActionEvents.start;
+							}
+							
+							if (currentAction._internals.fromState === null) {
+								currentAction._internals.fromState = currentFrameStateProperties;
 							}
 							
 							adjustedProperties = this._getQueuedActionState(objActionQueue);
@@ -989,7 +999,9 @@ function kapi(canvas, params, events) {
 								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
 								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
 								
-								// TODO:  Fire an "action completed" event for the immediate action
+								if (objActionEvents.complete && objActionEvents.complete instanceof Function) {
+									objActionEvents.complete.call(this._actors[actorName]);
+								}
 							}
 						}
 	
@@ -1366,13 +1378,14 @@ function kapi(canvas, params, events) {
 			 * @param {Object} stateObj The state to animate the actor to.
 			 * @returns {Object} The actor Object (for chaining).
 			 */
-			actorObj.to = function to (duration, stateObj) {
+			actorObj.to = function to (duration, stateObj, events) {
 				var newestAction, 
 					queue = self._actorStateIndex[actorObj.id].queue;
 
 					queue.push({
 						'duration': self._getRealKeyframe(duration),
-						'state': stateObj
+						'state': stateObj || {},
+						'events': events || {}
 					});
 				
 				newestAction = last(queue);

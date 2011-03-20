@@ -101,14 +101,19 @@
 			x: '+=100',
 			y: 50,
 			color: '#3f0000'
-		})
-		.to('5s', {
+		}, {
+			'start': function () {
+				console.log('First immediate action started!', this);
+			},
+			'complete': function () {
+				console.log('First immediate action completed!', this);
+			}
+		}).to('5s', {
 			x: 10,
 			y: 10,
 			radius: 145,
 			color: '#00f'
-		})
-		.to('1s', {
+		}).to('1s', {
 			radius: 5,
 			color: '#f00'
 		});
