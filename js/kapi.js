@@ -392,10 +392,10 @@ function kapi(canvas, params, events) {
 		 * Called immediately when `kapi()` is invoked, there is no need for the user to invoke it (`init` essentially acts as the Kapi constructor).  Sets up some properties that are used internally, and also sets up the `canvas` element that it acts upon.
 		 * 
 		 * Not meant to be used directly - it is called automatically by the `kapi` constructor.  The parameters are identical, please see the constructor for use info. 
-		 * @returns {Object} A `kapi` object (for chaining).
+		 * @returns {Object} A `kapi` object.
 		 */
 		init: function (canvas, params, events) {
-			var style;
+			var style, eventName;
 
 			params = params || {};
 			events = events || {};
@@ -407,11 +407,11 @@ function kapi(canvas, params, events) {
 			
 			// Save a reference to original canvas object
 			this._params.canvas = canvas;
-			this.events = events;
 			this.el = canvas;
 			this.ctx = canvas.getContext('2d');
 
 			// Initialize some internal properties
+			this._events = {};
 			this._keyframeIds = [];
 			this._reachedKeyframes = [];
 			this._layerIndex = [];
@@ -427,6 +427,12 @@ function kapi(canvas, params, events) {
 			
 			// Frame counter.  Is incremented for each frame that is rendered.
 			this.fCount = 0;
+			
+			for (eventName in events) {
+				if (events.hasOwnProperty(eventName)) {
+					this.bind(eventName, events[eventName]);
+				}
+			}
 
 			// Apply CSS styles specified in `params.styles` to `canvas`.
 			for (style in this._params.styles) {
@@ -513,6 +519,8 @@ function kapi(canvas, params, events) {
 				this._startTime += pauseDuration;
 			} else {
 				this._loopStartTime = currTime;
+				this._updateAnimationDuration();
+				this._fireEvent('loopStart');
 			}
 
 			this._updateState();
@@ -539,16 +547,18 @@ function kapi(canvas, params, events) {
 			
 			clearTimeout(this._updateHandle);
 			delete this._loopStartTime;
+			delete this._startTime;
 			delete this._pausedAtTime;
 			this._isStopped = true;
 			
 			// Allow the animation to run indefinitely if `.play()` is called later.
 			this._repsRemaining = -1;
 			
-			// Delete any queued Immediate Actions
+			// Reset any info stored in `_actorStateIndex`
 			for (obj in this._actorStateIndex) {
 				if (this._actorStateIndex.hasOwnProperty(obj)) {
 					this._actorStateIndex[obj].queue = [];
+					this._actorStateIndex[obj].reachedKeyframes = [];
 				}
 			}
 			
@@ -735,7 +745,6 @@ function kapi(canvas, params, events) {
 		 * 
 		 */
 		framerate: function (newFramerate) {
-			// Works great for keyframes, but breaks immediates.
 			var oldFRate,
 				fRateChange,
 				originalStatesIndexCopy = {},
@@ -851,6 +860,46 @@ function kapi(canvas, params, events) {
 			return this._currentState;
 		},
 		
+		bind: function (eventName, handler) {
+			if (typeof eventName === 'string' && typeof handler === 'function') {
+				if (!this._events[eventName]) {
+					this._events[eventName] = [];
+				}
+				
+				this._events[eventName].push(handler);
+			}
+			
+			return this;
+		},
+		
+		unbind: function (eventName, handler) {
+			var i;
+			
+			if (typeof eventName === 'string') {
+				if (typeof handler === 'function') {
+					for (i = 0; i < this._events[eventName].length; i++) {
+						if (this._events[eventName][i] === handler) {
+							this._events[eventName].splice(i, 1);
+						}
+					}
+				} else {
+					this._events[eventName] = [];
+				}
+			}
+			
+			return this;
+		},
+		
+		_fireEvent: function (eventName) {
+			var i;
+			
+			if (typeof eventName === 'string' && this._events[eventName]) {
+				for (i = 0; i < this._events[eventName].length; i++) {
+					this._events[eventName][i].call(this);
+				}
+			}
+		},
+		
 		/**
 		 *  @hide
 		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
@@ -888,6 +937,8 @@ function kapi(canvas, params, events) {
 					// Clear out the dynamic keyframe cache
 					self._keyframeCache = {};
 					
+					self._fireEvent('loopComplete');
+					
 					if (self._repsRemaining > -1) {
 						self._repsRemaining--;
 						
@@ -898,6 +949,8 @@ function kapi(canvas, params, events) {
 							return;
 						}
 					}
+					
+					self._fireEvent('loopStart');
 				}
 
 				// Determine where we are in the loop
@@ -932,10 +985,7 @@ function kapi(canvas, params, events) {
 						self.ctx.clearRect(0, 0, self.el.width, self.el.height);
 					}
 
-					if (typeof self.events.enterFrame === 'function') {
-						self.events.enterFrame.call(self);
-					}
-
+					self._fireEvent('enterFrame');
 					self._updateActors(self._currentFrame);
 				}
 				
@@ -981,7 +1031,7 @@ function kapi(canvas, params, events) {
 							currentAction = objActionQueue[0];
 							objActionEvents = currentAction.events;
 							
-							if (objActionEvents.start && objActionEvents.start instanceof Function) {
+							if (typeof objActionEvents.start === 'function') {
 								objActionEvents.start.call(this._actors[actorName]);
 								delete objActionEvents.start;
 							}
@@ -999,7 +1049,7 @@ function kapi(canvas, params, events) {
 								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
 								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
 								
-								if (objActionEvents.complete && objActionEvents.complete instanceof Function) {
+								if (typeof objActionEvents.complete === 'function') {
 									objActionEvents.complete.call(this._actors[actorName]);
 								}
 							}
@@ -1053,9 +1103,11 @@ function kapi(canvas, params, events) {
 				this._actorStateIndex[actorName].reachedKeyframes = [];
 			}
 			
-			// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
-			// when transitioning to the new keyframe segment
+			// Are we transitioning to a new keyframe segment for the actor?
 			if (latestKeyframeId !== lastRecordedKeyframe) {
+				// We are!
+				
+				// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
 				if (latestKeyframeId > lastRecordedKeyframe) {
 					this._actorStateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
 					

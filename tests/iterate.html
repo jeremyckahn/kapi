@@ -70,6 +70,9 @@
 			{
 				enterFrame: function(){
 					currFrameOutput.html(this._currentFrame);
+				},
+				loopComplete: function () {
+					console.log('Iteration complete!')
 				}
 			}),
 			circle1 = demo.add(circle, {	

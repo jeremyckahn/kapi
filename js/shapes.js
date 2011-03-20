@@ -7,7 +7,7 @@
 var circle = {
 	setup: function () {
 		if (console) {
-			console.log('Setting up ', this)
+			console.log('Setting up: ' + this.id)
 		}
 	},
 	draw: function (ctx){
