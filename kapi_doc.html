@@ -339,6 +339,73 @@ myKapi.gotoFrame('1.5s');</pre>
 			
 			<div class="ret"><strong>Returns:</strong>The current framerate.  If <code>newFramerate</code> is an integer and greater than 0, this number is the same as <code>newFramerate</code>.</div>
 			
+			
+			<a name="bind"></a>
+			<h3>bind()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.bind( eventName, handler )</pre>
+			
+			<p>Bind an event handler to a Kapi event.  Throughout the course of its execution, Kapi fires events at verious key points.  You can attach an event handler that gets invoked when these events fire.  You can attach as many event handlers to an event as you'd like; event handlers are invoked in the order they are attached.</p>  
+			<p>Event handlers are invoked in the context of the Kapi instance.  This means the <code>this</code> keyword is a reference to the Kapi object.</p>
+			
+			<p>You can bind event handlers to the following events:</p>
+			
+			<ul>
+				<li><code>enterFrame</code>: Fires at the beginning of every frame.</li>
+				<li><code>loopStart</code>: Fires once per loop, at the beginning of the loop.</li>
+				<li><code>loopComplete</code>: Fires once per loop, at the end of the loop.</li>
+			</ul>
+			
+			<h5>eventName:</h5>
+			
+			<p>A string.  The name of the event to bind an event handler to.</p>
+			
+			<h5>handler:</h5>
+			
+			<p>A function.  The event handler to attach.</p>
+			
+			<pre class="brush: js;">
+function myHandler () {
+	console.log('Hello there.');
+}
+
+var demo = kapi(document.getElementById('myCanvas'));
+
+demo.bind('enterFrame', myHandler);
+</pre>
+			
+			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
+			
+			
+			<a name="unbind"></a>
+			<h3>unbind()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.unbind( eventName, handler )</pre>
+			
+			<p>Remove an event handler from the Kapi instance.  You can either remove a specific handler from the event, or all of them - this is determined by the presence of the <code>handler</code> parameter.  If present, this method will only unbind the specified event handler.  If the <code>handler</code> parameter is omitted, all of the event handlers for this event are unbound.  Valid event names are the same as those listed in <a href="#bind"><code>.bind()</code></a>.</p>
+			
+			<h5>eventName:</h5>
+			
+			<p>A string.  The name of the event to unbind an event handler from.</p>
+			
+			<h5>handler:</h5>
+			
+			<p>A function.  A reference to the handler function to unbind.</p>
+			
+			<pre class="brush: js;">
+function myHandler () {
+	console.log('Hello there.');
+}
+				
+var demo = kapi(document.getElementById('myCanvas'));
+
+demo
+	.bind('enterFrame', myHandler)
+	.unbind('enterFrame', myHandler);
+</pre>
+			
+			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
+			
 		</div>
 		
     </body> 

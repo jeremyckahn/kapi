@@ -69,7 +69,7 @@
 			<a name="to"></a>
 			<h3>to()</h3>
 			
-			<pre class="func-def"><em>actorInstance</em>.to( duration, stateObj )</pre>
+			<pre class="func-def"><em>actorInstance</em>.to( duration, stateObj, events )</pre>
 			
 			<p>Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.</p>
 			
@@ -80,6 +80,40 @@
 			<h5>stateObj:</h5>
 			
 			<p>Object. The state to animate the actor to.</p>
+			
+			<h5>events:</h5>
+			
+			<p>Event handlers to attach to this immediate action.  This paramter is optional.  In an event handler function, the <code>this</code> keyword refers to the actor object.  Available events:</p>
+			
+			<ul>
+				<li><code>start</code>: A function.  Fires when the Immediate Action starts.</li>
+				<li><code>complete</code>: A function.  Fires when the Immediate Action completes.</li>
+			</ul>
+			
+			<pre class="brush: js;">
+var demo = kapi(document.getElementById('myCanvas')),
+	circle1 = demo.add(circle, {	
+			name : 'myCircle',
+			x : 0,
+			y : 0,
+			radius : 50,
+			color : '#00ff00'
+		});
+ 
+circle1.keyframe(0, { })
+	.to('2s', {
+			x: '+=100',
+			y: 50,
+			color: '#3f0000'
+		}, {
+			'start': function () {
+				console.log('Immediate action started!', this);
+			},
+			'complete': function () {
+				console.log('Immediate action completed!', this);
+			}
+		});
+</pre>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			

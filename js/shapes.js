@@ -6,7 +6,7 @@
 
 var circle = {
 	setup: function () {
-		if (console) {
+		if (window.console) {
 			console.log('Setting up: ' + this.id)
 		}
 	},
@@ -27,7 +27,7 @@ var circle = {
 		return this;
 	},
 	teardown: function () {
-		if (console) {
+		if (window.console) {
 			console.log('Tearing down ', this)
 		}
 	}

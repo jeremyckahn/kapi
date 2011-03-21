@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.3.0
+ * v0.4.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.3.0',
+	var version = '0.4.0',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -56,7 +56,6 @@ function kapi(canvas, params, events) {
 		toStr = Object.prototype.toString,
 		calcKeyframe = {
 			/**
-			 * @hide
 			 * Calculates the keyframe based on a given amount of amount of *milliseconds*.  To be invoked with `Function.call`.
 			 * @param {Number} num The amount of milliseconds to determine a keyframe by.
 			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
@@ -65,7 +64,6 @@ function kapi(canvas, params, events) {
 				return (num * this._params.fRate) / 1000;
 			},
 			/**
-			 * @hide
 			 * Calculates the keyframe based on a given amount of amount of *seconds*.  To be invoked with `Function.call`.
 			 * @param {Number} num The amount of seconds to determine a keyframe by.
 			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
@@ -101,7 +99,6 @@ function kapi(canvas, params, events) {
 		};
 	
 	/**
-	 * @hide
 	 * Returns whether or not `arr` is an Array.
 	 * @param {Array} arr The item to inspect.
 	 * @returns {Boolean} Whether or not `arr` is an Array.
@@ -111,7 +108,6 @@ function kapi(canvas, params, events) {
 	}
 	
 	/**
-	* @hide 
 	* Removes any whitespace from a string.
 	* @param {String} str The string to remove whitespace from.
 	* @returns {String}
@@ -125,7 +121,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Copy over properties from `parents` into `child`.  If multiple `parents` are supplied as an Array, `extend` them in order from right to left, and finally onto `child`.
 	 * 
 	 * @codestart
@@ -187,7 +182,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Applies an easing formula defined in `kapi.tween`.
 	 * @param {String} easing The name of the easing formula to apply.
 	 * @param {Number} previousKeyframe The ID of the keyframe to ease from.
@@ -203,7 +197,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/** 
-	 * @hide
 	 * Return the last element in an array.
 	 * @param {Array} arr The array to get the last item from
 	 * @returns {Any|undefined} If there are no items in the `arr`, this returns `undefined`.
@@ -213,7 +206,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Get a dimension value (height/width) and set it on a DOM element.  This gets the value from the element's CSS and applies it inline.  Useful for changing the `height` and `width` of the `canvas` element, because according to the HTML5 spec, as CSS styles are not the same as the inline dimension values unless specified.
 	 * Note:  This is meant to be called with `Function.call()`.
 	 * @param {String} dim The dimension to set (either "height" or "width")
@@ -223,7 +215,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Get the current UNIX time as an integer
 	 * @returns {Number} An integer representing the current timestamp.
 	 */
@@ -232,7 +223,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Create a unique number.
 	 * @returns {Number} A really random number.
 	 */
@@ -241,7 +231,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Sorts an array numerically, from smallest to largest.
 	 * @param {Array} array The Array to sort.
 	 * @returns {Array} The sorted Array.
@@ -253,7 +242,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Determines if a string is a hexadecimal string (`#xxxxxx`)
 	 * @param {String} str The string to test.
 	 * @returns {Boolean}
@@ -263,7 +251,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Determines if a string is an RGB string (`rgb(x,x,x)`)
 	 * @param {String} str The string to test.
 	 * @returns {Boolean}
@@ -273,7 +260,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Determines if a string is either a hexadecimal or RGB string
 	 * @param {String} str The string to test.
 	 * @returns {Boolean}
@@ -283,7 +269,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Convert a base-16 number to base-10.
 	 * @param {Number|String} hex The value to convert
 	 * @returns {Number} The base-10 equivalent of `hex`.
@@ -293,7 +278,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Convert a hexadecimal string to an array with three items, one each for the red, blue, and green decimal values.
 	 * @param {String} hex A hexadecimal string.
 	 * @returns {Array} The converted Array of RGB values if `hex` is a valid string, or an Array of three 0's.
@@ -313,7 +297,6 @@ function kapi(canvas, params, events) {
 	}
 	
 	/**
-	 * @hide
 	 * Converts a string, which must be either in RGB or hexadecimal format, into an RGB Array.
 	 * @param {String} str A hexadecimal (`#xxxxxx`) or RGB (`rgb(x,x,x)`) string
 	 * @returns {Array|String} The equivalent RGB array (three items) or `str` if it was not in a valid format. 
@@ -339,7 +322,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Convert a hexadecimal formatted string into an RGB string.
 	 * @param {String} hexStr A hexadecimal or RGB string.
 	 * @returns {String} The RGB equivalent of `hexStr`
@@ -357,7 +339,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Determines if a string is keyframe modifier string (`+=x`, `-=x`, `*=x`, `/=x`).
 	 * @param {String} str The string to test.
 	 * @returns {Boolean}
@@ -366,10 +347,8 @@ function kapi(canvas, params, events) {
 		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
 	}
 	
-	// This assumes that `str` is a valid modifier string ('+=x', '-=x', '*=x', '/=x')
 	/**
-	 * @hide
-	 * Extract the modifier portion of a keyframe modifier string.
+	 * Extract the modifier portion of a keyframe modifier string. This assumes that `str` is a valid modifier string ('+=x', '-=x', '*=x', '/=x')
 	 * @param {String} str The string to extract the modifier from
 	 * @returns {String} Either `+=x`, `-=x`, `*=x`, or `/=x`.
 	 */
@@ -378,7 +357,6 @@ function kapi(canvas, params, events) {
 	}
 
 	/**
-	 * @hide
 	 * Determines if a property can be keyframed.
 	 * @param {Any} prop The property to evaluate.
 	 * @returns {Boolean}
@@ -810,7 +788,7 @@ function kapi(canvas, params, events) {
 		/**
 		 * Renders a specified frame and upates the internal Kapi state to match that frame.
 		 * @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
-		 * @returns {Object} An Object with the properties described above.
+		 * @returns {Object} The Kapi instance.
 		 */
 		gotoFrame: function (frame) {
 			// This is not designed to work correctly with dynamic keyframes, because 
@@ -837,7 +815,7 @@ function kapi(canvas, params, events) {
 		/**
 		 *  Wraps the `gotoFrame` method and then plays the animation.
 		 *   @param {Number|String} frame A keyframe identifier (integer, "_x_s" or "_x_ms") specifying which frame to go to and render.
-		 *   @returns {Object} An Object with the properties described above.
+		 *   @returns {Object} The Kapi instance.
 		 */
 		gotoAndPlay: function (frame) {
 			this.gotoFrame(frame);
@@ -860,6 +838,19 @@ function kapi(canvas, params, events) {
 			return this._currentState;
 		},
 		
+		/**
+		 * Bind an event handler to a Kapi event.  Throughout the course of its execution, Kapi fires events at verious key points.  You can attach an event handler that gets invoked when these events fire.  You can attach as many event handlers to an event as you'd like; event handlers are invoked in the order they are attached.  Event handlers are invoked in the context of the Kapi instance.  This means the `this` keyword is a reference to the Kapi object.
+		 * 
+		 * You can bind event handlers to the following events:
+		 * 
+		 * - `enterFrame`: Fires at the beginning of every frame.
+		 * - `loopStart`: Fires once per loop, at the beginning of the loop.
+		 * - `loopComplete`: Fires once per loop, at the end of the loop.
+		 * 
+		 * @param {String} eventName The name of the event to bind an event handler to.
+		 * @param {Function} handler The event handler to attach.
+		 * @returns {Object} The Kapi istance.
+		 */
 		bind: function (eventName, handler) {
 			if (typeof eventName === 'string' && typeof handler === 'function') {
 				if (!this._events[eventName]) {
@@ -872,10 +863,30 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 		
+		/**
+		 * Remove an event handler from the Kapi instance.  You can either remove a specific handler from the event, or all of them - this is determined by the presence of the `handler` parameter.  If present, this method will only unbind the specified event handler.  If the `handler` parameter is omitted, all of the event handlers for this event are unbound.  Valid event names are the same as those listed in `.bind()`.
+		 * 
+		 * @param {String} eventName The name of the event to unbind an event handler from.
+		 * @param {Function} handler A reference to the handler function to unbind.
+		 * @returns {Object} The Kapi istance.
+		 * 
+		 * @codestart
+		 * // Using a named function as a handler so we can maintain a reference to it
+		 * function myHandler () {
+		 *   console.log('Hello there.');
+		 * }
+		 * 
+		 * var demo = kapi(document.getElementById('myCanvas'));
+		 * 
+		 * demo
+		 *   .bind('enterFrame', myHandler)
+		 *   .unbind('enterFrame', myHandler);
+		 * @codeend
+		 */
 		unbind: function (eventName, handler) {
 			var i;
 			
-			if (typeof eventName === 'string') {
+			if (typeof eventName === 'string' && this._events[eventName]) {
 				if (typeof handler === 'function') {
 					for (i = 0; i < this._events[eventName].length; i++) {
 						if (this._events[eventName][i] === handler) {
@@ -890,6 +901,11 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 		
+		/**
+		 * Invokes all of the Kapi event handlers for a specified event.  Handlers are invoked in the order they were attached.
+		 * 
+		 * @param {String} eventName The name of the event to fire the handlers for.
+		 */
 		_fireEvent: function (eventName) {
 			var i;
 			
@@ -901,7 +917,6 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 *  @hide
 		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
 		 *  
 		 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
@@ -996,7 +1011,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Update the state properties for the all of the actors in the animation.
 		 * @param {Number} currentFrame The deisred frame to process.
 		 */
@@ -1063,7 +1077,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Apply the current keyframe state and any other state modifiers (such as Immediate Actions like `actor.to()`) to an actor.
 		 * @param {String} actorName The identifier string corresponding the desired actor object.
 		 * @returns {Object} The current state properties of `actorName`.  
@@ -1128,7 +1141,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Gets the current state of the queued-up Immediate Action.  Also updates the Immediate Actions queue if necessary.
 		 * @param {Array} queuedActionsArr The queue of Immediate Actions to be applied.
 		 * @returns {Object} An Object containing the current properties of the queued Immediate Action. 
@@ -1177,7 +1189,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Calculate an actor's properties for the current frame.
 		 * @param {Object} fromState An object containing all of the properties that defined the keyframe to animate _from_.  This can be considered the "starting state."
 		 * @param {Object} toState An object containing all of the properties that defined the keyframe to animate _to_.  This can be considered the "ending state."
@@ -1296,7 +1307,6 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * @hide
 		 * Look up the ID of the last keyframe that was completed in the current animation loop.
 		 * @param {Array} lookup The list of keyframes to check against.
 		 * @returns {Number}    
@@ -1306,7 +1316,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Lookup the ID of the most recent keyframe that was started, but not completed.
 		 * @param {Array} lookup The list of keyframes to check against.
 		 * @returns {Number} The index of the latest keyframe.  Returns `-1` if there are no keyframes remaining for `lookup` in the current loop.
@@ -1333,7 +1342,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Get the ID of the next keyframe that has not been started yet.
 		 * @param {Array} lookup The list of keyframes to check against.
 		 * @param {Number} latestKeyframeId The ID of the most recent keyframe to have started.  Find this with `_getLatestKeyframeId()`.
@@ -1344,7 +1352,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_addActorMethods()`.).
 		 * @param {Object} actorObj The object to prep for Kapi use and add properties to.
 		 * @returns {Object} The "decorated" version of `actorObj`. 
@@ -1426,9 +1433,38 @@ function kapi(canvas, params, events) {
 
 			/**
 			 * Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.
-			 * @param {Number|String} duration The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax ("_x_ms" or "_x_s").  
+			 * @param {Number|String} duration The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax ("_x_ms" or "_x_s").
 			 * @param {Object} stateObj The state to animate the actor to.
+			 * @param {Object} events Event handlers to attach to this immediate action.  This paramter is optional.  In an event handler function, the `this` keyword refers to the actor object.  Available events:
+			 *   - `start` {Function}: Fires when the Immediate Action starts.
+			 *   - `complete` {Function}: Fires when the Immediate Action completes.
 			 * @returns {Object} The actor Object (for chaining).
+			 * 
+             * @codestart
+             * 
+             * var demo = kapi(document.getElementById('myCanvas')),
+             *  circle1 = demo.add(circle, {
+             *    name : 'myCircle',
+             *      x : 0,
+             *      y : 0,
+             *      radius : 50,
+             *      color : '#00ff00'
+             *    });
+             * 
+             * circle1.keyframe(0, { })
+             *   .to('2s', {
+             *      x: '+=100',
+             *      y: 50,
+             *      color: '#3f0000'
+             *    }, {
+             *      'start': function () {
+             *         console.log('Immediate action started!', this);
+             *       },
+             *       'complete': function () {
+             *         console.log('Immediate action completed!', this);
+             *       }
+             *   });
+             * @codeend
 			 */
 			actorObj.to = function to (duration, stateObj, events) {
 				var newestAction, 
@@ -1678,7 +1714,6 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * @hide
 		 * Calculates the "real" keyframe from `identifier`.  This means that you can speicify keyframes from things other than plain integers.  For example, you can calculate the real keyframe that will run at a certain period of time.
 		 * 
 		 * Valid formats:
@@ -1720,7 +1755,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * A maintenance function that calls a collection of other methods that, in turn, update and modify the animation keyframes.
 		 * @param actor An actor Object.
 		 * @param keyframeId The ID of the keyframe that a new state for `actor` is being placed. 
@@ -1736,7 +1770,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Create a unique entry for a keyframe ID in the internal `_keyframeIds` list and sort it.
 		 * @param {Number} keyframeId The keyframe ID to add.
 		 */
@@ -1754,7 +1787,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Validate a actor's state across all of the keyframe.  Essentially, this function fills in the gaps for keyframes that were missing parameters when created.  If a parameter is present for an actor in one keyframe, it is present in all of them.
 		 * 
 		 * Missing parameters are inferred from other keyframes.  Specifically, a keyframe missing parameter X will simply copy parameter X from the previous keyframe.  This "inheritance" will go all the way to the first keyframe, which inherited its parameters from when the actor was `kapi.add`ed.
@@ -1802,7 +1834,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Performs the actions specified in `params` in the internal state record for `actor`
 		 * @param {Object} actor The actor to update the internal Kapi state of.
 		 * @param {Object} params A description of the actions to perform on `actor`:
@@ -1829,7 +1860,6 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * @hide
 		 * Refresh the `layer` property on each actor.  Actors sync to the internal `_layerIndex` property.
 		 */
 		_updateLayers: function () {
@@ -1841,7 +1871,6 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * @hide
 		 * Synchronize any liveCopy keyframes with the keyframe they are liveCopying.  This is done by updating the keyframe reference on the liveCopy to the original.  
 		 */
 		_updateLiveCopies: function () {
