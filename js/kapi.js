@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.4.0
+ * v0.5.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.4.0',
+	var version = '0.5.0',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
