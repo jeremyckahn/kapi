@@ -243,6 +243,20 @@ myCircle = myKapi.add(circle, {
 			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to Kapi.</div>
 			
 			
+			<a name="removeactor"></a>
+			<h3>removeActor()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.removeActor( actorName )</pre>
+			
+			<p>Completely removes an actor from the animation.  This also removes all keyframes for the removed actor.  This method calls the actor's <code>teardown</code> method, if one was defined when the actor was <code><a href="#add">add</a></code>ed.</p>
+			
+			<h5>actorName:</h5>
+			
+			<p>A string.  The name of the actor to be removed.</p>
+			
+			<div class="ret"><strong>Returns:</strong>The Kapi object (for chaining).</div>
+			
+			
 			<a name="gotoframe"></a>
 			<h3>gotoFrame()</h3>
 			

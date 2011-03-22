@@ -589,7 +589,7 @@ function kapi(canvas, params, events) {
 		 *   If you are providing an object, you can supply any number of the following properties:
 		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.
 		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
-		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  Note:  This functionality does not exist as of v0.2.1, it will be added in the future.  https://github.com/jeremyckahn/kapi/issues#issue/27
+		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
@@ -669,6 +669,50 @@ function kapi(canvas, params, events) {
 			delete inst.setup;
 
 			return inst;
+		},
+		
+		/**
+		 * Completely removes an actor from the animation.  This also removes all keyframes for the removed actor.  This method calls the actor's `teardown` method, if one was defined when the actor was `add`ed.
+		 * 
+		 * @param {String} actorName The name of the actor to be removed.
+		 * @returns {Object} The Kapi object (for chaining).
+		 */
+		removeActor: function (actorName) {
+			var actor,
+				actorKeyframes,
+				teardownFunc,
+				i;
+			
+			if (typeof actorName === 'string' && this._actors[actorName]) {
+				actor = this._actors[actorName];
+				actorKeyframes = this._actorStateIndex[actorName].slice(0);
+				
+				for (i = 0; i < actorKeyframes.length; i++) {
+					actor.remove(actorKeyframes[i]);
+				}
+				
+				delete this._actorStateIndex[actorName];
+				delete this._currentState[actorName];
+				
+				for (i = 0; i < this._layerIndex.length; i++) {
+					if (this._layerIndex[i] === actorName) {
+						this._layerIndex.splice(i, 1);
+						break;
+					}
+				}
+				
+				teardownFunc = actor.teardown;
+				delete this._actors[actorName];
+				
+				teardownFunc(actorName);
+				
+			} else {
+				if (console && console.error) {
+					console.error(actorName, ' is not a valid actor ID.');
+				}
+			}
+			
+			return this;
 		},
 		
 		/**

@@ -26,9 +26,9 @@ var circle = {
 
 		return this;
 	},
-	teardown: function () {
+	teardown: function (actorName) {
 		if (window.console) {
-			console.log('Tearing down ', this)
+			console.log('Tearing down ' + actorName)
 		}
 	}
 }
