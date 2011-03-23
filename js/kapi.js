@@ -1107,6 +1107,7 @@ function kapi(canvas, params, events) {
 								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
 								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
 								
+								// Move this to _getQueuedActionState
 								if (typeof objActionEvents.complete === 'function') {
 									objActionEvents.complete.call(this._actors[actorName]);
 								}
@@ -1202,7 +1203,7 @@ function kapi(canvas, params, events) {
 				internals.pauseBufferUpdated = currTime;
 			}
 			
-			// Account for any animation pauses during the life of the action
+			// Correct for any animation pauses during the life of the action
 			if (internals.pauseBufferUpdated < this._pausedAtTime) {
 				internals.pauseBuffer += (currTime - this._pausedAtTime);
 				internals.pauseBufferUpdated = currTime;
@@ -1531,6 +1532,28 @@ function kapi(canvas, params, events) {
 
 				return this;
 			};
+			
+			actorObj.clearQueue = function clearQueue (alsoStop) {
+				var queue = self._actorStateIndex[actorObj.id].queue;
+				
+				if (alsoStop === true) {
+					this.stop();
+					queue.splice(1, queue.length);
+				} else {
+					queue = [];
+				}
+				
+				return this;
+			};
+			
+			actorObj.stop = function clearQueue () {
+				var queue = self._actorStateIndex[actorObj.id].queue;
+				
+				queue[0].duration = 0;
+				return this;
+			};
+			
+			
 
 			/**
 			 * Cleanly removes `actorObj` from `keyframeId`, as well as all internal references to it.
