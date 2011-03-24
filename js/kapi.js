@@ -1637,21 +1637,6 @@ function kapi(canvas, params, events) {
 						}
 					}
 					
-					// If there are no more states in the animation for this actor, remove it from the index.
-					// NOTE!  Commenting this out for now - it belongs in kapi.remove(), which does not yet exist.
-					// kapi.remove will remove an actor from kapi entirely.
-					/*if (self._actorStateIndex[actorObj.id].length === 0) {
-						delete self._actorStateIndex[actorObj.id];
-						
-						// Also remove its layer from the index.
-						for (i = 0; i < self._layerIndex.length; i++) {
-							if (self._layerIndex[i] === actorObj.id) {
-								self._layerIndex.splice(i, 1);
-								break;
-							}
-						}
-					}*/
-					
 					// Delete any liveCopies.
 					if (keyframeId in self._liveCopies) {
 						delete self._liveCopies[actorObj.id][keyframeId];
@@ -1729,14 +1714,8 @@ function kapi(canvas, params, events) {
 				keyframeIdToCopy = self._getRealKeyframe(keyframeIdToCopy);
 				
 				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][actorObj.id]) {
-					// Maintain an index of liveCopies so that they are updated in `_updateKeyframes`.
-					/*self._liveCopies[keyframeId] = {
-						'actorId': actorObj.id,
-						'copyOf': keyframeIdToCopy
-					};*/
 					
 					self._liveCopies[actorObj.id][keyframeId] = {
-						//'actorId': actorObj.id,
 						'copyOf': keyframeIdToCopy
 					};
 					
