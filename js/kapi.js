@@ -1098,7 +1098,7 @@ function kapi(canvas, params, events) {
 								currentAction._internals.fromState = currentFrameStateProperties;
 							}
 							
-							adjustedProperties = this._getQueuedActionState(objActionQueue);
+							adjustedProperties = this._getQueuedActionState(objActionQueue, actorName);
 							extend(currentFrameStateProperties, adjustedProperties, true);
 							
 							// If an immediate action finished running and was removed from the queue
@@ -1106,11 +1106,6 @@ function kapi(canvas, params, events) {
 								// Save the modified state to the most recent keyframe for this object
 								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
 								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
-								
-								// Move this to _getQueuedActionState
-								if (typeof objActionEvents.complete === 'function') {
-									objActionEvents.complete.call(this._actors[actorName]);
-								}
 							}
 						}
 	
@@ -1190,10 +1185,11 @@ function kapi(canvas, params, events) {
 		 * @param {Array} queuedActionsArr The queue of Immediate Actions to be applied.
 		 * @returns {Object} An Object containing the current properties of the queued Immediate Action. 
 		 */
-		_getQueuedActionState: function (queuedActionsArr) {
+		_getQueuedActionState: function (queuedActionsArr, actorName) {
 			var currTime = now(),
 				queuedAction = queuedActionsArr[0],
-				internals = queuedAction._internals;
+				internals = queuedAction._internals,
+				completeHandler;
 
 			if (internals.startTime === null) {
 				internals.startTime = currTime;
@@ -1215,9 +1211,21 @@ function kapi(canvas, params, events) {
 				extend(internals.toState, queuedAction.state, true);
 			}
 			
-			internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * this._params.fRate;
+			// If this is true, the user called `actor.endCurrentAction()`
+			if (internals.forceStop) {
+				internals.currFrame = queuedAction.duration + 1;
+			} else {
+				internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * this._params.fRate;
+			}
+				
 
 			if (internals.currFrame > queuedAction.duration) {
+				completeHandler = queuedAction.events.complete;
+				
+				if (typeof completeHandler === 'function') {
+					completeHandler.call(this._actors[actorName]);
+				}
+				
 				queuedActionsArr.shift();
 			}
 			
@@ -1533,26 +1541,38 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 			
-			actorObj.clearQueue = function clearQueue (alsoStop) {
+			actorObj.clearQueue = function clearQueue () {
 				var queue = self._actorStateIndex[actorObj.id].queue;
+				queue.length = 0;
 				
-				if (alsoStop === true) {
-					this.stop();
-					queue.splice(1, queue.length);
-				} else {
-					queue = [];
+				return this;
+			};
+			
+			actorObj.skipToEnd = function clearQueue () {
+				var queue = self._actorStateIndex[actorObj.id].queue,
+					currAction = queue[0];
+					
+				if (!queue.length) {
+					return this;
 				}
 				
+				currAction._internals.forceStop = true;
 				return this;
 			};
 			
-			actorObj.stop = function clearQueue () {
-				var queue = self._actorStateIndex[actorObj.id].queue;
+			actorObj.endCurrentAction = function clearQueue () {
+				var queue = self._actorStateIndex[actorObj.id].queue,
+					currAction = queue[0];
+					
+				if (!queue.length) {
+					return this;
+				}
 				
-				queue[0].duration = 0;
+				currAction._internals.toState = this.getState();
+				this.skipToEnd();
+				
 				return this;
 			};
-			
 			
 
 			/**
