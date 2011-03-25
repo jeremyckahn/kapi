@@ -1541,14 +1541,22 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 			
+			/*
+			 * Removes any queued Immediate Actions that have not yet begun.  This does not cancel or affect the currently executing Immediate Action.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
 			actorObj.clearQueue = function clearQueue () {
 				var queue = self._actorStateIndex[actorObj.id].queue;
-				queue.length = 0;
+				queue.length = 1;
 				
 				return this;
 			};
 			
-			actorObj.skipToEnd = function clearQueue () {
+			/**
+			 * Skips to the end of the currently executing Immediate Action.  The `complete` event is fired, if it was set.  The Immediate Action queue is not affected.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
+			actorObj.skipToEnd = function skipToEnd () {
 				var queue = self._actorStateIndex[actorObj.id].queue,
 					currAction = queue[0];
 					
@@ -1560,7 +1568,11 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 			
-			actorObj.endCurrentAction = function clearQueue () {
+			/**
+			 * Stops and ends the currently executing Immediate Action in its current state.  Note:  Internally, this method calls `actor.skipToEnd()`, so the functionality of that method applies here as well.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
+			actorObj.endCurrentAction = function endCurrentAction () {
 				var queue = self._actorStateIndex[actorObj.id].queue,
 					currAction = queue[0];
 					
