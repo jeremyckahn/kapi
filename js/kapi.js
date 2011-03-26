@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.5.0
+ * v0.6.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.5.0',
+	var version = '0.6.0',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -1676,6 +1676,10 @@ function kapi(canvas, params, events) {
 				return this;
 			};
 
+			/**
+			 * Removes the actor from all keyframes.
+			 * @returns {Object} The actor Object (for chaining).
+			 */
 			actorObj.removeAll = function removeAll () {
 				var id = actorObj.id;
 				
