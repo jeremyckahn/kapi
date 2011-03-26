@@ -748,12 +748,9 @@ function kapi(canvas, params, events) {
 		removeAllKeyframes: function () {
 			var currActor;
 			
-			for (currActor in this._actorStateIndex) {
-				if (this._actorStateIndex.hasOwnProperty(currActor)) {
-					
-					while (this._actorStateIndex[currActor] && this._actorStateIndex[currActor].length) {
-						this._actors[currActor].remove(last(this._actorStateIndex[currActor]));
-					}
+			for (currActor in this._actors) {
+				if (this._actors.hasOwnProperty(currActor)) {
+					this._actors[currActor].removeAll();
 				}				
 			}
 			
@@ -1573,7 +1570,6 @@ function kapi(canvas, params, events) {
 				
 				return this;
 			};
-			
 
 			/**
 			 * Cleanly removes `actorObj` from `keyframeId`, as well as all internal references to it.
@@ -1663,6 +1659,16 @@ function kapi(canvas, params, events) {
 							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
 						}
 					}
+				}
+				
+				return this;
+			};
+
+			actorObj.removeAll = function removeAll () {
+				var id = actorObj.id;
+				
+				while (self._actorStateIndex[id] && self._actorStateIndex[id].length) {
+					self._actors[id].remove(last(self._actorStateIndex[id]));
 				}
 				
 				return this;
