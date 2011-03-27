@@ -39,7 +39,7 @@
  *   // events
  *   {
  *     enterFrame: function(){
- *       console.log(this._currentFrame);
+ *       console.log(inst._currentFrame);
  *     }
  *   });
  * @codeend
@@ -53,6 +53,32 @@ function kapi(canvas, params, events) {
 			'fRate': 20,
 			'autoclear': true
 		},
+		inst = {
+			_events : {},
+			_keyframeIds : [],
+			_reachedKeyframes : [],
+			_layerIndex : [],
+			_keyframes : {},
+			_actors : {},
+			_actorstateIndex : {},
+			_keyframeCache : {},
+			_originalStates : {},
+			_liveCopies : {},
+			_currentState : {},
+			_animationDuration : 0,
+			_repsRemaining : -1,
+			_lastKeyframe : undefined,
+			_currentFrame : undefined,
+			_loopStartTime : undefined,
+			_startTime : undefined,
+			_pausedAtTime : undefined,
+			_isPaused : undefined,
+			_isStopped : undefined,
+			_loopLength : undefined,
+			_loopPosition : undefined,
+			_updateHandle : undefined,
+			fCount : 0
+		},
 		toStr = Object.prototype.toString,
 		calcKeyframe = {
 			/**
@@ -61,7 +87,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
 			 */
 			'ms': function (num) {
-				return (num * this._params.fRate) / 1000;
+				return (num * inst._params.fRate) / 1000;
 			},
 			/**
 			 * Calculates the keyframe based on a given amount of amount of *seconds*.  To be invoked with `Function.call`.
@@ -70,7 +96,7 @@ function kapi(canvas, params, events) {
 			 */
 
 			's': function (num) {
-				return num * this._params.fRate;
+				return num * inst._params.fRate;
 			}
 		},
 		/**
@@ -191,8 +217,8 @@ function kapi(canvas, params, events) {
 	 * @param {Number} currentProp The current frame that animation is processing.
 	 */
 	function applyEase (easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
-		if ((currentFrame || this._currentFrame) >= previousKeyframe) {
-			return kapi.tween[easing]((currentFrame || this._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+		if ((currentFrame || inst._currentFrame) >= previousKeyframe) {
+			return kapi.tween[easing]((currentFrame || inst._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
 		}
 	}
 
@@ -211,7 +237,7 @@ function kapi(canvas, params, events) {
 	 * @param {String} dim The dimension to set (either "height" or "width")
 	 */
 	function setDimensionVal (dim) {
-		this[dim] = this.style[dim].replace(/px/gi, '') || this._params[dim];
+		this[dim] = this.style[dim].replace(/px/gi, '') || inst._params[dim];
 	}
 
 	/**
@@ -380,32 +406,15 @@ function kapi(canvas, params, events) {
 			
 			// Fill in any missing parameters
 			extend(params, defaults);
-			this._params = params;			
-			this.autoclear = !!this._params.autoclear;
+			inst._params = params;			
+			inst.autoclear = !!inst._params.autoclear;
 			
 			// Save a reference to original canvas object
-			this._params.canvas = canvas;
-			this.el = canvas;
-			this.ctx = canvas.getContext('2d');
-
-			// Initialize some internal properties
-			this._events = {};
-			this._keyframeIds = [];
-			this._reachedKeyframes = [];
-			this._layerIndex = [];
-			this._keyframes = {};
-			this._actors = {};
-			this._actorStateIndex = {};
-			this._keyframeCache = {};
-			this._originalStates = {};
-			this._liveCopies = {};
-			this._currentState = {};
-			this._animationDuration = 0;
-			this._repsRemaining = -1;
+			inst._params.canvas = canvas;
+			inst.el = canvas;
+			inst.ctx = canvas.getContext('2d');
 			
-			// Frame counter.  Is incremented for each frame that is rendered.
-			this.fCount = 0;
-			
+			// Bind any event passed to the constructor
 			for (eventName in events) {
 				if (events.hasOwnProperty(eventName)) {
 					this.bind(eventName, events[eventName]);
@@ -413,11 +422,11 @@ function kapi(canvas, params, events) {
 			}
 
 			// Apply CSS styles specified in `params.styles` to `canvas`.
-			for (style in this._params.styles) {
-				if (this._params.styles.hasOwnProperty(style)) {
+			for (style in inst._params.styles) {
+				if (inst._params.styles.hasOwnProperty(style)) {
 
 					// Make the style value a lowercase string
-					this._params.styles[style] = (this._params.styles[style].toString()).toLowerCase();
+					inst._params.styles[style] = (inst._params.styles[style].toString()).toLowerCase();
 
 					// These styles all require a trailing "px"
 					if (style === 'height'
@@ -426,23 +435,23 @@ function kapi(canvas, params, events) {
 						|| style === 'left') {
 						
 						// If the user forgot to supply the aforemontioned "px", kindly add it for them.
-						if (!this._params.styles[style].match(/px/)) {
-							this._params.styles[style] = this._params.styles[style] + 'px';
+						if (!inst._params.styles[style].match(/px/)) {
+							inst._params.styles[style] = inst._params.styles[style] + 'px';
 						}
 					}
 					
-					this.el.style[style] = removeWhitespace(this._params.styles[style]);
+					inst.el.style[style] = removeWhitespace(inst._params.styles[style]);
 				}
 			}
 
 			// The height and width of the canvas draw area do not sync
 			// up with the CSS height/width values, so set those manually here
-			if (this._params.styles) {
-				if (this._params.styles.height) {
-					setDimensionVal.call(this.el, 'height');
+			if (inst._params.styles) {
+				if (inst._params.styles.height) {
+					setDimensionVal.call(inst.el, 'height');
 				}
-				if (this._params.styles.width) {
-					setDimensionVal.call(this.el, 'width');
+				if (inst._params.styles.width) {
+					setDimensionVal.call(inst.el, 'width');
 				}
 			}
 			
@@ -465,7 +474,7 @@ function kapi(canvas, params, events) {
 		 * @returns {Boolean}
 		 */
 		isPlaying: function () {
-			return (this._isStopped === false && this._isPaused === false);
+			return (inst._isStopped === false && inst._isPaused === false);
 		},
 
 		/**
@@ -480,23 +489,23 @@ function kapi(canvas, params, events) {
 				return this;
 			}
 
-			this._isStopped = this._isPaused = false;
+			inst._isStopped = inst._isPaused = false;
 
-			if (!this._startTime) {
-				this._startTime = currTime;
+			if (!inst._startTime) {
+				inst._startTime = currTime;
 			}
 
 			// If the animation was previously playing but was then stopped,
 			// adjust for the time that the animation was not runnning.
-			if (this._loopStartTime) {
-				pauseDuration = currTime - this._pausedAtTime;
-				this._loopStartTime += pauseDuration;
+			if (inst._loopStartTime) {
+				pauseDuration = currTime - inst._pausedAtTime;
+				inst._loopStartTime += pauseDuration;
 
 				// _startTime needs to be adjusted so that the loop doesn't
 				// start somewhere other than the beginning in update()
-				this._startTime += pauseDuration;
+				inst._startTime += pauseDuration;
 			} else {
-				this._loopStartTime = currTime;
+				inst._loopStartTime = currTime;
 				this._updateAnimationDuration();
 				this._fireEvent('loopStart');
 			}
@@ -510,9 +519,9 @@ function kapi(canvas, params, events) {
 		 * @returns {Kapi} The Kapi instance.
 		 */
 		pause: function () {
-			clearTimeout(this._updateHandle);
-			this._pausedAtTime = now();
-			this._isPaused = true;
+			clearTimeout(inst._updateHandle);
+			inst._pausedAtTime = now();
+			inst._isPaused = true;
 			return this;
 		},
 
@@ -523,24 +532,24 @@ function kapi(canvas, params, events) {
 		stop: function () {
 			var obj;
 			
-			clearTimeout(this._updateHandle);
-			delete this._loopStartTime;
-			delete this._startTime;
-			delete this._pausedAtTime;
-			this._isStopped = true;
+			clearTimeout(inst._updateHandle);
+			delete inst._loopStartTime;
+			delete inst._startTime;
+			delete inst._pausedAtTime;
+			inst._isStopped = true;
 			
 			// Allow the animation to run indefinitely if `.play()` is called later.
-			this._repsRemaining = -1;
+			inst._repsRemaining = -1;
 			
 			// Reset any info stored in `_actorStateIndex`
-			for (obj in this._actorStateIndex) {
-				if (this._actorStateIndex.hasOwnProperty(obj)) {
-					this._actorStateIndex[obj].queue = [];
-					this._actorStateIndex[obj].reachedKeyframes = [];
+			for (obj in inst._actorstateIndex) {
+				if (inst._actorstateIndex.hasOwnProperty(obj)) {
+					inst._actorstateIndex[obj].queue = [];
+					inst._actorstateIndex[obj].reachedKeyframes = [];
 				}
 			}
 			
-			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
+			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			return this;
 		},
 		
@@ -551,9 +560,9 @@ function kapi(canvas, params, events) {
 		 */
 		repeat: function (repetitions) {
 			if (typeof repetitions === 'number' && repetitions >= -1) {
-				this._repsRemaining = parseInt(repetitions, 10) + 1;
+				inst._repsRemaining = parseInt(repetitions, 10) + 1;
 			} else {
-				this._repsRemaining = -1;
+				inst._repsRemaining = -1;
 			}
 			return this.play();
 		},
@@ -594,7 +603,7 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
 		add: function (actor, initialState) {
-			var inst = {},
+			var actorInst = {},
 				validProps = ['setup', 'draw', 'teardown'],
 				i,
 				funcFactory = function () {
@@ -607,7 +616,7 @@ function kapi(canvas, params, events) {
 			if (actor instanceof Function) {
 				// Tack on the extra maintenance functions as empty functions, 
 				// since they will be called later.
-				inst = {
+				actorInst = {
 					'setup': function () {
 						
 					},
@@ -626,10 +635,10 @@ function kapi(canvas, params, events) {
 				
 				for (i = 0; i < validProps.length; i++) {
 					if (actor[validProps[i]] instanceof Function) {
-						inst[validProps[i]] = actor[validProps[i]];
+						actorInst[validProps[i]] = actor[validProps[i]];
 					} else {
 						// Just attach an empty function if one was not supplied
-						inst[validProps[i]] = funcFactory();
+						actorInst[validProps[i]] = funcFactory();
 					}
 				}
 			} else {
@@ -640,35 +649,35 @@ function kapi(canvas, params, events) {
 				return;
 			}
 			
-			inst.params = initialState;
-			inst.constructor = actor.draw;
+			actorInst.params = initialState;
+			actorInst.constructor = actor.draw;
 			
 			// Make really really sure the id is unique, if one is not provided
-			if (typeof inst.id === 'undefined') {
-				inst.id = inst.params.id || inst.params.name || generateUniqueName();
+			if (typeof actorInst.id === 'undefined') {
+				actorInst.id = actorInst.params.id || actorInst.params.name || generateUniqueName();
 			}
 			
 			// This property is only useful for giving an actor a name, and are useless otherwise.
 			// Delete it here to prevent user confusion.
-			delete inst.params.name;
+			delete actorInst.params.name;
 
-			if (typeof this._actorStateIndex[inst.id] === 'undefined') {
-				this._actorStateIndex[inst.id] = [];
-				this._actorStateIndex[inst.id].queue = [];
-				this._actorStateIndex[inst.id].reachedKeyframes = [];
+			if (typeof inst._actorstateIndex[actorInst.id] === 'undefined') {
+				inst._actorstateIndex[actorInst.id] = [];
+				inst._actorstateIndex[actorInst.id].queue = [];
+				inst._actorstateIndex[actorInst.id].reachedKeyframes = [];
 			}
 			
-			this._actors[inst.id] = inst;
-			this._liveCopies[inst.id] = {};
-			this._layerIndex.push(inst.id);
-			inst.params.layer = this._layerIndex.length - 1;
-			inst = this._addActorMethods(inst);
+			inst._actors[actorInst.id] = actorInst;
+			inst._liveCopies[actorInst.id] = {};
+			inst._layerIndex.push(actorInst.id);
+			actorInst.params.layer = inst._layerIndex.length - 1;
+			actorInst = this._addActorMethods(actorInst);
 			
 			// Call the actor's `setup` function
-			inst.setup(this);
-			delete inst.setup;
+			actorInst.setup(this);
+			delete actorInst.setup;
 
-			return inst;
+			return actorInst;
 		},
 		
 		/**
@@ -683,26 +692,26 @@ function kapi(canvas, params, events) {
 				teardownFunc,
 				i;
 			
-			if (typeof actorName === 'string' && this._actors[actorName]) {
-				actor = this._actors[actorName];
-				actorKeyframes = this._actorStateIndex[actorName].slice(0);
+			if (typeof actorName === 'string' && inst._actors[actorName]) {
+				actor = inst._actors[actorName];
+				actorKeyframes = inst._actorstateIndex[actorName].slice(0);
 				
 				for (i = 0; i < actorKeyframes.length; i++) {
 					actor.remove(actorKeyframes[i]);
 				}
 				
-				delete this._actorStateIndex[actorName];
-				delete this._currentState[actorName];
+				delete inst._actorstateIndex[actorName];
+				delete inst._currentState[actorName];
 				
-				for (i = 0; i < this._layerIndex.length; i++) {
-					if (this._layerIndex[i] === actorName) {
-						this._layerIndex.splice(i, 1);
+				for (i = 0; i < inst._layerIndex.length; i++) {
+					if (inst._layerIndex[i] === actorName) {
+						inst._layerIndex.splice(i, 1);
 						break;
 					}
 				}
 				
 				teardownFunc = actor.teardown;
-				delete this._actors[actorName];
+				delete inst._actors[actorName];
 				
 				teardownFunc(actorName);
 				
@@ -721,7 +730,7 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} An actor object.
 		 */
 		getActor: function (actorName) {
-			return this._actors[actorName];
+			return inst._actors[actorName];
 		},
 		
 		/**
@@ -732,8 +741,8 @@ function kapi(canvas, params, events) {
 			var arr = [],
 				actor;
 			
-			for (actor in this._actors) {
-				if (this._actors.hasOwnProperty(actor)) {
+			for (actor in inst._actors) {
+				if (inst._actors.hasOwnProperty(actor)) {
 					arr.push(actor);
 				}
 			}
@@ -748,9 +757,9 @@ function kapi(canvas, params, events) {
 		removeAllKeyframes: function () {
 			var currActor;
 			
-			for (currActor in this._actors) {
-				if (this._actors.hasOwnProperty(currActor)) {
-					this._actors[currActor].removeAll();
+			for (currActor in inst._actors) {
+				if (inst._actors.hasOwnProperty(currActor)) {
+					inst._actors[currActor].removeAll();
 				}				
 			}
 			
@@ -777,53 +786,53 @@ function kapi(canvas, params, events) {
 				i;
 			
 			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
-				oldFRate = this._params.fRate;
+				oldFRate = inst._params.fRate;
 				fRateChange = newFramerate / oldFRate;
-				this._params.fRate = parseInt(newFramerate, 10);
+				inst._params.fRate = parseInt(newFramerate, 10);
 				
 				// Make safe copies of a number of things that have to be re-processed after the framerate change.
-				extend(originalStatesIndexCopy, this._actorStateIndex);
-				extend(originalStatesCopy, this._originalStates);
-				extend(originalLiveCopies, this._liveCopies);
-				originalReachedKeyframeCopy = this._reachedKeyframes.slice(0);
+				extend(originalStatesIndexCopy, inst._actorstateIndex);
+				extend(originalStatesCopy, inst._originalStates);
+				extend(originalLiveCopies, inst._liveCopies);
+				originalReachedKeyframeCopy = inst._reachedKeyframes.slice(0);
 				this.removeAllKeyframes();
 				
 				for (index in originalStatesIndexCopy) {
 					if (originalStatesIndexCopy.hasOwnProperty(index)) {
 
 						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
-							this._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+							inst._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
 						}
 						
 						// Update the durations on the Immediate Actions.
 						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
-							this._actorStateIndex[index].queue[i].duration *= fRateChange;
+							inst._actorstateIndex[index].queue[i].duration *= fRateChange;
 						}
 						
 						// Restore the actor's reachedKeyframes list.
-						this._actorStateIndex[index].reachedKeyframes = originalStatesIndexCopy[index].reachedKeyframes.splice(0);
+						inst._actorstateIndex[index].reachedKeyframes = originalStatesIndexCopy[index].reachedKeyframes.splice(0);
 					}
 				}
 				
 				// Recreate all of the liveCopies				
 				for (liveCopyData in originalLiveCopies) {
 					if (originalLiveCopies.hasOwnProperty(liveCopyData)) {
-						this._liveCopies[liveCopyData] = {};
+						inst._liveCopies[liveCopyData] = {};
 						for (liveCopy in originalLiveCopies[liveCopyData]) {
 							if (originalLiveCopies[liveCopyData].hasOwnProperty(liveCopy)) {
 								tempLiveCopy = originalLiveCopies[liveCopyData][liveCopy];
-								this._actors[liveCopyData].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
+								inst._actors[liveCopyData].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
 							}
 						}
 					}
 				}
 				
 				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
-					this._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fRateChange;
+					inst._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fRateChange;
 				}
 			}
 			
-			return this._params.fRate;
+			return inst._params.fRate;
 		},
 		
 		/**
@@ -841,15 +850,15 @@ function kapi(canvas, params, events) {
 				this.stop();
 			}
 			
-			frame = this._getRealKeyframe(frame) % this._lastKeyframe;
+			frame = this._getRealKeyframe(frame) % inst._lastKeyframe;
 			
 			// Fake a bunch of properties to make `update` properly emulate the desired `frame`
-			this._currentFrame = frame;
-			this._loopStartTime = this._startTime = currTime - (frame * this._params.fRate);
-			this._pausedAtTime = currTime;
-			this._reachedKeyframes = this._keyframeIds.slice(0, this._getLatestKeyframeId(this._keyframeIds));
-			this.ctx.clearRect(0, 0, this.el.width, this.el.height);
-			this._updateActors(this._currentFrame);
+			inst._currentFrame = frame;
+			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fRate);
+			inst._pausedAtTime = currTime;
+			inst._reachedKeyframes = inst._keyframeIds.slice(0, this._getLatestKeyframeId(inst._keyframeIds));
+			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			this._updateActors(inst._currentFrame);
 			return this;
 		},
 		
@@ -868,7 +877,7 @@ function kapi(canvas, params, events) {
 		 * @returns {Number}
 		 */
 		getNumberOfLayers: function () {
-			return this._layerIndex.length;
+			return inst._layerIndex.length;
 		},
 
 		/**
@@ -876,7 +885,7 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} A container of all of the animation's actors and their states at the time of invokation.
 		 */
 		getState: function () {
-			return this._currentState;
+			return inst._currentState;
 		},
 		
 		/**
@@ -894,11 +903,11 @@ function kapi(canvas, params, events) {
 		 */
 		bind: function (eventName, handler) {
 			if (typeof eventName === 'string' && typeof handler === 'function') {
-				if (!this._events[eventName]) {
-					this._events[eventName] = [];
+				if (!inst._events[eventName]) {
+					inst._events[eventName] = [];
 				}
 				
-				this._events[eventName].push(handler);
+				inst._events[eventName].push(handler);
 			}
 			
 			return this;
@@ -927,19 +936,27 @@ function kapi(canvas, params, events) {
 		unbind: function (eventName, handler) {
 			var i;
 			
-			if (typeof eventName === 'string' && this._events[eventName]) {
+			if (typeof eventName === 'string' && inst._events[eventName]) {
 				if (typeof handler === 'function') {
-					for (i = 0; i < this._events[eventName].length; i++) {
-						if (this._events[eventName][i] === handler) {
-							this._events[eventName].splice(i, 1);
+					for (i = 0; i < inst._events[eventName].length; i++) {
+						if (inst._events[eventName][i] === handler) {
+							inst._events[eventName].splice(i, 1);
 						}
 					}
 				} else {
-					this._events[eventName] = [];
+					inst._events[eventName] = [];
 				}
 			}
 			
 			return this;
+		},
+		
+		/**
+		 * Returns an object of internal state properties.  You probably don't need to use this, it's for Kapi development.
+		 * @returns {Object}
+		 */
+		_debug: function () {
+			return inst;
 		},
 		
 		/**
@@ -950,9 +967,9 @@ function kapi(canvas, params, events) {
 		_fireEvent: function (eventName) {
 			var i;
 			
-			if (typeof eventName === 'string' && this._events[eventName]) {
-				for (i = 0; i < this._events[eventName].length; i++) {
-					this._events[eventName][i].call(this);
+			if (typeof eventName === 'string' && inst._events[eventName]) {
+				for (i = 0; i < inst._events[eventName].length; i++) {
+					inst._events[eventName][i].call(inst);
 				}
 			}
 		},
@@ -971,37 +988,36 @@ function kapi(canvas, params, events) {
 			var self = this,
 				currTime = now();
 
-			this.fCount++;
-			this._updateHandle = setTimeout(function () {
+			inst.fCount++;
+			inst._updateHandle = setTimeout(function () {
 				var reachedKeyframeLastIndex, 
 					prevKeyframe;
 
 				// Calculate how long this iteration of the loop has been running for
-				self._loopLength = currTime - self._loopStartTime;
+				inst._loopLength = currTime - inst._loopStartTime;
 
 				// Check to see if the loop is starting over.
-				if ( (self._loopLength > self._animationDuration) && self._reachedKeyframes.length === self._keyframeIds.length ) {
+				if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
 					// It is!
-					self._hasHitValidFrame = false;
 	
 					// Reset the loop start time relative to when the animation began,
 					// not to when the final keyframe last completed
-					self._loopStartTime = self._startTime + parseInt((currTime - self._startTime) / (self._animationDuration || 1), 10) * self._animationDuration;
-					self._loopLength -= self._animationDuration || self._loopLength;
-					self._reachedKeyframes = [];
+					inst._loopStartTime = inst._startTime + parseInt((currTime - inst._startTime) / (inst._animationDuration || 1), 10) * inst._animationDuration;
+					inst._loopLength -= inst._animationDuration || inst._loopLength;
+					inst._reachedKeyframes = [];
 					
 					// Clear out the dynamic keyframe cache
-					self._keyframeCache = {};
+					inst._keyframeCache = {};
 					
 					self._fireEvent('loopComplete');
 					
-					if (self._repsRemaining > -1) {
-						self._repsRemaining--;
+					if (inst._repsRemaining > -1) {
+						inst._repsRemaining--;
 						
-						if (self._repsRemaining === 0) {
+						if (inst._repsRemaining === 0) {
 							self.stop();
 							// Allow the animation to run indefinitely if `.play()` is called later.
-							self._repsRemaining = -1;
+							inst._repsRemaining = -1;
 							return;
 						}
 					}
@@ -1010,45 +1026,45 @@ function kapi(canvas, params, events) {
 				}
 
 				// Determine where we are in the loop
-				if (self._animationDuration) {
-					self._loopPosition = self._loopLength / self._animationDuration;
+				if (inst._animationDuration) {
+					inst._loopPosition = inst._loopLength / inst._animationDuration;
 				} else {
-					self._loopPosition = 0;
+					inst._loopPosition = 0;
 				}
 				
 				// Calculate the current frame of the loop
-				self._currentFrame = parseInt(self._loopPosition * self._lastKeyframe, 10);
+				inst._currentFrame = parseInt(inst._loopPosition * inst._lastKeyframe, 10);
 				
-				prevKeyframe = self._getLatestKeyframeId(self._keyframeIds);
-				prevKeyframe = prevKeyframe === -1 ? self._lastKeyframe : self._keyframeIds[prevKeyframe];
+				prevKeyframe = self._getLatestKeyframeId(inst._keyframeIds);
+				prevKeyframe = prevKeyframe === -1 ? inst._lastKeyframe : inst._keyframeIds[prevKeyframe];
 				
 				// Maintain a record of keyframes that have been run for this loop iteration
-				if (prevKeyframe > (last(self._reachedKeyframes) || 0)) {
-					self._reachedKeyframes.push(prevKeyframe);
+				if (prevKeyframe > (last(inst._reachedKeyframes) || 0)) {
+					inst._reachedKeyframes.push(prevKeyframe);
 				}
 				
-				reachedKeyframeLastIndex = self._reachedKeyframes.length ? self._reachedKeyframes.length - 1 : 0;
+				reachedKeyframeLastIndex = inst._reachedKeyframes.length ? inst._reachedKeyframes.length - 1 : 0;
 
-				// If a keyframe was skipped, set self._currentFrame to the first skipped keyframe
-				if (self._reachedKeyframes[reachedKeyframeLastIndex] !== self._keyframeIds[reachedKeyframeLastIndex] ) {
-					self._currentFrame = self._reachedKeyframes[reachedKeyframeLastIndex] = self._keyframeIds[reachedKeyframeLastIndex];
+				// If a keyframe was skipped, set inst._currentFrame to the first skipped keyframe
+				if (inst._reachedKeyframes[reachedKeyframeLastIndex] !== inst._keyframeIds[reachedKeyframeLastIndex] ) {
+					inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
 				}
 				
 				// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
-				if (self._currentFrame <= self._lastKeyframe) {
+				if (inst._currentFrame <= inst._lastKeyframe) {
 					// Clear out the canvas
-					if (self.autoclear !== false) {
-						self.ctx.clearRect(0, 0, self.el.width, self.el.height);
+					if (inst.autoclear !== false) {
+						inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 					}
 
 					self._fireEvent('enterFrame');
-					self._updateActors(self._currentFrame);
+					self._updateActors(inst._currentFrame);
 				}
 				
 				self._updateState();
-			}, 1000 / this._params.fRate);
+			}, 1000 / inst._params.fRate);
 
-			return this._updateHandle;
+			return inst._updateHandle;
 		},
 
 		/**
@@ -1067,19 +1083,19 @@ function kapi(canvas, params, events) {
 				currentAction,
 				i;
 
-			for (i = 0; i < this._layerIndex.length; i++) {				
-				actorName = this._layerIndex[i];
+			for (i = 0; i < inst._layerIndex.length; i++) {				
+				actorName = inst._layerIndex[i];
 				
 				// The current object may have a first keyframe greater than 0.
 				// If so, we don't want to calculate or draw it until we have
 				// reached this object's first keyframe
-				if (typeof this._actorStateIndex[actorName][0] !== 'undefined' && currentFrame >= this._actorStateIndex[actorName][0]) {
+				if (typeof inst._actorstateIndex[actorName][0] !== 'undefined' && currentFrame >= inst._actorstateIndex[actorName][0]) {
 					
 					currentFrameStateProperties = this._getActorState(actorName);
 
 					// If there are remaining keyframes for this object, draw it.
 					if (currentFrameStateProperties !== null) {
-						objActionQueue = this._actorStateIndex[actorName].queue;
+						objActionQueue = inst._actorstateIndex[actorName].queue;
 						
 						// If there is a queued action, apply it to the current frame
 						if ((oldQueueLength = objActionQueue.length) > 0) {
@@ -1087,7 +1103,7 @@ function kapi(canvas, params, events) {
 							objActionEvents = currentAction.events;
 							
 							if (typeof objActionEvents.start === 'function') {
-								objActionEvents.start.call(this._actors[actorName]);
+								objActionEvents.start.call(inst._actors[actorName]);
 								delete objActionEvents.start;
 							}
 							
@@ -1101,15 +1117,15 @@ function kapi(canvas, params, events) {
 							// If an immediate action finished running and was removed from the queue
 							if (oldQueueLength !== objActionQueue.length) {
 								// Save the modified state to the most recent keyframe for this object
-								keyframeToModify = this._getLatestKeyframeId(this._actorStateIndex[actorName]);
-								this._keyframes[ this._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
+								keyframeToModify = this._getLatestKeyframeId(inst._actorstateIndex[actorName]);
+								inst._keyframes[ inst._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
 							}
 						}
 	
-						currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, this.ctx);
+						currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx);
 					}
 				}
-				this._currentState[actorName] = currentFrameStateProperties;
+				inst._currentState[actorName] = currentFrameStateProperties;
 			}
 		},
 
@@ -1120,7 +1136,7 @@ function kapi(canvas, params, events) {
 		 */
 		_getActorState: function (actorName) {
 
-			var actorKeyframeIndex = this._actorStateIndex[actorName],
+			var actorKeyframeIndex = inst._actorstateIndex[actorName],
 				latestKeyframeId = this._getLatestKeyframeId(actorKeyframeIndex),
 				nextKeyframeId, 
 				latestKeyframeProps, 
@@ -1133,24 +1149,24 @@ function kapi(canvas, params, events) {
 			}
 
 			nextKeyframeId = this._getNextKeyframeId(actorKeyframeIndex, latestKeyframeId);
-			latestKeyframeProps = this._keyframes[actorKeyframeIndex[latestKeyframeId]][actorName];
-			nextKeyframeProps = this._keyframes[actorKeyframeIndex[nextKeyframeId]][actorName];
+			latestKeyframeProps = inst._keyframes[actorKeyframeIndex[latestKeyframeId]][actorName];
+			nextKeyframeProps = inst._keyframes[actorKeyframeIndex[nextKeyframeId]][actorName];
 
 			// If we are on or past the last keyframe
-			if (latestKeyframeId === nextKeyframeId  && this._lastKeyframe > 0) {
+			if (latestKeyframeId === nextKeyframeId  && inst._lastKeyframe > 0) {
 				return null;
 			}
 			
 			// Manage the actor cache
-			lastRecordedKeyframe = last(this._actorStateIndex[actorName].reachedKeyframes) || 0;
+			lastRecordedKeyframe = last(inst._actorstateIndex[actorName].reachedKeyframes) || 0;
 			
-			if (!this._keyframeCache[actorName]) {
-				this._keyframeCache[actorName] = {
+			if (!inst._keyframeCache[actorName]) {
+				inst._keyframeCache[actorName] = {
 					'from': {},
 					'to': {}
 				};
 				
-				this._actorStateIndex[actorName].reachedKeyframes = [];
+				inst._actorstateIndex[actorName].reachedKeyframes = [];
 			}
 			
 			// Are we transitioning to a new keyframe segment for the actor?
@@ -1159,10 +1175,10 @@ function kapi(canvas, params, events) {
 				
 				// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
 				if (latestKeyframeId > lastRecordedKeyframe) {
-					this._actorStateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
+					inst._actorstateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
 					
-					this._keyframeCache[actorName] = {
-						'from': this._keyframeCache[actorName].to,
+					inst._keyframeCache[actorName] = {
+						'from': inst._keyframeCache[actorName].to,
 						'to': {}
 					};	
 				}
@@ -1197,8 +1213,8 @@ function kapi(canvas, params, events) {
 			}
 			
 			// Correct for any animation pauses during the life of the action
-			if (internals.pauseBufferUpdated < this._pausedAtTime) {
-				internals.pauseBuffer += (currTime - this._pausedAtTime);
+			if (internals.pauseBufferUpdated < inst._pausedAtTime) {
+				internals.pauseBuffer += (currTime - inst._pausedAtTime);
 				internals.pauseBufferUpdated = currTime;
 			}
 
@@ -1212,7 +1228,7 @@ function kapi(canvas, params, events) {
 			if (internals.forceStop) {
 				internals.currFrame = queuedAction.duration + 1;
 			} else {
-				internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * this._params.fRate;
+				internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * inst._params.fRate;
 			}
 				
 
@@ -1220,7 +1236,7 @@ function kapi(canvas, params, events) {
 				completeHandler = queuedAction.events.complete;
 				
 				if (typeof completeHandler === 'function') {
-					completeHandler.call(this._actors[actorName]);
+					completeHandler.call(inst._actors[actorName]);
 				}
 				
 				queuedActionsArr.shift();
@@ -1284,22 +1300,22 @@ function kapi(canvas, params, events) {
 						}
 					}
 
-					if (typeof this._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
-						fromProp = this._keyframeCache[fromStateId].from[keyProp];
+					if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
+						fromProp = inst._keyframeCache[fromStateId].from[keyProp];
 					} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
 						// If fromProp is dynamic, preprocess it (by invoking it)
 						if (typeof fromProp === 'function') {
 							fromProp = fromProp.call(fromState) || 0;
 						} else {
 							modifier = getModifier(fromProp);
-							previousPropVal = this._getPreviousKeyframeId(this._actorStateIndex[fromStateId]);
+							previousPropVal = this._getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
 							
 							// Convert the keyframe ID to its corresponding property value
 							if (previousPropVal === -1) {
 								// This is the first keyframe for this object, so modify the original parameter if it is available
 								previousPropVal = fromState.prototype.params[keyProp] || 0;
 							} else {
-								previousPropVal = this._keyframes[previousPropVal][fromStateId][keyProp];
+								previousPropVal = inst._keyframes[previousPropVal][fromStateId][keyProp];
 							}
 							
 							// Convert the value into a number and perform the value modification
@@ -1307,7 +1323,7 @@ function kapi(canvas, params, events) {
 						}
 						
 						// Update the cache
-						this._keyframeCache[fromStateId].from[keyProp] = fromProp;
+						inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
 					}
 					
 					if (isKeyframeableProp(fromProp)) {
@@ -1326,8 +1342,8 @@ function kapi(canvas, params, events) {
 							}
 						}
 						
-						if (typeof this._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
-							toProp = this._keyframeCache[toStateId].to[keyProp];
+						if (typeof inst._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
+							toProp = inst._keyframeCache[toStateId].to[keyProp];
 						} else if (typeof toProp === 'function' || isModifierString(toProp)) {
 							if (typeof toProp === 'function') {
 								toProp = toProp.call(toState) || 0;
@@ -1336,7 +1352,7 @@ function kapi(canvas, params, events) {
 								toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
 							}
 							
-							this._keyframeCache[toStateId].to[keyProp] = toProp;
+							inst._keyframeCache[toStateId].to[keyProp] = toProp;
 						}
 						
 						// Superfluous workaround for a meaningless and nonsensical JSLint error. ("Weird relation")
@@ -1396,17 +1412,17 @@ function kapi(canvas, params, events) {
 		_getLatestKeyframeId: function (lookup) {
 			var i;
 			
-			if (this._currentFrame === 0) {
+			if (inst._currentFrame === 0) {
 				return 0;
 			}
 
-			if (this._currentFrame > lookup[lookup.length - 1]) {
+			if (inst._currentFrame > lookup[lookup.length - 1]) {
 				// There are no more keyframes left in the animation loop for this object
 				return -1;
 			}
 
 			for (i = lookup.length - 1; i >= 0; i--) {
-				if (lookup[i] < this._currentFrame) {
+				if (lookup[i] < inst._currentFrame) {
 					return i;
 				}
 			}
@@ -1495,25 +1511,25 @@ function kapi(canvas, params, events) {
 				}
 				
 				// Create keyframe zero if it was not done so already
-				if (keyframeId > 0 && typeof self._keyframes['0'] === 'undefined') {
-					self._keyframes['0'] = {};
-					self._keyframeIds.unshift(0);
+				if (keyframeId > 0 && typeof inst._keyframes['0'] === 'undefined') {
+					inst._keyframes['0'] = {};
+					inst._keyframeIds.unshift(0);
 				}
 
 				// If this keyframe does not already exist, create it
-				if (typeof self._keyframes[keyframeId] === 'undefined') {
-					self._keyframes[keyframeId] = {};
+				if (typeof inst._keyframes[keyframeId] === 'undefined') {
+					inst._keyframes[keyframeId] = {};
 				}
 				
-				if (typeof self._originalStates[keyframeId] === 'undefined') {
-					self._originalStates[keyframeId] = {};
+				if (typeof inst._originalStates[keyframeId] === 'undefined') {
+					inst._originalStates[keyframeId] = {};
 				}
 
 				// Create the keyframe state info for this object
-				self._keyframes[keyframeId][actorObj.id] = stateObj;
+				inst._keyframes[keyframeId][actorObj.id] = stateObj;
 				
 				// Save a copy of the original `stateObj`.  This is used for updating keyframes after they are created.
-				self._originalStates[keyframeId][actorObj.id] = orig;
+				inst._originalStates[keyframeId][actorObj.id] = orig;
 
 				// Perform necessary maintenance upon all of the keyframes in the animation
 				self._updateKeyframes(actorObj, keyframeId);
@@ -1564,7 +1580,7 @@ function kapi(canvas, params, events) {
 			 */
 			actorObj.to = function to (duration, stateObj, events) {
 				var newestAction, 
-					queue = self._actorStateIndex[actorObj.id].queue;
+					queue = inst._actorstateIndex[actorObj.id].queue;
 
 					queue.push({
 						'duration': self._getRealKeyframe(duration),
@@ -1589,7 +1605,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Object} The actor Object (for chaining).
 			 */
 			actorObj.clearQueue = function clearQueue () {
-				var queue = self._actorStateIndex[actorObj.id].queue;
+				var queue = inst._actorstateIndex[actorObj.id].queue;
 				queue.length = 1;
 				
 				return this;
@@ -1600,7 +1616,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Object} The actor Object (for chaining).
 			 */
 			actorObj.skipToEnd = function skipToEnd () {
-				var queue = self._actorStateIndex[actorObj.id].queue,
+				var queue = inst._actorstateIndex[actorObj.id].queue,
 					currAction = queue[0];
 					
 				if (!queue.length) {
@@ -1616,7 +1632,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Object} The actor Object (for chaining).
 			 */
 			actorObj.endCurrentAction = function endCurrentAction () {
-				var queue = self._actorStateIndex[actorObj.id].queue,
+				var queue = inst._actorstateIndex[actorObj.id].queue,
 					currAction = queue[0];
 					
 				if (!queue.length) {
@@ -1645,15 +1661,15 @@ function kapi(canvas, params, events) {
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				
-				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][actorObj.id]) {
+				if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
 					
-					delete self._keyframes[keyframeId][actorObj.id];
-					delete self._originalStates[keyframeId][actorObj.id];
+					delete inst._keyframes[keyframeId][actorObj.id];
+					delete inst._originalStates[keyframeId][actorObj.id];
 					
 					// Check to see if there's any objects left in the keyframe.
 					// If not, delete the keyframe.
-					for (keyframe in self._keyframes[keyframeId]) {
-						if (self._keyframes[keyframeId].hasOwnProperty(keyframe)) {
+					for (keyframe in inst._keyframes[keyframeId]) {
+						if (inst._keyframes[keyframeId].hasOwnProperty(keyframe)) {
 							keyframeHasObjs = true;
 						}
 					}
@@ -1661,30 +1677,30 @@ function kapi(canvas, params, events) {
 					// You can't delete keyframe zero!  Logically it must always exist!
 					if (!keyframeHasObjs && keyframeId !== 0) {
 						
-						delete self._keyframes[keyframeId];
-						delete self._originalStates[keyframeId];
+						delete inst._keyframes[keyframeId];
+						delete inst._originalStates[keyframeId];
 						
-						for (i = 0; i < self._keyframeIds.length; i++) {
-							if (self._keyframeIds[i] === keyframeId) {
-								self._keyframeIds.splice(i, 1);
+						for (i = 0; i < inst._keyframeIds.length; i++) {
+							if (inst._keyframeIds[i] === keyframeId) {
+								inst._keyframeIds.splice(i, 1);
 								break;
 							}
 						}
 						
-						for (i = 0; i < self._reachedKeyframes.length; i++) {
-							if (self._reachedKeyframes[i] === keyframeId) {
-								self._reachedKeyframes.splice(i, 1);
+						for (i = 0; i < inst._reachedKeyframes.length; i++) {
+							if (inst._reachedKeyframes[i] === keyframeId) {
+								inst._reachedKeyframes.splice(i, 1);
 								break;
 							}
 						}
 					}
 					
-					for (i = 0; i < self._actorStateIndex[actorObj.id].length; i++) {
-						if (self._actorStateIndex[actorObj.id][i] === keyframeId) {
-							self._actorStateIndex[actorObj.id].splice(i, 1);
+					for (i = 0; i < inst._actorstateIndex[actorObj.id].length; i++) {
+						if (inst._actorstateIndex[actorObj.id][i] === keyframeId) {
+							inst._actorstateIndex[actorObj.id].splice(i, 1);
 							
-							if (i <= self._actorStateIndex[actorObj.id].reachedKeyframes.length) {
-								self._actorStateIndex[actorObj.id].reachedKeyframes.pop();
+							if (i <= inst._actorstateIndex[actorObj.id].reachedKeyframes.length) {
+								inst._actorstateIndex[actorObj.id].reachedKeyframes.pop();
 							}
 							
 							break;
@@ -1692,26 +1708,26 @@ function kapi(canvas, params, events) {
 					}
 					
 					// Delete any liveCopies.
-					if (keyframeId in self._liveCopies) {
-						delete self._liveCopies[actorObj.id][keyframeId];
+					if (keyframeId in inst._liveCopies) {
+						delete inst._liveCopies[actorObj.id][keyframeId];
 					}
 					
-					for (liveCopy in self._liveCopies[actorObj.id]) {
-						if (self._liveCopies[actorObj.id].hasOwnProperty(liveCopy) && self._liveCopies[actorObj.id][liveCopy].copyOf === keyframeId) {
+					for (liveCopy in inst._liveCopies[actorObj.id]) {
+						if (inst._liveCopies[actorObj.id].hasOwnProperty(liveCopy) && inst._liveCopies[actorObj.id][liveCopy].copyOf === keyframeId) {
 							actorObj.remove(liveCopy);
 							liveCopiesRemain = true;
 						}
 					}
 					
 					if (!liveCopiesRemain) {
-						delete self._liveCopies[actorObj.id];
+						delete inst._liveCopies[actorObj.id];
 					}
 					
 					self._updateAnimationDuration();
 					
 				} else {
 					if (console && console.error) {
-						if (self._keyframes[keyframeId]) {
+						if (inst._keyframes[keyframeId]) {
 							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but ' + actorObj.id + ' does not exist at that keyframe.');
 						} else {
 							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
@@ -1729,8 +1745,8 @@ function kapi(canvas, params, events) {
 			actorObj.removeAll = function removeAll () {
 				var id = actorObj.id;
 				
-				while (self._actorStateIndex[id] && self._actorStateIndex[id].length) {
-					self._actors[id].remove(last(self._actorStateIndex[id]));
+				while (inst._actorstateIndex[id] && inst._actorstateIndex[id].length) {
+					inst._actors[id].remove(last(inst._actorstateIndex[id]));
 				}
 				
 				return this;
@@ -1750,14 +1766,14 @@ function kapi(canvas, params, events) {
 				
 				keyframeId = self._getRealKeyframe(keyframeId);
 				
-				if (self._keyframes[keyframeId] && self._keyframes[keyframeId][actorObj.id]) {
-					originalState = self._originalStates[keyframeId][actorObj.id];
-					keyframeToUpdate = self._keyframes[keyframeId][actorObj.id];
+				if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
+					originalState = inst._originalStates[keyframeId][actorObj.id];
+					keyframeToUpdate = inst._keyframes[keyframeId][actorObj.id];
 					extend(originalState, newProps, true);
 					actorObj.keyframe(keyframeId, originalState);
 				} else {
 					if (window.console && window.console.error) {
-						if (!self._keyframes[keyframeId]) {
+						if (!inst._keyframes[keyframeId]) {
 							console.error('Keyframe ' + keyframeId + ' does not exist.');
 						} else {
 							console.error('Keyframe ' + keyframeId + ' does not contain ' + actorObj.id);
@@ -1781,16 +1797,16 @@ function kapi(canvas, params, events) {
 				keyframeId = self._getRealKeyframe(keyframeId);
 				keyframeIdToCopy = self._getRealKeyframe(keyframeIdToCopy);
 				
-				if (self._keyframes[keyframeIdToCopy] && self._keyframes[keyframeIdToCopy][actorObj.id]) {
+				if (inst._keyframes[keyframeIdToCopy] && inst._keyframes[keyframeIdToCopy][actorObj.id]) {
 					
-					self._liveCopies[actorObj.id][keyframeId] = {
+					inst._liveCopies[actorObj.id][keyframeId] = {
 						'copyOf': keyframeIdToCopy
 					};
 					
 					actorObj.keyframe(keyframeId, {});
 				} else {
 					if (window.console && window.console.error) {
-						if (!self._keyframes[keyframeIdToCopy]) {
+						if (!inst._keyframes[keyframeIdToCopy]) {
 							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but keyframe ' + keyframeIdToCopy + ' does not exist.');
 						} else {
 							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + actorObj.id + ' does not exist at keyframe ' + keyframeId + '.');
@@ -1806,7 +1822,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Object} An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when `getState` is called. 
 			 */
 			actorObj.getState = function getState () {
-				return self._currentState[actorObj.id] || {};
+				return inst._currentState[actorObj.id] || {};
 			};
 			
 			/**
@@ -1815,7 +1831,7 @@ function kapi(canvas, params, events) {
 			 * @return {Anything} Whatever the current value for `prop` is. 
 			 */
 			actorObj.get = function get (prop) {
-				return prop.toLowerCase() === 'layer' ? self._actors[actorObj.id].params.layer : actorObj.getState()[prop];
+				return prop.toLowerCase() === 'layer' ? inst._actors[actorObj.id].params.layer : actorObj.getState()[prop];
 			};
 			
 			/**
@@ -1833,12 +1849,12 @@ function kapi(canvas, params, events) {
 				// Drop any decimal if the user for some reason passed in a float
 				layerId = parseInt(layerId, 10);
 				
-				if (layerId > -1 && layerId < self._layerIndex.length) {
-					slicedId = self._layerIndex.splice(actorObj.params.layer, 1)[0];
-					self._layerIndex.splice(layerId, 0, slicedId);
+				if (layerId > -1 && layerId < inst._layerIndex.length) {
+					slicedId = inst._layerIndex.splice(actorObj.params.layer, 1)[0];
+					inst._layerIndex.splice(layerId, 0, slicedId);
 					self._updateLayers();
 				} else {
-					throw '"' + layerId + '" is out of bounds.  There are only ' + self._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + self._layerIndex.length;
+					throw '"' + layerId + '" is out of bounds.  There are only ' + inst._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + inst._layerIndex.length;
 				}
 				
 				return actorObj;
@@ -1910,14 +1926,14 @@ function kapi(canvas, params, events) {
 		_updateKeyframeIdsList: function (keyframeId) {
 			var i;
 
-			for (i = 0; i < this._keyframeIds.length; i++) {
-				if (this._keyframeIds[i] === keyframeId) {
+			for (i = 0; i < inst._keyframeIds.length; i++) {
+				if (inst._keyframeIds[i] === keyframeId) {
 					return;
 				}
 			}
 
-			this._keyframeIds.push(keyframeId);
-			sortArrayNumerically(this._keyframeIds);
+			inst._keyframeIds.push(keyframeId);
+			sortArrayNumerically(inst._keyframeIds);
 		},
 
 		/**
@@ -1936,19 +1952,19 @@ function kapi(canvas, params, events) {
 				tempString,
 				i;
 
-			for (i = 0; i < this._actorStateIndex[actorId].length; i++) {
-				newStateId = this._actorStateIndex[actorId][i];
+			for (i = 0; i < inst._actorstateIndex[actorId].length; i++) {
+				newStateId = inst._actorstateIndex[actorId][i];
 				
 				if (typeof prevStateId === 'undefined') {
-					stateCopy = extend({}, this._actors[actorId].params);
+					stateCopy = extend({}, inst._actors[actorId].params);
 				} else {
 					stateCopy = extend({}, prevStateObj);
 				}
 				
-				newStateObj = extend(stateCopy, this._originalStates[newStateId][actorId], true);
-				newStateObj.prototype = this._actors[actorId];
+				newStateObj = extend(stateCopy, inst._originalStates[newStateId][actorId], true);
+				newStateObj.prototype = inst._actors[actorId];
 				
-				this._keyframes[newStateId][actorId] = newStateObj;
+				inst._keyframes[newStateId][actorId] = newStateObj;
 				
 				// Find any hex color strings and convert them to rgb(x, x, x) format.
 				// More overhead for keyframe setup, but makes for faster frame processing later
@@ -1975,7 +1991,7 @@ function kapi(canvas, params, events) {
 		 */
 		_updateActorStateIndex: function (actor, params) {
 			// TODO:  This method should be used for removing keyframes as well.  Currently this is being performed in `actorObj.remove`.
-			var index = this._actorStateIndex[actor.id],
+			var index = inst._actorstateIndex[actor.id],
 				stateAlreadyExists = false,
 				i;
 
@@ -1999,8 +2015,8 @@ function kapi(canvas, params, events) {
 		_updateLayers: function () {
 			var i;
 			
-			for (i = 0; i < this._layerIndex.length; i++) {
-				this._actors[this._layerIndex[i]].params.layer = i;
+			for (i = 0; i < inst._layerIndex.length; i++) {
+				inst._actors[inst._layerIndex[i]].params.layer = i;
 			}
 		},
 
@@ -2012,14 +2028,14 @@ function kapi(canvas, params, events) {
 				actorId,
 				tempLiveCopy;
 			
-			for (actorId in this._liveCopies) {
-				if (this._liveCopies.hasOwnProperty(actorId)) {
-					tempLiveCopy = this._liveCopies[actorId];
+			for (actorId in inst._liveCopies) {
+				if (inst._liveCopies.hasOwnProperty(actorId)) {
+					tempLiveCopy = inst._liveCopies[actorId];
 					
 					for (liveCopyData in tempLiveCopy) {
 						if (tempLiveCopy.hasOwnProperty(liveCopyData)) {
 							// OH MY GOD WTF IS WITH THIS LINE
-							this._keyframes[liveCopyData][actorId] = this._keyframes[this._liveCopies[actorId][liveCopyData].copyOf][actorId];
+							inst._keyframes[liveCopyData][actorId] = inst._keyframes[inst._liveCopies[actorId][liveCopyData].copyOf][actorId];
 							// IS THIS A JOKE
 						}
 					}
@@ -2032,8 +2048,8 @@ function kapi(canvas, params, events) {
 		 */
 		_updateAnimationDuration: function () {
 			// Calculate and update the number of seconds this animation will run for
-			this._lastKeyframe = last(this._keyframeIds);
-			this._animationDuration = 1000 * (this._lastKeyframe / this._params.fRate);
+			inst._lastKeyframe = last(inst._keyframeIds);
+			inst._animationDuration = 1000 * (inst._lastKeyframe / inst._params.fRate);
 		}
 
 	}.init(canvas, params, events);
