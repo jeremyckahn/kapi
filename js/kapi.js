@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.7.0
+ * v1.0.0b
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,11 +48,12 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.7.0',
+	var version = '1.0.0b',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
 		},
+		self = {},
 		inst = {
 			_events : {},
 			_keyframeIds : [],
@@ -391,7 +392,1097 @@ function kapi(canvas, params, events) {
 		return (typeof prop === 'number' || typeof prop === 'function' || isModifierString(prop) || isColorString(prop));
 	}
 
-	return {
+	/**
+	 * Calculates the "real" keyframe from `identifier`.  This means that you can speicify keyframes from things other than plain integers.  For example, you can calculate the real keyframe that will run at a certain period of time.
+	 * 
+	 * Valid formats:
+	 * - x : keyframe integer
+	 * - "xms" : keyframe at an amount of milliseconds
+	 * - "xs" : keyframe at an amount of seconds
+	 * @param {Number|String} identifier A value like the ones described above.
+	 * @returns {Number} A valid keyframe identifier equivalent to `identifier`  
+	 */
+	function _getRealKeyframe (identifier) {
+		var quantifier, 
+			unit, 
+			calculatedKeyframe;
+
+		if (typeof identifier === 'number') {
+			return parseInt(identifier, 10);
+		} else if (typeof identifier === 'string') {
+			// Strip spaces
+			identifier = identifier.replace(/\s/g, '');
+
+			quantifier = /^(\d|\.)+/.exec(identifier)[0];
+			unit = /\D+$/.exec(identifier);
+
+			// The quantifier was passed as a string... just return it as a number
+			if (!unit) {
+				return parseInt(quantifier, 10);
+			}
+
+			if (calcKeyframe[unit]) {
+				calculatedKeyframe = parseInt(calcKeyframe[unit].call(this, quantifier), 10);
+			} else {
+				throw 'Invalid keyframe identifier unit!';
+			}
+
+			return calculatedKeyframe;
+		} else {
+			throw 'Invalid keyframe identifier type!';
+		}
+	}
+	
+	/**
+	 * Create a unique entry for a keyframe ID in the internal `_keyframeIds` list and sort it.
+	 * @param {Number} keyframeId The keyframe ID to add.
+	 */
+	function _updateKeyframeIdsList (keyframeId) {
+		var i;
+
+		for (i = 0; i < inst._keyframeIds.length; i++) {
+			if (inst._keyframeIds[i] === keyframeId) {
+				return;
+			}
+		}
+
+		inst._keyframeIds.push(keyframeId);
+		sortArrayNumerically(inst._keyframeIds);
+	}
+	
+	/**
+	 * Performs the actions specified in `params` in the internal state record for `actor`
+	 * @param {Object} actor The actor to update the internal Kapi state of.
+	 * @param {Object} params A description of the actions to perform on `actor`:
+	 *   @param {Number} add The keyframe ID that `actor` is being placed into.
+	 */
+	function _updateActorStateIndex (actor, params) {
+		// TODO:  This method should be used for removing keyframes as well.  Currently this is being performed in `actorObj.remove`.
+		var index = inst._actorstateIndex[actor.id],
+			stateAlreadyExists = false,
+			i;
+
+		if (typeof params.add !== 'undefined') {
+			for (i = 0; i < index.length; i++) {
+				if (index[i] === params.add) {
+					stateAlreadyExists = true;
+				}
+			}
+			
+			if (!stateAlreadyExists) {
+				index.push(params.add);
+				sortArrayNumerically(index);
+			}
+		}
+	}
+	
+	/**
+	 * Validate a actor's state across all of the keyframe.  Essentially, this function fills in the gaps for keyframes that were missing parameters when created.  If a parameter is present for an actor in one keyframe, it is present in all of them.
+	 * 
+	 * Missing parameters are inferred from other keyframes.  Specifically, a keyframe missing parameter X will simply copy parameter X from the previous keyframe.  This "inheritance" will go all the way to the first keyframe, which inherited its parameters from when the actor was `kapi.add`ed.
+	 * @param {Object} actorId The ID of the actor to normalize.
+	 */
+	function _normalizeActorAcrossKeyframes (actorId) {
+		var newStateId, 
+			prevStateId, 
+			newStateObj, 
+			prevStateObj, 
+			prop,
+			stateCopy,
+			tempString,
+			i;
+
+		for (i = 0; i < inst._actorstateIndex[actorId].length; i++) {
+			newStateId = inst._actorstateIndex[actorId][i];
+			
+			if (typeof prevStateId === 'undefined') {
+				stateCopy = extend({}, inst._actors[actorId].params);
+			} else {
+				stateCopy = extend({}, prevStateObj);
+			}
+			
+			newStateObj = extend(stateCopy, inst._originalStates[newStateId][actorId], true);
+			newStateObj.prototype = inst._actors[actorId];
+			
+			inst._keyframes[newStateId][actorId] = newStateObj;
+			
+			// Find any hex color strings and convert them to rgb(x, x, x) format.
+			// More overhead for keyframe setup, but makes for faster frame processing later
+			for (prop in newStateObj) {
+				if (newStateObj.hasOwnProperty(prop) && typeof newStateObj[prop] === 'string') {
+					// Trim any whitespace and make a temporary string to test
+					tempString = newStateObj[prop].replace(/\s/g, '');
+					if (isColorString(tempString)) {
+						newStateObj[prop] = hexToRGBStr(tempString);
+					}
+				}
+			}
+			
+			prevStateId = newStateId;
+			prevStateObj = newStateObj;
+		}
+	}
+	
+	/**
+	 * Synchronize any liveCopy keyframes with the keyframe they are liveCopying.  This is done by updating the keyframe reference on the liveCopy to the original.  
+	 */
+	function _updateLiveCopies () {
+		var liveCopyData,
+			actorId,
+			tempLiveCopy;
+		
+		for (actorId in inst._liveCopies) {
+			if (inst._liveCopies.hasOwnProperty(actorId)) {
+				tempLiveCopy = inst._liveCopies[actorId];
+				
+				for (liveCopyData in tempLiveCopy) {
+					if (tempLiveCopy.hasOwnProperty(liveCopyData)) {
+						// OH MY GOD WTF IS WITH THIS LINE
+						inst._keyframes[liveCopyData][actorId] = inst._keyframes[inst._liveCopies[actorId][liveCopyData].copyOf][actorId];
+						// IS THIS A JOKE
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Refresh the `layer` property on each actor.  Actors sync to the internal `_layerIndex` property.
+	 */
+	function _updateLayers () {
+		var i;
+		
+		for (i = 0; i < inst._layerIndex.length; i++) {
+			inst._actors[inst._layerIndex[i]].params.layer = i;
+		}
+	}
+	
+	/**
+	 * A maintenance function that calls a collection of other methods that, in turn, update and modify the animation keyframes.
+	 * @param actor An actor Object.
+	 * @param keyframeId The ID of the keyframe that a new state for `actor` is being placed. 
+	 */
+	function _updateKeyframes (actor, keyframeId) {
+		_updateKeyframeIdsList(keyframeId);
+		_updateActorStateIndex(actor, {
+			add: keyframeId
+		});
+		_normalizeActorAcrossKeyframes(actor.id);
+		_updateLiveCopies();
+		_updateLayers();
+	}
+	
+	/**
+	 * Recalculate and internally store the length of time that the animation will run for.
+	 */
+	function _updateAnimationDuration () {
+		// Calculate and update the number of seconds this animation will run for
+		inst._lastKeyframe = last(inst._keyframeIds);
+		inst._animationDuration = 1000 * (inst._lastKeyframe / inst._params.fRate);
+	}
+	
+	/**
+	 * Lookup the ID of the most recent keyframe that was started, but not completed.
+	 * @param {Array} lookup The list of keyframes to check against.
+	 * @returns {Number} The index of the latest keyframe.  Returns `-1` if there are no keyframes remaining for `lookup` in the current loop.
+	 */
+	function _getLatestKeyframeId (lookup) {
+		var i;
+		
+		if (inst._currentFrame === 0) {
+			return 0;
+		}
+
+		if (inst._currentFrame > lookup[lookup.length - 1]) {
+			// There are no more keyframes left in the animation loop for this object
+			return -1;
+		}
+
+		for (i = lookup.length - 1; i >= 0; i--) {
+			if (lookup[i] < inst._currentFrame) {
+				return i;
+			}
+		}
+
+		return lookup.length - 1;
+	}
+	
+	/**
+	 * Look up the ID of the last keyframe that was completed in the current animation loop.
+	 * @param {Array} lookup The list of keyframes to check against.
+	 * @returns {Number}    
+	 */
+	function _getPreviousKeyframeId (lookup) {
+		return _getLatestKeyframeId(lookup) - 1;
+	}
+	
+	/**
+	 * Get the ID of the next keyframe that has not been started yet.
+	 * @param {Array} lookup The list of keyframes to check against.
+	 * @param {Number} latestKeyframeId The ID of the most recent keyframe to have started.  Find this with `_getLatestKeyframeId()`.
+	 * @returns {Number}
+	 */
+	function _getNextKeyframeId (lookup, latestKeyframeId) {
+		return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
+	}
+
+	/**
+	 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_addActorMethods()`.).
+	 * @param {Object} actorObj The object to prep for Kapi use and add properties to.
+	 * @returns {Object} The "decorated" version of `actorObj`. 
+	 */
+	function _addActorMethods (actorObj) {
+		/**
+		 * Create a keyframe for an actor.
+		 * @param {Number|String|Object} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s".
+		 * @param {Object} stateObj The properties of the keyframed state.  Any missing parameters on this keyframe will be inferred from other keyframes in the animation set for this actor.  Individual properties can have tweening formulas applied to them and only them.  To do this, pass those properties as Object literals that contain one property.  That property's name must be the same as a valid `kapi.tween` formula.
+		 * @returns {Object} The actor Object (for chaining).
+		 *
+		 * @codestart
+		 * var demo = kapi(document.getElementById('myCanvas')),
+     *  circle1 = demo.add(circle, {
+     *    name : 'myCircle',
+     *      x : 50,
+     *      y : 50,
+     *      radius : 50,
+     *      color : '#0f0',
+     *      easing : 'easeInOutQuad'
+     *    });
+     * 
+		 * circle1
+     *   .keyframe(0, {
+     *     x: 50,
+     *     y: 50
+     *   })
+     *   .keyframe('3s', {
+     *     x: {easeInSine: 450},
+     *     y: {easeOutSine: 250},
+     *     color: '#f0f'
+     *   }).liveCopy('5s', 0);
+		 * @codeend
+		 */
+		actorObj.keyframe = function keyframe (keyframeId, stateObj) {
+			// Save a "safe" copy of the state object before modifying it - will be used later in this function.
+			// This is done here to prevent the `_originalStates` property from being changed
+			// by other code that references it.
+			var orig,
+				prop,
+				digits;
+			
+			// If any number values were passed as strings, convert them to numbers.
+			for (prop in stateObj) {
+				if (stateObj.hasOwnProperty(prop)) {
+					// Yeah it's ugly.  But it's fast and DRY.
+					if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi, ''))).toString() ) {
+						stateObj[prop] = digits;
+					}
+				}
+			}
+			
+			orig = extend({}, stateObj);
+
+			try {
+				keyframeId = _getRealKeyframe(keyframeId);
+			} catch (ex) {
+				if (window.console && window.console.error) {
+					console.error(ex);
+				}
+				return undefined;
+			}
+			
+			if (keyframeId < 0) {
+				throw 'Keyframe ' + keyframeId + ' is less than zero!';
+			}
+			
+			// Create keyframe zero if it was not done so already
+			if (keyframeId > 0 && typeof inst._keyframes['0'] === 'undefined') {
+				inst._keyframes['0'] = {};
+				inst._keyframeIds.unshift(0);
+			}
+
+			// If this keyframe does not already exist, create it
+			if (typeof inst._keyframes[keyframeId] === 'undefined') {
+				inst._keyframes[keyframeId] = {};
+			}
+			
+			if (typeof inst._originalStates[keyframeId] === 'undefined') {
+				inst._originalStates[keyframeId] = {};
+			}
+
+			// Create the keyframe state info for this object
+			inst._keyframes[keyframeId][actorObj.id] = stateObj;
+			
+			// Save a copy of the original `stateObj`.  This is used for updating keyframes after they are created.
+			inst._originalStates[keyframeId][actorObj.id] = orig;
+
+			// Perform necessary maintenance upon all of the keyframes in the animation
+			_updateKeyframes(actorObj, keyframeId);
+			
+			// The `layer` property does not belong in the keyframe states, as it is part of the actor object itself
+			// and can be changed at any time by other parts of the API.
+			delete stateObj.layer;
+			
+			_updateAnimationDuration();
+			
+			return this;
+		};
+
+		/**
+		 * Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.
+		 * @param {Number|String} duration The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax ("_x_ms" or "_x_s").
+		 * @param {Object} stateObj The state to animate the actor to.
+		 * @param {Object} events Event handlers to attach to this immediate action.  This paramter is optional.  In an event handler function, the `this` keyword refers to the actor object.  Available events:
+		 *   - `start` {Function}: Fires when the Immediate Action starts.
+		 *   - `complete` {Function}: Fires when the Immediate Action completes.
+		 * @returns {Object} The actor Object (for chaining).
+		 * 
+     * @codestart
+     * 
+     * var demo = kapi(document.getElementById('myCanvas')),
+     *  circle1 = demo.add(circle, {
+     *    name : 'myCircle',
+     *      x : 0,
+     *      y : 0,
+     *      radius : 50,
+     *      color : '#00ff00'
+     *    });
+     * 
+     * circle1.keyframe(0, { })
+     *   .to('2s', {
+     *      x: '+=100',
+     *      y: 50,
+     *      color: '#3f0000'
+     *    }, {
+     *      'start': function () {
+     *         console.log('Immediate action started!', this);
+     *       },
+     *       'complete': function () {
+     *         console.log('Immediate action completed!', this);
+     *       }
+     *   });
+     * @codeend
+		 */
+		actorObj.to = function to (duration, stateObj, events) {
+			var newestAction, 
+				queue = inst._actorstateIndex[actorObj.id].queue;
+
+				queue.push({
+					'duration': _getRealKeyframe(duration),
+					'state': stateObj || {},
+					'events': events || {}
+				});
+			
+			newestAction = last(queue);
+			newestAction._internals = {};
+
+			newestAction._internals.startTime = null;
+			newestAction._internals.fromState = null;
+			newestAction._internals.toState = null;
+			newestAction._internals.pauseBuffer = null;
+			newestAction._internals.pauseBufferUpdated = null;
+
+			return this;
+		};
+		
+		/*
+		 * Removes any queued Immediate Actions that have not yet begun.  This does not cancel or affect the currently executing Immediate Action.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.clearQueue = function clearQueue () {
+			var queue = inst._actorstateIndex[actorObj.id].queue;
+			queue.length = 1;
+			
+			return this;
+		};
+		
+		/**
+		 * Skips to the end of the currently executing Immediate Action.  The `complete` event is fired, if it was set.  The Immediate Action queue is not affected.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.skipToEnd = function skipToEnd () {
+			var queue = inst._actorstateIndex[actorObj.id].queue,
+				currAction = queue[0];
+				
+			if (!queue.length) {
+				return this;
+			}
+			
+			currAction._internals.forceStop = true;
+			return this;
+		};
+		
+		/**
+		 * Stops and ends the currently executing Immediate Action in its current state.  Note:  Internally, this method calls `actor.skipToEnd()`, so the functionality of that method applies here as well.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.endCurrentAction = function endCurrentAction () {
+			var queue = inst._actorstateIndex[actorObj.id].queue,
+				currAction = queue[0];
+				
+			if (!queue.length) {
+				return this;
+			}
+			
+			currAction._internals.toState = this.getState();
+			this.skipToEnd();
+			
+			return this;
+		};
+
+		/**
+		 * Cleanly removes `actorObj` from `keyframeId`, as well as all internal references to it.
+		 * 
+		 * An error is logged if `actorObj` does not exist at `keyframeId`.
+		 * @param {Number|String} keyframeId The desired keyframe to remove `actorObj` from.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.remove = function remove (keyframeId) {
+			var i,
+				keyframe,
+				liveCopy,
+				liveCopiesRemain,
+				keyframeHasObjs = false;
+			
+			keyframeId = _getRealKeyframe(keyframeId);
+			
+			if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
+				
+				delete inst._keyframes[keyframeId][actorObj.id];
+				delete inst._originalStates[keyframeId][actorObj.id];
+				
+				// Check to see if there's any objects left in the keyframe.
+				// If not, delete the keyframe.
+				for (keyframe in inst._keyframes[keyframeId]) {
+					if (inst._keyframes[keyframeId].hasOwnProperty(keyframe)) {
+						keyframeHasObjs = true;
+					}
+				}
+				
+				// You can't delete keyframe zero!  Logically it must always exist!
+				if (!keyframeHasObjs && keyframeId !== 0) {
+					
+					delete inst._keyframes[keyframeId];
+					delete inst._originalStates[keyframeId];
+					
+					for (i = 0; i < inst._keyframeIds.length; i++) {
+						if (inst._keyframeIds[i] === keyframeId) {
+							inst._keyframeIds.splice(i, 1);
+							break;
+						}
+					}
+					
+					for (i = 0; i < inst._reachedKeyframes.length; i++) {
+						if (inst._reachedKeyframes[i] === keyframeId) {
+							inst._reachedKeyframes.splice(i, 1);
+							break;
+						}
+					}
+				}
+				
+				for (i = 0; i < inst._actorstateIndex[actorObj.id].length; i++) {
+					if (inst._actorstateIndex[actorObj.id][i] === keyframeId) {
+						inst._actorstateIndex[actorObj.id].splice(i, 1);
+						
+						if (i <= inst._actorstateIndex[actorObj.id].reachedKeyframes.length) {
+							inst._actorstateIndex[actorObj.id].reachedKeyframes.pop();
+						}
+						
+						break;
+					}
+				}
+				
+				// Delete any liveCopies.
+				if (keyframeId in inst._liveCopies) {
+					delete inst._liveCopies[actorObj.id][keyframeId];
+				}
+				
+				for (liveCopy in inst._liveCopies[actorObj.id]) {
+					if (inst._liveCopies[actorObj.id].hasOwnProperty(liveCopy) && inst._liveCopies[actorObj.id][liveCopy].copyOf === keyframeId) {
+						actorObj.remove(liveCopy);
+						liveCopiesRemain = true;
+					}
+				}
+				
+				if (!liveCopiesRemain) {
+					delete inst._liveCopies[actorObj.id];
+				}
+				
+				_updateAnimationDuration();
+				
+			} else {
+				if (console && console.error) {
+					if (inst._keyframes[keyframeId]) {
+						console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but ' + actorObj.id + ' does not exist at that keyframe.');
+					} else {
+						console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
+					}
+				}
+			}
+			
+			return this;
+		};
+
+		/**
+		 * Removes the actor from all keyframes.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.removeAll = function removeAll () {
+			var id = actorObj.id;
+			
+			while (inst._actorstateIndex[id] && inst._actorstateIndex[id].length) {
+				inst._actors[id].remove(last(inst._actorstateIndex[id]));
+			}
+			
+			return this;
+		};
+
+		/**
+		 * Selectively modify the state properties of a keyframe.  Properties that are missing from a call to `updateKeyframe()` are left unmodified in the keyframe it is modifying.
+		 * 
+		 * Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.
+		 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+		 * @param {Object} newProps The properties on the keyframe to be updated.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
+			var keyframeToUpdate,
+				originalState;
+			
+			keyframeId = _getRealKeyframe(keyframeId);
+			
+			if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
+				originalState = inst._originalStates[keyframeId][actorObj.id];
+				keyframeToUpdate = inst._keyframes[keyframeId][actorObj.id];
+				extend(originalState, newProps, true);
+				actorObj.keyframe(keyframeId, originalState);
+			} else {
+				if (window.console && window.console.error) {
+					if (!inst._keyframes[keyframeId]) {
+						console.error('Keyframe ' + keyframeId + ' does not exist.');
+					} else {
+						console.error('Keyframe ' + keyframeId + ' does not contain ' + actorObj.id);
+					}
+				}
+			}
+			
+			return this;
+		};
+		
+		/**
+		 * Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified, so is the live copy.
+		 * 
+		 * This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.
+		 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+		 * @param {Number|String} keyframeIdToCopy The keyframe identifier of the keyframe to copy..  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
+		 * @returns {Object} The actor Object (for chaining).  
+		 */
+		actorObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
+			
+			keyframeId = _getRealKeyframe(keyframeId);
+			keyframeIdToCopy = _getRealKeyframe(keyframeIdToCopy);
+			
+			if (inst._keyframes[keyframeIdToCopy] && inst._keyframes[keyframeIdToCopy][actorObj.id]) {
+				
+				inst._liveCopies[actorObj.id][keyframeId] = {
+					'copyOf': keyframeIdToCopy
+				};
+				
+				actorObj.keyframe(keyframeId, {});
+			} else {
+				if (window.console && window.console.error) {
+					if (!inst._keyframes[keyframeIdToCopy]) {
+						console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but keyframe ' + keyframeIdToCopy + ' does not exist.');
+					} else {
+						console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + actorObj.id + ' does not exist at keyframe ' + keyframeId + '.');
+					}
+				}
+			}
+			
+			return this;
+		};
+		
+		/**
+		 * Get the current state of the actor as it exists in Kapi.
+		 * @returns {Object} An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when `getState` is called. 
+		 */
+		actorObj.getState = function getState () {
+			return inst._currentState[actorObj.id] || {};
+		};
+		
+		/**
+		 * Get the current value of a single state property from the actor.
+		 * @param {String} prop The state property to retrieve.  If `prop` is "layer," this function will return the layer that this actor is currently in.
+		 * @return {Anything} Whatever the current value for `prop` is. 
+		 */
+		actorObj.get = function get (prop) {
+			return prop.toLowerCase() === 'layer' ? inst._actors[actorObj.id].params.layer : actorObj.getState()[prop];
+		};
+		
+		/**
+		 * Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling `kapiInstance.getNumberOfLayers()`.
+		 * @param {Number} layerId The layer to move the actor to.
+		 * @returns {Object} The actor Object (for chaining).
+		 */
+		actorObj.moveToLayer = function moveToLayer (layerId) {
+			var slicedId;
+			
+			if (typeof layerId !== 'number') {
+				throw 'moveToLayer requires a number specifying which layer to move ' + this.id + ' to.';
+			}
+			
+			// Drop any decimal if the user for some reason passed in a float
+			layerId = parseInt(layerId, 10);
+			
+			if (layerId > -1 && layerId < inst._layerIndex.length) {
+				slicedId = inst._layerIndex.splice(actorObj.params.layer, 1)[0];
+				inst._layerIndex.splice(layerId, 0, slicedId);
+				_updateLayers();
+			} else {
+				throw '"' + layerId + '" is out of bounds.  There are only ' + inst._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + inst._layerIndex.length;
+			}
+			
+			return actorObj;
+		};
+
+		return actorObj;
+	}
+
+	/**
+	 * Invokes all of the Kapi event handlers for a specified event.  Handlers are invoked in the order they were attached.
+	 * 
+	 * @param {String} eventName The name of the event to fire the handlers for.
+	 */
+	function _fireEvent (eventName) {
+		var i;
+		
+		if (typeof eventName === 'string' && inst._events[eventName]) {
+			for (i = 0; i < inst._events[eventName].length; i++) {
+				inst._events[eventName][i].call(inst);
+			}
+		}
+	}
+	
+	/**
+	 * Calculate an actor's properties for the current frame.
+	 * @param {Object} fromState An object containing all of the properties that defined the keyframe to animate _from_.  This can be considered the "starting state."
+	 * @param {Object} toState An object containing all of the properties that defined the keyframe to animate _to_.  This can be considered the "ending state."
+	 * @param {Number} fromKeyframe The Kapi keyframe ID that corresponds to `fromState`.
+	 * @param {Number} toKeyframe The Kapi keyframe ID that corresponds to `toState`.
+	 * @param {String} easing The easing formula to use.  Kapi comes prepackaged with "linear," but Kapi be extended with more easing formulas.  If `easing` is not valid, this method defaults to `linear`.
+	 * @param {Object} options Extra, non-necessary options to set.  They include:
+	 *   @param {Number} currentFrame If present, `currentFrame` overrides the internally maintained '_currentFrame' property.
+	 * @returns {Object}
+	 */
+	function _calculateCurrentFrameProps (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
+		// Magic.
+		var i, 
+			keyProp, 
+			fromProp, 
+			toProp, 
+			isColor,
+			fromStateId,
+			toStateId,
+			modifier,
+			previousPropVal,
+			fromPropType,
+			easeProp,
+			currentFrameProps = {};
+		
+		easing = kapi.tween[easing] ? easing : 'linear';
+		options = options || {};
+
+		for (keyProp in fromState) {
+
+			if (fromState.hasOwnProperty(keyProp)) {
+				fromProp = fromState[keyProp];
+				fromStateId = fromState.prototype.id;
+				
+				// Extract the property from the object if the "from" property has a custon easing
+				if (typeof fromProp === 'object' && keyProp !== 'prototype') {
+					for (easeProp in fromProp) {
+						if (fromProp.hasOwnProperty(easeProp)) {
+							// Do not apply custom eases from the "from" property.  Only the "to" property
+							fromProp = fromProp[easeProp];
+							break;
+						}
+					}
+				}
+
+				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
+					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
+				} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
+					// If fromProp is dynamic, preprocess it (by invoking it)
+					if (typeof fromProp === 'function') {
+						fromProp = fromProp.call(fromState) || 0;
+					} else {
+						modifier = getModifier(fromProp);
+						previousPropVal = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
+						
+						// Convert the keyframe ID to its corresponding property value
+						if (previousPropVal === -1) {
+							// This is the first keyframe for this object, so modify the original parameter if it is available
+							previousPropVal = fromState.prototype.params[keyProp] || 0;
+						} else {
+							previousPropVal = inst._keyframes[previousPropVal][fromStateId][keyProp];
+						}
+						
+						// Convert the value into a number and perform the value modification
+						fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(/\D/g, ''));
+					}
+					
+					// Update the cache
+					inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
+				}
+				
+				if (isKeyframeableProp(fromProp)) {
+					isColor = false;
+					toProp = toState[keyProp];
+					toStateId = toState.prototype.id;
+					
+					// Check to see if the "to" property has a custom easing and apply it
+					if (typeof toProp === 'object' && keyProp !== 'prototype') {
+						for (easeProp in toProp) {
+							if (toProp.hasOwnProperty(easeProp)) {
+								easing = kapi.tween[easeProp] ? easeProp : 'linear';
+								toProp = toProp[easeProp];
+								break;
+							}
+						}
+					}
+					
+					if (typeof inst._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
+						toProp = inst._keyframeCache[toStateId].to[keyProp];
+					} else if (typeof toProp === 'function' || isModifierString(toProp)) {
+						if (typeof toProp === 'function') {
+							toProp = toProp.call(toState) || 0;
+						} else {
+							modifier = getModifier(toProp);
+							toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
+						}
+						
+						inst._keyframeCache[toStateId].to[keyProp] = toProp;
+					}
+					
+					// Superfluous workaround for a meaningless and nonsensical JSLint error. ("Weird relation")
+					fromPropType = typeof fromProp;
+					
+					if (!isKeyframeableProp(toProp) || fromPropType !== typeof toProp) {
+						// The toProp isn't valid, so just make the current value for the this frame
+						// the same as the fromProp
+						currentFrameProps[keyProp] = fromProp;
+					} else {
+						if (typeof fromProp === 'string') {
+							isColor = true;
+							fromProp = getRGBArr(fromProp);
+							toProp = getRGBArr(toProp);
+						}
+
+						// The fromProp and toProp have been validated.
+						// Perform the easing calculation to find the middle value based on the _currentFrame
+						if (isColor) {
+							// If the property is a color, do some logic to
+							// blend it across the states
+							currentFrameProps[keyProp] = 'rgb(';
+
+							for (i = 0; i < fromProp.length; i++) {
+								currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp[i], toProp[i], options.currentFrame)) + ',';
+							}
+
+							// Swap the last RGB comma for an end-paren
+							currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
+
+						} else {
+							currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);
+						}
+					}
+				}
+			}
+		}
+
+		extend(currentFrameProps, fromState);
+		return currentFrameProps;
+	}
+	
+	/**
+	 * Apply the current keyframe state and any other state modifiers (such as Immediate Actions like `actor.to()`) to an actor.
+	 * @param {String} actorName The identifier string corresponding the desired actor object.
+	 * @returns {Object} The current state properties of `actorName`.  
+	 */
+	function _getActorState (actorName) {
+
+		var actorKeyframeIndex = inst._actorstateIndex[actorName],
+			latestKeyframeId = _getLatestKeyframeId(actorKeyframeIndex),
+			nextKeyframeId, 
+			latestKeyframeProps, 
+			nextKeyframeProps,
+			lastRecordedKeyframe;
+
+		// Do a check to see if any more keyframes remain in the animation loop for this actor
+		if (latestKeyframeId === -1) {
+			return null;
+		}
+
+		nextKeyframeId = _getNextKeyframeId(actorKeyframeIndex, latestKeyframeId);
+		latestKeyframeProps = inst._keyframes[actorKeyframeIndex[latestKeyframeId]][actorName];
+		nextKeyframeProps = inst._keyframes[actorKeyframeIndex[nextKeyframeId]][actorName];
+
+		// If we are on or past the last keyframe
+		if (latestKeyframeId === nextKeyframeId  && inst._lastKeyframe > 0) {
+			return null;
+		}
+		
+		// Manage the actor cache
+		lastRecordedKeyframe = last(inst._actorstateIndex[actorName].reachedKeyframes) || 0;
+		
+		if (!inst._keyframeCache[actorName]) {
+			inst._keyframeCache[actorName] = {
+				'from': {},
+				'to': {}
+			};
+			
+			inst._actorstateIndex[actorName].reachedKeyframes = [];
+		}
+		
+		// Are we transitioning to a new keyframe segment for the actor?
+		if (latestKeyframeId !== lastRecordedKeyframe) {
+			// We are!
+			
+			// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
+			if (latestKeyframeId > lastRecordedKeyframe) {
+				inst._actorstateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
+				
+				inst._keyframeCache[actorName] = {
+					'from': inst._keyframeCache[actorName].to,
+					'to': {}
+				};	
+			}
+		}
+
+		return _calculateCurrentFrameProps(
+			latestKeyframeProps, 
+			nextKeyframeProps, 
+			actorKeyframeIndex[latestKeyframeId], 
+			actorKeyframeIndex[nextKeyframeId], 
+			nextKeyframeProps.easing
+		);
+	}
+	
+	/**
+	 * Gets the current state of the queued-up Immediate Action.  Also updates the Immediate Actions queue if necessary.
+	 * @param {Array} queuedActionsArr The queue of Immediate Actions to be applied.
+	 * @returns {Object} An Object containing the current properties of the queued Immediate Action. 
+	 */
+	function _getQueuedActionState (queuedActionsArr, actorName) {
+		var currTime = now(),
+			queuedAction = queuedActionsArr[0],
+			internals = queuedAction._internals,
+			completeHandler;
+
+		if (internals.startTime === null) {
+			internals.startTime = currTime;
+		}
+		
+		if (!internals.pauseBufferUpdated) {
+			internals.pauseBufferUpdated = currTime;
+		}
+		
+		// Correct for any animation pauses during the life of the action
+		if (internals.pauseBufferUpdated < inst._pausedAtTime) {
+			internals.pauseBuffer += (currTime - inst._pausedAtTime);
+			internals.pauseBufferUpdated = currTime;
+		}
+
+		if (internals.toState === null) {
+			internals.toState = {};
+			extend(internals.toState, internals.fromState);
+			extend(internals.toState, queuedAction.state, true);
+		}
+		
+		// If this is true, the user called `actor.endCurrentAction()`
+		if (internals.forceStop) {
+			internals.currFrame = queuedAction.duration + 1;
+		} else {
+			internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * inst._params.fRate;
+		}
+			
+
+		if (internals.currFrame > queuedAction.duration) {
+			completeHandler = queuedAction.events.complete;
+			
+			if (typeof completeHandler === 'function') {
+				completeHandler.call(inst._actors[actorName]);
+			}
+			
+			queuedActionsArr.shift();
+		}
+		
+		return _calculateCurrentFrameProps(
+			internals.fromState, 
+			internals.toState, 
+			0, 
+			+queuedAction.duration, 
+			(queuedAction.easing || internals.fromState.easing), 
+			{
+				currentFrame: internals.currFrame
+			}
+		);
+	}
+	
+	/**
+	 * Update the state properties for the all of the actors in the animation.
+	 * @param {Number} currentFrame The deisred frame to process.
+	 */
+	function _updateActors (currentFrame) {
+		// Here be dragons.
+		var actorName,
+			currentFrameStateProperties,
+			adjustedProperties,
+			objActionQueue,
+			objActionEvents,
+			oldQueueLength,
+			keyframeToModify,
+			currentAction,
+			i;
+
+		for (i = 0; i < inst._layerIndex.length; i++) {				
+			actorName = inst._layerIndex[i];
+			
+			// The current object may have a first keyframe greater than 0.
+			// If so, we don't want to calculate or draw it until we have
+			// reached this object's first keyframe
+			if (typeof inst._actorstateIndex[actorName][0] !== 'undefined' && currentFrame >= inst._actorstateIndex[actorName][0]) {
+				
+				currentFrameStateProperties = _getActorState(actorName);
+
+				// If there are remaining keyframes for this object, draw it.
+				if (currentFrameStateProperties !== null) {
+					objActionQueue = inst._actorstateIndex[actorName].queue;
+					
+					// If there is a queued action, apply it to the current frame
+					if ((oldQueueLength = objActionQueue.length) > 0) {
+						currentAction = objActionQueue[0];
+						objActionEvents = currentAction.events;
+						
+						if (typeof objActionEvents.start === 'function') {
+							objActionEvents.start.call(inst._actors[actorName]);
+							delete objActionEvents.start;
+						}
+						
+						if (currentAction._internals.fromState === null) {
+							currentAction._internals.fromState = currentFrameStateProperties;
+						}
+						
+						adjustedProperties = _getQueuedActionState(objActionQueue, actorName);
+						extend(currentFrameStateProperties, adjustedProperties, true);
+						
+						// If an immediate action finished running and was removed from the queue
+						if (oldQueueLength !== objActionQueue.length) {
+							// Save the modified state to the most recent keyframe for this object
+							keyframeToModify = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
+							inst._keyframes[ inst._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
+						}
+					}
+
+					currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx);
+				}
+			}
+			inst._currentState[actorName] = currentFrameStateProperties;
+		}
+	}
+	
+	/**
+	 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
+	 *  
+	 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
+	 * 
+	 *  You probably don't want to modify this unless you really know what you're doing.
+	 *
+	 *  @return {Number} The setTimeout identifier for the timer callback.
+	 */
+	function _updateState () {
+		// Abandon all hope, ye who enter here.
+		var currTime = now();
+
+		inst.fCount++;
+		inst._updateHandle = setTimeout(function () {
+			var reachedKeyframeLastIndex, 
+				prevKeyframe;
+
+			// Calculate how long this iteration of the loop has been running for
+			inst._loopLength = currTime - inst._loopStartTime;
+
+			// Check to see if the loop is starting over.
+			if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
+				// It is!
+
+				// Reset the loop start time relative to when the animation began,
+				// not to when the final keyframe last completed
+				inst._loopStartTime = inst._startTime + parseInt((currTime - inst._startTime) / (inst._animationDuration || 1), 10) * inst._animationDuration;
+				inst._loopLength -= inst._animationDuration || inst._loopLength;
+				inst._reachedKeyframes = [];
+				
+				// Clear out the dynamic keyframe cache
+				inst._keyframeCache = {};
+				
+				_fireEvent('loopComplete');
+				
+				if (inst._repsRemaining > -1) {
+					inst._repsRemaining--;
+					
+					if (inst._repsRemaining === 0) {
+						self.stop();
+						// Allow the animation to run indefinitely if `.play()` is called later.
+						inst._repsRemaining = -1;
+						return;
+					}
+				}
+				
+				_fireEvent('loopStart');
+			}
+
+			// Determine where we are in the loop
+			if (inst._animationDuration) {
+				inst._loopPosition = inst._loopLength / inst._animationDuration;
+			} else {
+				inst._loopPosition = 0;
+			}
+			
+			// Calculate the current frame of the loop
+			inst._currentFrame = parseInt(inst._loopPosition * inst._lastKeyframe, 10);
+			
+			prevKeyframe = _getLatestKeyframeId(inst._keyframeIds);
+			prevKeyframe = prevKeyframe === -1 ? inst._lastKeyframe : inst._keyframeIds[prevKeyframe];
+			
+			// Maintain a record of keyframes that have been run for this loop iteration
+			if (prevKeyframe > (last(inst._reachedKeyframes) || 0)) {
+				inst._reachedKeyframes.push(prevKeyframe);
+			}
+			
+			reachedKeyframeLastIndex = inst._reachedKeyframes.length ? inst._reachedKeyframes.length - 1 : 0;
+
+			// If a keyframe was skipped, set inst._currentFrame to the first skipped keyframe
+			if (inst._reachedKeyframes[reachedKeyframeLastIndex] !== inst._keyframeIds[reachedKeyframeLastIndex] ) {
+				inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
+			}
+			
+			// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
+			if (inst._currentFrame <= inst._lastKeyframe) {
+				// Clear out the canvas
+				if (inst.autoclear !== false) {
+					inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+				}
+
+				_fireEvent('enterFrame');
+				_updateActors(inst._currentFrame);
+			}
+			
+			_updateState();
+		}, 1000 / inst._params.fRate);
+
+		return inst._updateHandle;
+	}
+	
+	self = {
 		/**
 		 * Called immediately when `kapi()` is invoked, there is no need for the user to invoke it (`init` essentially acts as the Kapi constructor).  Sets up some properties that are used internally, and also sets up the `canvas` element that it acts upon.
 		 * 
@@ -506,11 +1597,11 @@ function kapi(canvas, params, events) {
 				inst._startTime += pauseDuration;
 			} else {
 				inst._loopStartTime = currTime;
-				this._updateAnimationDuration();
-				this._fireEvent('loopStart');
+				_updateAnimationDuration();
+				_fireEvent('loopStart');
 			}
 
-			this._updateState();
+			_updateState();
 			return this;
 		},
 
@@ -671,7 +1762,7 @@ function kapi(canvas, params, events) {
 			inst._liveCopies[actorInst.id] = {};
 			inst._layerIndex.push(actorInst.id);
 			actorInst.params.layer = inst._layerIndex.length - 1;
-			actorInst = this._addActorMethods(actorInst);
+			actorInst = _addActorMethods(actorInst);
 			
 			// Call the actor's `setup` function
 			actorInst.setup(this);
@@ -850,15 +1941,15 @@ function kapi(canvas, params, events) {
 				this.stop();
 			}
 			
-			frame = this._getRealKeyframe(frame) % inst._lastKeyframe;
+			frame = _getRealKeyframe(frame) % inst._lastKeyframe;
 			
 			// Fake a bunch of properties to make `update` properly emulate the desired `frame`
 			inst._currentFrame = frame;
 			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fRate);
 			inst._pausedAtTime = currTime;
-			inst._reachedKeyframes = inst._keyframeIds.slice(0, this._getLatestKeyframeId(inst._keyframeIds));
+			inst._reachedKeyframes = inst._keyframeIds.slice(0, _getLatestKeyframeId(inst._keyframeIds));
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
-			this._updateActors(inst._currentFrame);
+			_updateActors(inst._currentFrame);
 			return this;
 		},
 		
@@ -957,1102 +2048,11 @@ function kapi(canvas, params, events) {
 		 */
 		_debug: function () {
 			return inst;
-		},
-		
-		/**
-		 * Invokes all of the Kapi event handlers for a specified event.  Handlers are invoked in the order they were attached.
-		 * 
-		 * @param {String} eventName The name of the event to fire the handlers for.
-		 */
-		_fireEvent: function (eventName) {
-			var i;
-			
-			if (typeof eventName === 'string' && inst._events[eventName]) {
-				for (i = 0; i < inst._events[eventName].length; i++) {
-					inst._events[eventName][i].call(inst);
-				}
-			}
-		},
-		
-		/**
-		 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
-		 *  
-		 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
-		 * 
-		 *  You probably don't want to modify this unless you really know what you're doing.
-		 *
-		 *  @return {Number} The setTimeout identifier for the timer callback.
-		 */
-		_updateState: function () {
-			// Abandon all hope, ye who enter here.
-			var self = this,
-				currTime = now();
-
-			inst.fCount++;
-			inst._updateHandle = setTimeout(function () {
-				var reachedKeyframeLastIndex, 
-					prevKeyframe;
-
-				// Calculate how long this iteration of the loop has been running for
-				inst._loopLength = currTime - inst._loopStartTime;
-
-				// Check to see if the loop is starting over.
-				if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
-					// It is!
-	
-					// Reset the loop start time relative to when the animation began,
-					// not to when the final keyframe last completed
-					inst._loopStartTime = inst._startTime + parseInt((currTime - inst._startTime) / (inst._animationDuration || 1), 10) * inst._animationDuration;
-					inst._loopLength -= inst._animationDuration || inst._loopLength;
-					inst._reachedKeyframes = [];
-					
-					// Clear out the dynamic keyframe cache
-					inst._keyframeCache = {};
-					
-					self._fireEvent('loopComplete');
-					
-					if (inst._repsRemaining > -1) {
-						inst._repsRemaining--;
-						
-						if (inst._repsRemaining === 0) {
-							self.stop();
-							// Allow the animation to run indefinitely if `.play()` is called later.
-							inst._repsRemaining = -1;
-							return;
-						}
-					}
-					
-					self._fireEvent('loopStart');
-				}
-
-				// Determine where we are in the loop
-				if (inst._animationDuration) {
-					inst._loopPosition = inst._loopLength / inst._animationDuration;
-				} else {
-					inst._loopPosition = 0;
-				}
-				
-				// Calculate the current frame of the loop
-				inst._currentFrame = parseInt(inst._loopPosition * inst._lastKeyframe, 10);
-				
-				prevKeyframe = self._getLatestKeyframeId(inst._keyframeIds);
-				prevKeyframe = prevKeyframe === -1 ? inst._lastKeyframe : inst._keyframeIds[prevKeyframe];
-				
-				// Maintain a record of keyframes that have been run for this loop iteration
-				if (prevKeyframe > (last(inst._reachedKeyframes) || 0)) {
-					inst._reachedKeyframes.push(prevKeyframe);
-				}
-				
-				reachedKeyframeLastIndex = inst._reachedKeyframes.length ? inst._reachedKeyframes.length - 1 : 0;
-
-				// If a keyframe was skipped, set inst._currentFrame to the first skipped keyframe
-				if (inst._reachedKeyframes[reachedKeyframeLastIndex] !== inst._keyframeIds[reachedKeyframeLastIndex] ) {
-					inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
-				}
-				
-				// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
-				if (inst._currentFrame <= inst._lastKeyframe) {
-					// Clear out the canvas
-					if (inst.autoclear !== false) {
-						inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
-					}
-
-					self._fireEvent('enterFrame');
-					self._updateActors(inst._currentFrame);
-				}
-				
-				self._updateState();
-			}, 1000 / inst._params.fRate);
-
-			return inst._updateHandle;
-		},
-
-		/**
-		 * Update the state properties for the all of the actors in the animation.
-		 * @param {Number} currentFrame The deisred frame to process.
-		 */
-		_updateActors: function (currentFrame) {
-			// Here be dragons.
-			var actorName,
-				currentFrameStateProperties,
-				adjustedProperties,
-				objActionQueue,
-				objActionEvents,
-				oldQueueLength,
-				keyframeToModify,
-				currentAction,
-				i;
-
-			for (i = 0; i < inst._layerIndex.length; i++) {				
-				actorName = inst._layerIndex[i];
-				
-				// The current object may have a first keyframe greater than 0.
-				// If so, we don't want to calculate or draw it until we have
-				// reached this object's first keyframe
-				if (typeof inst._actorstateIndex[actorName][0] !== 'undefined' && currentFrame >= inst._actorstateIndex[actorName][0]) {
-					
-					currentFrameStateProperties = this._getActorState(actorName);
-
-					// If there are remaining keyframes for this object, draw it.
-					if (currentFrameStateProperties !== null) {
-						objActionQueue = inst._actorstateIndex[actorName].queue;
-						
-						// If there is a queued action, apply it to the current frame
-						if ((oldQueueLength = objActionQueue.length) > 0) {
-							currentAction = objActionQueue[0];
-							objActionEvents = currentAction.events;
-							
-							if (typeof objActionEvents.start === 'function') {
-								objActionEvents.start.call(inst._actors[actorName]);
-								delete objActionEvents.start;
-							}
-							
-							if (currentAction._internals.fromState === null) {
-								currentAction._internals.fromState = currentFrameStateProperties;
-							}
-							
-							adjustedProperties = this._getQueuedActionState(objActionQueue, actorName);
-							extend(currentFrameStateProperties, adjustedProperties, true);
-							
-							// If an immediate action finished running and was removed from the queue
-							if (oldQueueLength !== objActionQueue.length) {
-								// Save the modified state to the most recent keyframe for this object
-								keyframeToModify = this._getLatestKeyframeId(inst._actorstateIndex[actorName]);
-								inst._keyframes[ inst._keyframeIds[keyframeToModify] ][actorName] = currentFrameStateProperties;
-							}
-						}
-	
-						currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx);
-					}
-				}
-				inst._currentState[actorName] = currentFrameStateProperties;
-			}
-		},
-
-		/**
-		 * Apply the current keyframe state and any other state modifiers (such as Immediate Actions like `actor.to()`) to an actor.
-		 * @param {String} actorName The identifier string corresponding the desired actor object.
-		 * @returns {Object} The current state properties of `actorName`.  
-		 */
-		_getActorState: function (actorName) {
-
-			var actorKeyframeIndex = inst._actorstateIndex[actorName],
-				latestKeyframeId = this._getLatestKeyframeId(actorKeyframeIndex),
-				nextKeyframeId, 
-				latestKeyframeProps, 
-				nextKeyframeProps,
-				lastRecordedKeyframe;
-
-			// Do a check to see if any more keyframes remain in the animation loop for this actor
-			if (latestKeyframeId === -1) {
-				return null;
-			}
-
-			nextKeyframeId = this._getNextKeyframeId(actorKeyframeIndex, latestKeyframeId);
-			latestKeyframeProps = inst._keyframes[actorKeyframeIndex[latestKeyframeId]][actorName];
-			nextKeyframeProps = inst._keyframes[actorKeyframeIndex[nextKeyframeId]][actorName];
-
-			// If we are on or past the last keyframe
-			if (latestKeyframeId === nextKeyframeId  && inst._lastKeyframe > 0) {
-				return null;
-			}
-			
-			// Manage the actor cache
-			lastRecordedKeyframe = last(inst._actorstateIndex[actorName].reachedKeyframes) || 0;
-			
-			if (!inst._keyframeCache[actorName]) {
-				inst._keyframeCache[actorName] = {
-					'from': {},
-					'to': {}
-				};
-				
-				inst._actorstateIndex[actorName].reachedKeyframes = [];
-			}
-			
-			// Are we transitioning to a new keyframe segment for the actor?
-			if (latestKeyframeId !== lastRecordedKeyframe) {
-				// We are!
-				
-				// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
-				if (latestKeyframeId > lastRecordedKeyframe) {
-					inst._actorstateIndex[actorName].reachedKeyframes.push(latestKeyframeId);
-					
-					inst._keyframeCache[actorName] = {
-						'from': inst._keyframeCache[actorName].to,
-						'to': {}
-					};	
-				}
-			}
-
-			return this._calculateCurrentFrameProps(
-				latestKeyframeProps, 
-				nextKeyframeProps, 
-				actorKeyframeIndex[latestKeyframeId], 
-				actorKeyframeIndex[nextKeyframeId], 
-				nextKeyframeProps.easing
-			);
-		},
-
-		/**
-		 * Gets the current state of the queued-up Immediate Action.  Also updates the Immediate Actions queue if necessary.
-		 * @param {Array} queuedActionsArr The queue of Immediate Actions to be applied.
-		 * @returns {Object} An Object containing the current properties of the queued Immediate Action. 
-		 */
-		_getQueuedActionState: function (queuedActionsArr, actorName) {
-			var currTime = now(),
-				queuedAction = queuedActionsArr[0],
-				internals = queuedAction._internals,
-				completeHandler;
-
-			if (internals.startTime === null) {
-				internals.startTime = currTime;
-			}
-			
-			if (!internals.pauseBufferUpdated) {
-				internals.pauseBufferUpdated = currTime;
-			}
-			
-			// Correct for any animation pauses during the life of the action
-			if (internals.pauseBufferUpdated < inst._pausedAtTime) {
-				internals.pauseBuffer += (currTime - inst._pausedAtTime);
-				internals.pauseBufferUpdated = currTime;
-			}
-
-			if (internals.toState === null) {
-				internals.toState = {};
-				extend(internals.toState, internals.fromState);
-				extend(internals.toState, queuedAction.state, true);
-			}
-			
-			// If this is true, the user called `actor.endCurrentAction()`
-			if (internals.forceStop) {
-				internals.currFrame = queuedAction.duration + 1;
-			} else {
-				internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * inst._params.fRate;
-			}
-				
-
-			if (internals.currFrame > queuedAction.duration) {
-				completeHandler = queuedAction.events.complete;
-				
-				if (typeof completeHandler === 'function') {
-					completeHandler.call(inst._actors[actorName]);
-				}
-				
-				queuedActionsArr.shift();
-			}
-			
-			return this._calculateCurrentFrameProps(
-				internals.fromState, 
-				internals.toState, 
-				0, 
-				+queuedAction.duration, 
-				(queuedAction.easing || internals.fromState.easing), 
-				{
-					currentFrame: internals.currFrame
-				}
-			);
-		},
-
-		/**
-		 * Calculate an actor's properties for the current frame.
-		 * @param {Object} fromState An object containing all of the properties that defined the keyframe to animate _from_.  This can be considered the "starting state."
-		 * @param {Object} toState An object containing all of the properties that defined the keyframe to animate _to_.  This can be considered the "ending state."
-		 * @param {Number} fromKeyframe The Kapi keyframe ID that corresponds to `fromState`.
-		 * @param {Number} toKeyframe The Kapi keyframe ID that corresponds to `toState`.
-		 * @param {String} easing The easing formula to use.  Kapi comes prepackaged with "linear," but Kapi be extended with more easing formulas.  If `easing` is not valid, this method defaults to `linear`.
-		 * @param {Object} options Extra, non-necessary options to set.  They include:
-		 *   @param {Number} currentFrame If present, `currentFrame` overrides the internally maintained '_currentFrame' property.
-		 * @returns {Object}
-		 */
-		_calculateCurrentFrameProps: function (fromState, toState, fromKeyframe, toKeyframe, easing, options) {
-			// Magic.
-			var i, 
-				keyProp, 
-				fromProp, 
-				toProp, 
-				isColor,
-				fromStateId,
-				toStateId,
-				modifier,
-				previousPropVal,
-				fromPropType,
-				easeProp,
-				currentFrameProps = {};
-			
-			easing = kapi.tween[easing] ? easing : 'linear';
-			options = options || {};
-
-			for (keyProp in fromState) {
-
-				if (fromState.hasOwnProperty(keyProp)) {
-					fromProp = fromState[keyProp];
-					fromStateId = fromState.prototype.id;
-					
-					// Extract the property from the object if the "from" property has a custon easing
-					if (typeof fromProp === 'object' && keyProp !== 'prototype') {
-						for (easeProp in fromProp) {
-							if (fromProp.hasOwnProperty(easeProp)) {
-								// Do not apply custom eases from the "from" property.  Only the "to" property
-								fromProp = fromProp[easeProp];
-								break;
-							}
-						}
-					}
-
-					if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
-						fromProp = inst._keyframeCache[fromStateId].from[keyProp];
-					} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
-						// If fromProp is dynamic, preprocess it (by invoking it)
-						if (typeof fromProp === 'function') {
-							fromProp = fromProp.call(fromState) || 0;
-						} else {
-							modifier = getModifier(fromProp);
-							previousPropVal = this._getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
-							
-							// Convert the keyframe ID to its corresponding property value
-							if (previousPropVal === -1) {
-								// This is the first keyframe for this object, so modify the original parameter if it is available
-								previousPropVal = fromState.prototype.params[keyProp] || 0;
-							} else {
-								previousPropVal = inst._keyframes[previousPropVal][fromStateId][keyProp];
-							}
-							
-							// Convert the value into a number and perform the value modification
-							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(/\D/g, ''));
-						}
-						
-						// Update the cache
-						inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
-					}
-					
-					if (isKeyframeableProp(fromProp)) {
-						isColor = false;
-						toProp = toState[keyProp];
-						toStateId = toState.prototype.id;
-						
-						// Check to see if the "to" property has a custom easing and apply it
-						if (typeof toProp === 'object' && keyProp !== 'prototype') {
-							for (easeProp in toProp) {
-								if (toProp.hasOwnProperty(easeProp)) {
-									easing = kapi.tween[easeProp] ? easeProp : 'linear';
-									toProp = toProp[easeProp];
-									break;
-								}
-							}
-						}
-						
-						if (typeof inst._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
-							toProp = inst._keyframeCache[toStateId].to[keyProp];
-						} else if (typeof toProp === 'function' || isModifierString(toProp)) {
-							if (typeof toProp === 'function') {
-								toProp = toProp.call(toState) || 0;
-							} else {
-								modifier = getModifier(toProp);
-								toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
-							}
-							
-							inst._keyframeCache[toStateId].to[keyProp] = toProp;
-						}
-						
-						// Superfluous workaround for a meaningless and nonsensical JSLint error. ("Weird relation")
-						fromPropType = typeof fromProp;
-						
-						if (!isKeyframeableProp(toProp) || fromPropType !== typeof toProp) {
-							// The toProp isn't valid, so just make the current value for the this frame
-							// the same as the fromProp
-							currentFrameProps[keyProp] = fromProp;
-						} else {
-							if (typeof fromProp === 'string') {
-								isColor = true;
-								fromProp = getRGBArr(fromProp);
-								toProp = getRGBArr(toProp);
-							}
-
-							// The fromProp and toProp have been validated.
-							// Perform the easing calculation to find the middle value based on the _currentFrame
-							if (isColor) {
-								// If the property is a color, do some logic to
-								// blend it across the states
-								currentFrameProps[keyProp] = 'rgb(';
-
-								for (i = 0; i < fromProp.length; i++) {
-									currentFrameProps[keyProp] += Math.floor(applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp[i], toProp[i], options.currentFrame)) + ',';
-								}
-
-								// Swap the last RGB comma for an end-paren
-								currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
-
-							} else {
-								currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);
-							}
-						}
-					}
-				}
-			}
-
-			extend(currentFrameProps, fromState);
-			return currentFrameProps;
-		},
-		
-		/**
-		 * Look up the ID of the last keyframe that was completed in the current animation loop.
-		 * @param {Array} lookup The list of keyframes to check against.
-		 * @returns {Number}    
-		 */
-		_getPreviousKeyframeId: function (lookup) {
-			return this._getLatestKeyframeId(lookup) - 1;
-		},
-
-		/**
-		 * Lookup the ID of the most recent keyframe that was started, but not completed.
-		 * @param {Array} lookup The list of keyframes to check against.
-		 * @returns {Number} The index of the latest keyframe.  Returns `-1` if there are no keyframes remaining for `lookup` in the current loop.
-		 */
-		_getLatestKeyframeId: function (lookup) {
-			var i;
-			
-			if (inst._currentFrame === 0) {
-				return 0;
-			}
-
-			if (inst._currentFrame > lookup[lookup.length - 1]) {
-				// There are no more keyframes left in the animation loop for this object
-				return -1;
-			}
-
-			for (i = lookup.length - 1; i >= 0; i--) {
-				if (lookup[i] < inst._currentFrame) {
-					return i;
-				}
-			}
-
-			return lookup.length - 1;
-		},
-
-		/**
-		 * Get the ID of the next keyframe that has not been started yet.
-		 * @param {Array} lookup The list of keyframes to check against.
-		 * @param {Number} latestKeyframeId The ID of the most recent keyframe to have started.  Find this with `_getLatestKeyframeId()`.
-		 * @returns {Number}
-		 */
-		_getNextKeyframeId: function (lookup, latestKeyframeId) {
-			return latestKeyframeId === lookup.length - 1 ? latestKeyframeId : latestKeyframeId + 1;
-		},
-
-		/**
-		 * Augment an actor object with properties that enable it to interact with Kapi.  See the documentation for `add()` for more details on the properties this method adds (`add()` is a public method that wraps `_addActorMethods()`.).
-		 * @param {Object} actorObj The object to prep for Kapi use and add properties to.
-		 * @returns {Object} The "decorated" version of `actorObj`. 
-		 */
-		_addActorMethods: function (actorObj) {
-			var self = this;
-
-			/**
-			 * Create a keyframe for an actor.
-			 * @param {Number|String|Object} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s".
-			 * @param {Object} stateObj The properties of the keyframed state.  Any missing parameters on this keyframe will be inferred from other keyframes in the animation set for this actor.  Individual properties can have tweening formulas applied to them and only them.  To do this, pass those properties as Object literals that contain one property.  That property's name must be the same as a valid `kapi.tween` formula.
-			 * @returns {Object} The actor Object (for chaining).
-			 *
-			 * @codestart
-			 * var demo = kapi(document.getElementById('myCanvas')),
-             *  circle1 = demo.add(circle, {
-             *    name : 'myCircle',
-             *      x : 50,
-             *      y : 50,
-             *      radius : 50,
-             *      color : '#0f0',
-             *      easing : 'easeInOutQuad'
-             *    });
-             * 
-			 * circle1
-             *   .keyframe(0, {
-             *     x: 50,
-             *     y: 50
-             *   })
-             *   .keyframe('3s', {
-             *     x: {easeInSine: 450},
-             *     y: {easeOutSine: 250},
-             *     color: '#f0f'
-             *   }).liveCopy('5s', 0);
-			 * @codeend
-			 */
-			actorObj.keyframe = function keyframe (keyframeId, stateObj) {
-				// Save a "safe" copy of the state object before modifying it - will be used later in this function.
-				// This is done here to prevent the `_originalStates` property from being changed
-				// by other code that references it.
-				var orig,
-					prop,
-					digits;
-				
-				// If any number values were passed as strings, convert them to numbers.
-				for (prop in stateObj) {
-					if (stateObj.hasOwnProperty(prop)) {
-						// Yeah it's ugly.  But it's fast and DRY.
-						if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi, ''))).toString() ) {
-							stateObj[prop] = digits;
-						}
-					}
-				}
-				
-				orig = extend({}, stateObj);
-
-				try {
-					keyframeId = self._getRealKeyframe(keyframeId);
-				} catch (ex) {
-					if (window.console && window.console.error) {
-						console.error(ex);
-					}
-					return undefined;
-				}
-				
-				if (keyframeId < 0) {
-					throw 'Keyframe ' + keyframeId + ' is less than zero!';
-				}
-				
-				// Create keyframe zero if it was not done so already
-				if (keyframeId > 0 && typeof inst._keyframes['0'] === 'undefined') {
-					inst._keyframes['0'] = {};
-					inst._keyframeIds.unshift(0);
-				}
-
-				// If this keyframe does not already exist, create it
-				if (typeof inst._keyframes[keyframeId] === 'undefined') {
-					inst._keyframes[keyframeId] = {};
-				}
-				
-				if (typeof inst._originalStates[keyframeId] === 'undefined') {
-					inst._originalStates[keyframeId] = {};
-				}
-
-				// Create the keyframe state info for this object
-				inst._keyframes[keyframeId][actorObj.id] = stateObj;
-				
-				// Save a copy of the original `stateObj`.  This is used for updating keyframes after they are created.
-				inst._originalStates[keyframeId][actorObj.id] = orig;
-
-				// Perform necessary maintenance upon all of the keyframes in the animation
-				self._updateKeyframes(actorObj, keyframeId);
-				
-				// The `layer` property does not belong in the keyframe states, as it is part of the actor object itself
-				// and can be changed at any time by other parts of the API.
-				delete stateObj.layer;
-				
-				self._updateAnimationDuration();
-				
-				return this;
-			};
-
-			/**
-			 * Creates an Immediate Action and adds it to the Immediate Actions queue.  This immediately starts applying a state change over time.
-			 * @param {Number|String} duration The length of time to apply the change.  This can be either an amount of frames or a period of time, expressed in Kapi time syntax ("_x_ms" or "_x_s").
-			 * @param {Object} stateObj The state to animate the actor to.
-			 * @param {Object} events Event handlers to attach to this immediate action.  This paramter is optional.  In an event handler function, the `this` keyword refers to the actor object.  Available events:
-			 *   - `start` {Function}: Fires when the Immediate Action starts.
-			 *   - `complete` {Function}: Fires when the Immediate Action completes.
-			 * @returns {Object} The actor Object (for chaining).
-			 * 
-             * @codestart
-             * 
-             * var demo = kapi(document.getElementById('myCanvas')),
-             *  circle1 = demo.add(circle, {
-             *    name : 'myCircle',
-             *      x : 0,
-             *      y : 0,
-             *      radius : 50,
-             *      color : '#00ff00'
-             *    });
-             * 
-             * circle1.keyframe(0, { })
-             *   .to('2s', {
-             *      x: '+=100',
-             *      y: 50,
-             *      color: '#3f0000'
-             *    }, {
-             *      'start': function () {
-             *         console.log('Immediate action started!', this);
-             *       },
-             *       'complete': function () {
-             *         console.log('Immediate action completed!', this);
-             *       }
-             *   });
-             * @codeend
-			 */
-			actorObj.to = function to (duration, stateObj, events) {
-				var newestAction, 
-					queue = inst._actorstateIndex[actorObj.id].queue;
-
-					queue.push({
-						'duration': self._getRealKeyframe(duration),
-						'state': stateObj || {},
-						'events': events || {}
-					});
-				
-				newestAction = last(queue);
-				newestAction._internals = {};
-
-				newestAction._internals.startTime = null;
-				newestAction._internals.fromState = null;
-				newestAction._internals.toState = null;
-				newestAction._internals.pauseBuffer = null;
-				newestAction._internals.pauseBufferUpdated = null;
-
-				return this;
-			};
-			
-			/*
-			 * Removes any queued Immediate Actions that have not yet begun.  This does not cancel or affect the currently executing Immediate Action.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.clearQueue = function clearQueue () {
-				var queue = inst._actorstateIndex[actorObj.id].queue;
-				queue.length = 1;
-				
-				return this;
-			};
-			
-			/**
-			 * Skips to the end of the currently executing Immediate Action.  The `complete` event is fired, if it was set.  The Immediate Action queue is not affected.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.skipToEnd = function skipToEnd () {
-				var queue = inst._actorstateIndex[actorObj.id].queue,
-					currAction = queue[0];
-					
-				if (!queue.length) {
-					return this;
-				}
-				
-				currAction._internals.forceStop = true;
-				return this;
-			};
-			
-			/**
-			 * Stops and ends the currently executing Immediate Action in its current state.  Note:  Internally, this method calls `actor.skipToEnd()`, so the functionality of that method applies here as well.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.endCurrentAction = function endCurrentAction () {
-				var queue = inst._actorstateIndex[actorObj.id].queue,
-					currAction = queue[0];
-					
-				if (!queue.length) {
-					return this;
-				}
-				
-				currAction._internals.toState = this.getState();
-				this.skipToEnd();
-				
-				return this;
-			};
-
-			/**
-			 * Cleanly removes `actorObj` from `keyframeId`, as well as all internal references to it.
-			 * 
-			 * An error is logged if `actorObj` does not exist at `keyframeId`.
-			 * @param {Number|String} keyframeId The desired keyframe to remove `actorObj` from.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.remove = function remove (keyframeId) {
-				var i,
-					keyframe,
-					liveCopy,
-					liveCopiesRemain,
-					keyframeHasObjs = false;
-				
-				keyframeId = self._getRealKeyframe(keyframeId);
-				
-				if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
-					
-					delete inst._keyframes[keyframeId][actorObj.id];
-					delete inst._originalStates[keyframeId][actorObj.id];
-					
-					// Check to see if there's any objects left in the keyframe.
-					// If not, delete the keyframe.
-					for (keyframe in inst._keyframes[keyframeId]) {
-						if (inst._keyframes[keyframeId].hasOwnProperty(keyframe)) {
-							keyframeHasObjs = true;
-						}
-					}
-					
-					// You can't delete keyframe zero!  Logically it must always exist!
-					if (!keyframeHasObjs && keyframeId !== 0) {
-						
-						delete inst._keyframes[keyframeId];
-						delete inst._originalStates[keyframeId];
-						
-						for (i = 0; i < inst._keyframeIds.length; i++) {
-							if (inst._keyframeIds[i] === keyframeId) {
-								inst._keyframeIds.splice(i, 1);
-								break;
-							}
-						}
-						
-						for (i = 0; i < inst._reachedKeyframes.length; i++) {
-							if (inst._reachedKeyframes[i] === keyframeId) {
-								inst._reachedKeyframes.splice(i, 1);
-								break;
-							}
-						}
-					}
-					
-					for (i = 0; i < inst._actorstateIndex[actorObj.id].length; i++) {
-						if (inst._actorstateIndex[actorObj.id][i] === keyframeId) {
-							inst._actorstateIndex[actorObj.id].splice(i, 1);
-							
-							if (i <= inst._actorstateIndex[actorObj.id].reachedKeyframes.length) {
-								inst._actorstateIndex[actorObj.id].reachedKeyframes.pop();
-							}
-							
-							break;
-						}
-					}
-					
-					// Delete any liveCopies.
-					if (keyframeId in inst._liveCopies) {
-						delete inst._liveCopies[actorObj.id][keyframeId];
-					}
-					
-					for (liveCopy in inst._liveCopies[actorObj.id]) {
-						if (inst._liveCopies[actorObj.id].hasOwnProperty(liveCopy) && inst._liveCopies[actorObj.id][liveCopy].copyOf === keyframeId) {
-							actorObj.remove(liveCopy);
-							liveCopiesRemain = true;
-						}
-					}
-					
-					if (!liveCopiesRemain) {
-						delete inst._liveCopies[actorObj.id];
-					}
-					
-					self._updateAnimationDuration();
-					
-				} else {
-					if (console && console.error) {
-						if (inst._keyframes[keyframeId]) {
-							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but ' + actorObj.id + ' does not exist at that keyframe.');
-						} else {
-							console.error('Trying to remove ' + actorObj.id + ' from keyframe ' + keyframeId + ', but keyframe ' + keyframeId + ' does not exist.');
-						}
-					}
-				}
-				
-				return this;
-			};
-
-			/**
-			 * Removes the actor from all keyframes.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.removeAll = function removeAll () {
-				var id = actorObj.id;
-				
-				while (inst._actorstateIndex[id] && inst._actorstateIndex[id].length) {
-					inst._actors[id].remove(last(inst._actorstateIndex[id]));
-				}
-				
-				return this;
-			};
-
-			/**
-			 * Selectively modify the state properties of a keyframe.  Properties that are missing from a call to `updateKeyframe()` are left unmodified in the keyframe it is modifying.
-			 * 
-			 * Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.
-			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
-			 * @param {Object} newProps The properties on the keyframe to be updated.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
-				var keyframeToUpdate,
-					originalState;
-				
-				keyframeId = self._getRealKeyframe(keyframeId);
-				
-				if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
-					originalState = inst._originalStates[keyframeId][actorObj.id];
-					keyframeToUpdate = inst._keyframes[keyframeId][actorObj.id];
-					extend(originalState, newProps, true);
-					actorObj.keyframe(keyframeId, originalState);
-				} else {
-					if (window.console && window.console.error) {
-						if (!inst._keyframes[keyframeId]) {
-							console.error('Keyframe ' + keyframeId + ' does not exist.');
-						} else {
-							console.error('Keyframe ' + keyframeId + ' does not contain ' + actorObj.id);
-						}
-					}
-				}
-				
-				return this;
-			};
-			
-			/**
-			 * Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified, so is the live copy.
-			 * 
-			 * This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.
-			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
-			 * @param {Number|String} keyframeIdToCopy The keyframe identifier of the keyframe to copy..  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
-			 * @returns {Object} The actor Object (for chaining).  
-			 */
-			actorObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
-				
-				keyframeId = self._getRealKeyframe(keyframeId);
-				keyframeIdToCopy = self._getRealKeyframe(keyframeIdToCopy);
-				
-				if (inst._keyframes[keyframeIdToCopy] && inst._keyframes[keyframeIdToCopy][actorObj.id]) {
-					
-					inst._liveCopies[actorObj.id][keyframeId] = {
-						'copyOf': keyframeIdToCopy
-					};
-					
-					actorObj.keyframe(keyframeId, {});
-				} else {
-					if (window.console && window.console.error) {
-						if (!inst._keyframes[keyframeIdToCopy]) {
-							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but keyframe ' + keyframeIdToCopy + ' does not exist.');
-						} else {
-							console.error('Trying to make a liveCopy of ' + keyframeIdToCopy + ', but  ' + actorObj.id + ' does not exist at keyframe ' + keyframeId + '.');
-						}
-					}
-				}
-				
-				return this;
-			};
-			
-			/**
-			 * Get the current state of the actor as it exists in Kapi.
-			 * @returns {Object} An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when `getState` is called. 
-			 */
-			actorObj.getState = function getState () {
-				return inst._currentState[actorObj.id] || {};
-			};
-			
-			/**
-			 * Get the current value of a single state property from the actor.
-			 * @param {String} prop The state property to retrieve.  If `prop` is "layer," this function will return the layer that this actor is currently in.
-			 * @return {Anything} Whatever the current value for `prop` is. 
-			 */
-			actorObj.get = function get (prop) {
-				return prop.toLowerCase() === 'layer' ? inst._actors[actorObj.id].params.layer : actorObj.getState()[prop];
-			};
-			
-			/**
-			 * Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling `kapiInstance.getNumberOfLayers()`.
-			 * @param {Number} layerId The layer to move the actor to.
-			 * @returns {Object} The actor Object (for chaining).
-			 */
-			actorObj.moveToLayer = function moveToLayer (layerId) {
-				var slicedId;
-				
-				if (typeof layerId !== 'number') {
-					throw 'moveToLayer requires a number specifying which layer to move ' + this.id + ' to.';
-				}
-				
-				// Drop any decimal if the user for some reason passed in a float
-				layerId = parseInt(layerId, 10);
-				
-				if (layerId > -1 && layerId < inst._layerIndex.length) {
-					slicedId = inst._layerIndex.splice(actorObj.params.layer, 1)[0];
-					inst._layerIndex.splice(layerId, 0, slicedId);
-					self._updateLayers();
-				} else {
-					throw '"' + layerId + '" is out of bounds.  There are only ' + inst._layerIndex.length + ' layers in the animation, ' + actorObj.id + ' can only be moved to layers 0-' + inst._layerIndex.length;
-				}
-				
-				return actorObj;
-			};
-
-			return actorObj;
-		},
-		
-		/**
-		 * Calculates the "real" keyframe from `identifier`.  This means that you can speicify keyframes from things other than plain integers.  For example, you can calculate the real keyframe that will run at a certain period of time.
-		 * 
-		 * Valid formats:
-		 * - x : keyframe integer
-		 * - "xms" : keyframe at an amount of milliseconds
-		 * - "xs" : keyframe at an amount of seconds
-		 * @param {Number|String} identifier A value like the ones described above.
-		 * @returns {Number} A valid keyframe identifier equivalent to `identifier`  
-		 */
-		_getRealKeyframe: function (identifier) {
-			var quantifier, 
-				unit, 
-				calculatedKeyframe;
-
-			if (typeof identifier === 'number') {
-				return parseInt(identifier, 10);
-			} else if (typeof identifier === 'string') {
-				// Strip spaces
-				identifier = identifier.replace(/\s/g, '');
-
-				quantifier = /^(\d|\.)+/.exec(identifier)[0];
-				unit = /\D+$/.exec(identifier);
-
-				// The quantifier was passed as a string... just return it as a number
-				if (!unit) {
-					return parseInt(quantifier, 10);
-				}
-
-				if (calcKeyframe[unit]) {
-					calculatedKeyframe = parseInt(calcKeyframe[unit].call(this, quantifier), 10);
-				} else {
-					throw 'Invalid keyframe identifier unit!';
-				}
-
-				return calculatedKeyframe;
-			} else {
-				throw 'Invalid keyframe identifier type!';
-			}
-		},
-
-		/**
-		 * A maintenance function that calls a collection of other methods that, in turn, update and modify the animation keyframes.
-		 * @param actor An actor Object.
-		 * @param keyframeId The ID of the keyframe that a new state for `actor` is being placed. 
-		 */
-		_updateKeyframes: function (actor, keyframeId) {
-			this._updateKeyframeIdsList(keyframeId);
-			this._updateActorStateIndex(actor, {
-				add: keyframeId
-			});
-			this._normalizeActorAcrossKeyframes(actor.id);
-			this._updateLiveCopies();
-			this._updateLayers();
-		},
-
-		/**
-		 * Create a unique entry for a keyframe ID in the internal `_keyframeIds` list and sort it.
-		 * @param {Number} keyframeId The keyframe ID to add.
-		 */
-		_updateKeyframeIdsList: function (keyframeId) {
-			var i;
-
-			for (i = 0; i < inst._keyframeIds.length; i++) {
-				if (inst._keyframeIds[i] === keyframeId) {
-					return;
-				}
-			}
-
-			inst._keyframeIds.push(keyframeId);
-			sortArrayNumerically(inst._keyframeIds);
-		},
-
-		/**
-		 * Validate a actor's state across all of the keyframe.  Essentially, this function fills in the gaps for keyframes that were missing parameters when created.  If a parameter is present for an actor in one keyframe, it is present in all of them.
-		 * 
-		 * Missing parameters are inferred from other keyframes.  Specifically, a keyframe missing parameter X will simply copy parameter X from the previous keyframe.  This "inheritance" will go all the way to the first keyframe, which inherited its parameters from when the actor was `kapi.add`ed.
-		 * @param {Object} actorId The ID of the actor to normalize.
-		 */
-		_normalizeActorAcrossKeyframes: function (actorId) {
-			var newStateId, 
-				prevStateId, 
-				newStateObj, 
-				prevStateObj, 
-				prop,
-				stateCopy,
-				tempString,
-				i;
-
-			for (i = 0; i < inst._actorstateIndex[actorId].length; i++) {
-				newStateId = inst._actorstateIndex[actorId][i];
-				
-				if (typeof prevStateId === 'undefined') {
-					stateCopy = extend({}, inst._actors[actorId].params);
-				} else {
-					stateCopy = extend({}, prevStateObj);
-				}
-				
-				newStateObj = extend(stateCopy, inst._originalStates[newStateId][actorId], true);
-				newStateObj.prototype = inst._actors[actorId];
-				
-				inst._keyframes[newStateId][actorId] = newStateObj;
-				
-				// Find any hex color strings and convert them to rgb(x, x, x) format.
-				// More overhead for keyframe setup, but makes for faster frame processing later
-				for (prop in newStateObj) {
-					if (newStateObj.hasOwnProperty(prop) && typeof newStateObj[prop] === 'string') {
-						// Trim any whitespace and make a temporary string to test
-						tempString = newStateObj[prop].replace(/\s/g, '');
-						if (isColorString(tempString)) {
-							newStateObj[prop] = hexToRGBStr(tempString);
-						}
-					}
-				}
-				
-				prevStateId = newStateId;
-				prevStateObj = newStateObj;
-			}
-		},
-
-		/**
-		 * Performs the actions specified in `params` in the internal state record for `actor`
-		 * @param {Object} actor The actor to update the internal Kapi state of.
-		 * @param {Object} params A description of the actions to perform on `actor`:
-		 *   @param {Number} add The keyframe ID that `actor` is being placed into.
-		 */
-		_updateActorStateIndex: function (actor, params) {
-			// TODO:  This method should be used for removing keyframes as well.  Currently this is being performed in `actorObj.remove`.
-			var index = inst._actorstateIndex[actor.id],
-				stateAlreadyExists = false,
-				i;
-
-			if (typeof params.add !== 'undefined') {
-				for (i = 0; i < index.length; i++) {
-					if (index[i] === params.add) {
-						stateAlreadyExists = true;
-					}
-				}
-				
-				if (!stateAlreadyExists) {
-					index.push(params.add);
-					sortArrayNumerically(index);
-				}
-			}
-		},
-		
-		/**
-		 * Refresh the `layer` property on each actor.  Actors sync to the internal `_layerIndex` property.
-		 */
-		_updateLayers: function () {
-			var i;
-			
-			for (i = 0; i < inst._layerIndex.length; i++) {
-				inst._actors[inst._layerIndex[i]].params.layer = i;
-			}
-		},
-
-		/**
-		 * Synchronize any liveCopy keyframes with the keyframe they are liveCopying.  This is done by updating the keyframe reference on the liveCopy to the original.  
-		 */
-		_updateLiveCopies: function () {
-			var liveCopyData,
-				actorId,
-				tempLiveCopy;
-			
-			for (actorId in inst._liveCopies) {
-				if (inst._liveCopies.hasOwnProperty(actorId)) {
-					tempLiveCopy = inst._liveCopies[actorId];
-					
-					for (liveCopyData in tempLiveCopy) {
-						if (tempLiveCopy.hasOwnProperty(liveCopyData)) {
-							// OH MY GOD WTF IS WITH THIS LINE
-							inst._keyframes[liveCopyData][actorId] = inst._keyframes[inst._liveCopies[actorId][liveCopyData].copyOf][actorId];
-							// IS THIS A JOKE
-						}
-					}
-				}
-			}
-		},
-
-		/**
-		 * Recalculate and internally store the length of time that the animation will run for.
-		 */
-		_updateAnimationDuration: function () {
-			// Calculate and update the number of seconds this animation will run for
-			inst._lastKeyframe = last(inst._keyframeIds);
-			inst._animationDuration = 1000 * (inst._lastKeyframe / inst._params.fRate);
 		}
-
-	}.init(canvas, params, events);
+		
+	};
+	
+	return self.init(canvas, params, events);
 }
 
 /**
