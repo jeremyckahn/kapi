@@ -61,7 +61,29 @@
 			
 			<h5>stateObj:</h5>
 			
-			<p>Object. The properties of this keyframed state.  Any missing parameters on this keyframe will be inferred from previous keyframes in the animation set for this actor.</p>
+			<p>Object. The properties of this keyframed state.  Any missing parameters on this keyframe will be inferred from previous keyframes in the animation set for this actor. Individual properties can have tweening formulas applied to them and only them.  To do this, pass those properties as Object literals that contain one property.  That property's name must be the same as a valid <code>kapi.tween</code> formula.</p>
+			
+			<pre class="brush: js;">
+var demo = kapi(document.getElementById('myCanvas')),
+	circle1 = demo.add(circle, {
+		name : 'myCircle',
+		x : 50,
+		y : 50,
+		radius : 50,
+		color : '#0f0',
+		easing : 'easeInOutQuad'
+	});
+
+circle1
+	.keyframe(0, {
+		x: 50,
+		y: 50
+	})
+	.keyframe('3s', {
+		x: {easeInSine: 450},
+		y: {easeOutSine: 250},
+		color: '#f0f'
+	}).liveCopy('5s', 0);</pre>
 			
 			<div class="ret"><strong>Returns:</strong>The actor Object (for chaining).</div>
 			

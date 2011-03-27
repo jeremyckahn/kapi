@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v0.6.0
+ * v0.7.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '0.6.0',
+	var version = '0.7.0',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -1261,6 +1261,7 @@ function kapi(canvas, params, events) {
 				modifier,
 				previousPropVal,
 				fromPropType,
+				easeProp,
 				currentFrameProps = {};
 			
 			easing = kapi.tween[easing] ? easing : 'linear';
@@ -1271,6 +1272,17 @@ function kapi(canvas, params, events) {
 				if (fromState.hasOwnProperty(keyProp)) {
 					fromProp = fromState[keyProp];
 					fromStateId = fromState.prototype.id;
+					
+					// Extract the property from the object if the "from" property has a custon easing
+					if (typeof fromProp === 'object' && keyProp !== 'prototype') {
+						for (easeProp in fromProp) {
+							if (fromProp.hasOwnProperty(easeProp)) {
+								// Do not apply custom eases from the "from" property.  Only the "to" property
+								fromProp = fromProp[easeProp];
+								break;
+							}
+						}
+					}
 
 					if (typeof this._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 						fromProp = this._keyframeCache[fromStateId].from[keyProp];
@@ -1284,7 +1296,7 @@ function kapi(canvas, params, events) {
 							
 							// Convert the keyframe ID to its corresponding property value
 							if (previousPropVal === -1) {
-								// This is the first keyframe for this object, so modify the original parameter if it is available.
+								// This is the first keyframe for this object, so modify the original parameter if it is available
 								previousPropVal = fromState.prototype.params[keyProp] || 0;
 							} else {
 								previousPropVal = this._keyframes[previousPropVal][fromStateId][keyProp];
@@ -1302,6 +1314,17 @@ function kapi(canvas, params, events) {
 						isColor = false;
 						toProp = toState[keyProp];
 						toStateId = toState.prototype.id;
+						
+						// Check to see if the "to" property has a custom easing and apply it
+						if (typeof toProp === 'object' && keyProp !== 'prototype') {
+							for (easeProp in toProp) {
+								if (toProp.hasOwnProperty(easeProp)) {
+									easing = kapi.tween[easeProp] ? easeProp : 'linear';
+									toProp = toProp[easeProp];
+									break;
+								}
+							}
+						}
 						
 						if (typeof this._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
 							toProp = this._keyframeCache[toStateId].to[keyProp];
@@ -1411,9 +1434,32 @@ function kapi(canvas, params, events) {
 
 			/**
 			 * Create a keyframe for an actor.
-			 * @param {Number|String} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s").
-			 * @param {Object} stateObj The properties of the keyframed state.  Any missing parameters on this keyframe will be inferred from other keyframes in the animation set for this actor.
+			 * @param {Number|String|Object} keyframeId Where in the animation to place this keyframe.  Can either be the actual keyframe number, or a valid time format string ("_x_ms" or "_x_s".
+			 * @param {Object} stateObj The properties of the keyframed state.  Any missing parameters on this keyframe will be inferred from other keyframes in the animation set for this actor.  Individual properties can have tweening formulas applied to them and only them.  To do this, pass those properties as Object literals that contain one property.  That property's name must be the same as a valid `kapi.tween` formula.
 			 * @returns {Object} The actor Object (for chaining).
+			 *
+			 * @codestart
+			 * var demo = kapi(document.getElementById('myCanvas')),
+             *  circle1 = demo.add(circle, {
+             *    name : 'myCircle',
+             *      x : 50,
+             *      y : 50,
+             *      radius : 50,
+             *      color : '#0f0',
+             *      easing : 'easeInOutQuad'
+             *    });
+             * 
+			 * circle1
+             *   .keyframe(0, {
+             *     x: 50,
+             *     y: 50
+             *   })
+             *   .keyframe('3s', {
+             *     x: {easeInSine: 450},
+             *     y: {easeOutSine: 250},
+             *     color: '#f0f'
+             *   }).liveCopy('5s', 0);
+			 * @codeend
 			 */
 			actorObj.keyframe = function keyframe (keyframeId, stateObj) {
 				// Save a "safe" copy of the state object before modifying it - will be used later in this function.
