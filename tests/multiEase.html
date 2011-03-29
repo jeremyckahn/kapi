@@ -84,8 +84,8 @@
 			
 		circle1
 			.keyframe(0, {
-				x: 50,
-				y: 50
+				x: { easeInSine: 50},
+				y: {easeOutSine: 50}
 			})
 			.keyframe('3s', {
 				x: {easeInSine: '+=400'},
