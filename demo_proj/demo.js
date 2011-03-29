@@ -88,7 +88,7 @@
 		.keyframe('5s', {
 			scaleX: BADGE_SIZE + 70,
 			scaleY: BADGE_SIZE + 70,
-			x: '-=70' // OMG BUG!  The dynamic keyframe is being repeated!
+			x: '-=35' // OMG BUG!  The dynamic keyframe is being repeated!
 		})
 		.keyframe('6s', {})
 		.keyframe('7s', {

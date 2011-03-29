@@ -490,6 +490,7 @@ function kapi(canvas, params, events) {
 			prop,
 			stateCopy,
 			tempString,
+			prevProp,
 			i;
 
 		for (i = 0; i < inst._actorstateIndex[actorId].length; i++) {
@@ -505,16 +506,27 @@ function kapi(canvas, params, events) {
 			newStateObj.prototype = inst._actors[actorId];
 			
 			inst._keyframes[newStateId][actorId] = newStateObj;
-			
-			// Find any hex color strings and convert them to rgb(x, x, x) format.
-			// More overhead for keyframe setup, but makes for faster frame processing later
+						
 			for (prop in newStateObj) {
 				if (newStateObj.hasOwnProperty(prop) && typeof newStateObj[prop] === 'string') {
+					if (prevStateObj) {
+						prevProp = prevStateObj[prop];
+					}
+					
 					// Trim any whitespace and make a temporary string to test
 					tempString = newStateObj[prop].replace(/\s/g, '');
 					if (isColorString(tempString)) {
+						// Find any hex color strings and convert them to rgb(x, x, x) format.
+						// More overhead for keyframe setup, but makes for faster frame processing later
 						newStateObj[prop] = hexToRGBStr(tempString);
+						
+						// Check to see if the previous keyframed property was dynamic, and if it was given a new value in `newStateObj`.
+						// If true, just give it "+=0" value, which does nothing relative to the current value.
+						// It's basically a no-op.
+					} else if (prevStateObj && prevProp && (typeof isModifierString(prevProp) === 'function' || isModifierString(prevProp)) && typeof inst._originalStates[newStateId][actorId][prop] === 'undefined') {
+						newStateObj[prop] = '+=0';
 					}
+					
 				}
 			}
 			
