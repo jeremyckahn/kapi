@@ -108,7 +108,9 @@
 			color : '#f0f'
 		});
 		
-		demo.repeat(2);
+		demo.repeat(2, function () {
+			console.log('Done repeating!')
+		});
 		
 		console.dir(demo);
 		

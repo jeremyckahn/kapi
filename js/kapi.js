@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.0b
+ * v1.0.0b2
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.0b',
+	var version = '1.0.0b2',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -78,6 +78,7 @@ function kapi(canvas, params, events) {
 			_loopLength : undefined,
 			_loopPosition : undefined,
 			_updateHandle : undefined,
+			_repeatCompleteHandler : undefined,
 			fCount : 0
 		},
 		toStr = Object.prototype.toString,
@@ -374,6 +375,10 @@ function kapi(canvas, params, events) {
 		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
 	}
 	
+	function isDynamic (prop) {
+		return (isModifierString(prop) || typeof prop === 'function');
+	}
+	
 	/**
 	 * Extract the modifier portion of a keyframe modifier string. This assumes that `str` is a valid modifier string ('+=x', '-=x', '*=x', '/=x')
 	 * @param {String} str The string to extract the modifier from
@@ -389,7 +394,7 @@ function kapi(canvas, params, events) {
 	 * @returns {Boolean}
 	 */
 	function isKeyframeableProp (prop) {
-		return (typeof prop === 'number' || typeof prop === 'function' || isModifierString(prop) || isColorString(prop));
+		return (typeof prop === 'number' || isDynamic(prop) || isColorString(prop));
 	}
 
 	/**
@@ -520,10 +525,14 @@ function kapi(canvas, params, events) {
 						// More overhead for keyframe setup, but makes for faster frame processing later
 						newStateObj[prop] = hexToRGBStr(tempString);
 						
-						// Check to see if the previous keyframed property was dynamic, and if it was given a new value in `newStateObj`.
+						// Check to see if the property was dynamic in the previous keyframe, and if it was not given a new value in `newStateObj`.
 						// If true, just give it "+=0" value, which does nothing relative to the current value.
-						// It's basically a no-op.
-					} else if (prevStateObj && prevProp && (typeof isModifierString(prevProp) === 'function' || isModifierString(prevProp)) && typeof inst._originalStates[newStateId][actorId][prop] === 'undefined') {
+						// It's basically a no-op.  What this does, is fill in "no-op" dynamic keyframes until
+						// a non-dynamic value is provided for the property.
+					} else if (prevStateObj 
+								&& prevProp 
+								&& isDynamic(prevProp)
+								&& typeof inst._originalStates[newStateId][actorId][prop] === 'undefined') {
 						newStateObj[prop] = '+=0';
 					}
 					
@@ -904,7 +913,7 @@ function kapi(canvas, params, events) {
 				}
 				
 				// Delete any liveCopies.
-				if (keyframeId in inst._liveCopies) {
+				if (inst._liveCopies[actorObj.id] && inst._liveCopies[actorObj.id].hasOwnProperty(keyframeId)) {
 					delete inst._liveCopies[actorObj.id][keyframeId];
 				}
 				
@@ -1122,7 +1131,7 @@ function kapi(canvas, params, events) {
 
 				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
-				} else if (typeof fromProp === 'function' || isModifierString(fromProp)) {
+				} else if (isDynamic(fromProp)) {
 					// If fromProp is dynamic, preprocess it (by invoking it)
 					if (typeof fromProp === 'function') {
 						fromProp = fromProp.call(fromState) || 0;
@@ -1164,7 +1173,7 @@ function kapi(canvas, params, events) {
 					
 					if (typeof inst._keyframeCache[toStateId].to[keyProp] !== 'undefined') {
 						toProp = inst._keyframeCache[toStateId].to[keyProp];
-					} else if (typeof toProp === 'function' || isModifierString(toProp)) {
+					} else if (isDynamic(toProp)) {
 						if (typeof toProp === 'function') {
 							toProp = toProp.call(toState) || 0;
 						} else {
@@ -1443,6 +1452,10 @@ function kapi(canvas, params, events) {
 					
 					if (inst._repsRemaining === 0) {
 						self.stop();
+						if (typeof inst._repeatCompleteHandler === 'function') {
+							inst._repeatCompleteHandler.call(inst);
+							inst._repeatCompleteHandler = undefined;
+						}
 						// Allow the animation to run indefinitely if `.play()` is called later.
 						inst._repsRemaining = -1;
 						return;
@@ -1659,10 +1672,12 @@ function kapi(canvas, params, events) {
 		/**
 		 * Play the animation for set amount of repetitions.  After starting over the specified amount of times, the animation will `stop()`.
 		 * @param {Number} repetitions The number of times to start over.
+		 * @param {Function} callback An optional callback function that will be invoked when the `repeat()` sequence completes.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		repeat: function (repetitions) {
+		repeat: function (repetitions, callback) {
 			if (typeof repetitions === 'number' && repetitions >= -1) {
+				inst._repeatCompleteHandler = callback;
 				inst._repsRemaining = parseInt(repetitions, 10) + 1;
 			} else {
 				inst._repsRemaining = -1;
@@ -1673,11 +1688,12 @@ function kapi(canvas, params, events) {
 		/**
 		 * Play the animation And let it run for a set amount of iterations.  After running over the specified amount of times, the animation will `stop()`.  This is extremely similar to the functionality of `kapi.repeat()`, but the parameter controls how many times the animation runs for, not how many times it starts over.
 		 * @param {Number} iterations The number of times to run for.
+		 * @param {Function} callback An optional callback function that will be invoked when the `iterate()` sequence completes.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		iterate: function (iterations) {
+		iterate: function (iterations, callback) {
 			if (typeof iterations === 'number' && iterations >= -1) {
-				this.repeat(iterations - 1);
+				this.repeat(iterations - 1, callback);
 			}
 			
 			return this.play();
