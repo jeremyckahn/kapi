@@ -1,3 +1,5 @@
+/*global kapi:true, window:true, document:true, Image:true */
+
 (function () {
 	var canvas,
 		demo,
@@ -34,23 +36,34 @@
 		}
 	});
 	
+	// Set a pause toggle for when the user clicks the canvas.
+	canvas.addEventListener('click', function () {
+		if (demo.isPlaying()) {
+			demo.pause();
+		}  else {
+			demo.play();
+		}
+	}, true);
+	
+	function imgSetup (src) {
+		return function () {
+			this.img = new Image();
+			this.img.src = src;
+		};
+	}
+	
+	function imgDraw (ctx) {
+		ctx.globalAlpha = this.alpha;
+		ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
+		ctx.globalAlpha = 1;
+	}
+	
 	// Setup all the actors and add them to the kapi instance
 	for (actor in imageUrls) {
 		if (imageUrls.hasOwnProperty(actor)) {
 			actors[actor] = {
-				setup: function () {
-					var self = this;
-					this.img = new Image();
-					this.img.src = imageUrls[actor];
-					this.img.onload = function () {
-						//console.log(self.img);
-					}
-				},
-				draw: function (ctx) {
-					ctx.globalAlpha = this.alpha;
-					ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
-					ctx.globalAlpha = 1;
-				}
+				setup: imgSetup(imageUrls[actor]),
+				draw: imgDraw
 			};
 			
 			actors[actor] = demo.add(actors[actor], {
@@ -95,26 +108,30 @@
 			alpha: 0
 		});
 		
+	function getXofOffscreenSubTech () {
+		return -this.scaleX;
+	}
+	
+	function getXofOnScreenSubTech (index) {
+		return function () {
+			return ((this.scaleX + SUB_TECH_SPACING) * index) + 50;
+		};
+	}
+		
 	for (i = 0; i < subTechNameList.length; i++) {
 		actor = actors[subTechNameList[i]];
 		
 		actor
 			.keyframe(0, {
 				y: 300,
-				x: function () {
-					return -this.scaleX;
-				},
+				x: getXofOffscreenSubTech,
 				alpha: 0,
 				scaleX: SUB_TECH_SIZE,
 				scaleY: SUB_TECH_SIZE
 			})
 			.keyframe('1s', {
 				y: BADGE_OFFSET_TOP + BADGE_SIZE + 30,
-				x: (function (i) {
-					return function () {
-						return ((this.scaleX + SUB_TECH_SPACING) * i) + 50;
-					}
-				})(i),
+				x: getXofOnScreenSubTech(i),
 				alpha: 1
 			})
 			.keyframe('4s', {})
@@ -125,4 +142,4 @@
 	
 	demo.play();
 	
-}())
+}());
