@@ -220,7 +220,11 @@ function kapi(canvas, params, events) {
 	 */
 	function applyEase (easing, previousKeyframe, nextKeyframe, currProp, nextProp, currentFrame) {
 		if ((currentFrame || inst._currentFrame) >= previousKeyframe) {
-			return kapi.tween[easing]((currentFrame || inst._currentFrame) - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+			if (typeof currentFrame === 'undefined') {
+				return kapi.tween[easing](inst._currentFrame - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+			} else {
+				return kapi.tween[easing](currentFrame - previousKeyframe, currProp, nextProp - currProp, (nextKeyframe - previousKeyframe) || 1);
+			}
 		}
 	}
 
