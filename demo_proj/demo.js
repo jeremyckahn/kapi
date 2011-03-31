@@ -1,8 +1,14 @@
 /*global kapi:true, window:true, document:true, Image:true */
 
 (function () {
-	var canvas,
-		demo,
+	var CANVAS_HEIGHT = 375,
+		CANVAS_WIDTH = 500,
+		BADGE_SIZE = 256,
+		BADGE_OFFSET_TOP = 20,
+		SUB_TECH_SIZE = 40,
+		SUB_TECH_SPACING = 10,
+		NUM_RAYS = 10,
+		RAY_RADIUS = 1000,
 		imageUrls = {
 			'badge': 'img/HTML5_Badge.png',
 			'3d': 'img/3D_Effects.png',
@@ -12,23 +18,49 @@
 			'offline': 'img/Offline_Storage.png',
 			'perf': 'img/Performance.png',
 			'sem': 'img/Semantics.png',
-			'style': 'img/Styling.png'
-		},
+			'style': 'img/Styling.png'},
 		actors = {},
 		subTechNameList = [],
+		canvas,
+		demo,
 		actor,
-		i,
-		CANVAS_HEIGHT = 400,
-		CANVAS_WIDTH = 500,
-		BADGE_SIZE = 256,
-		BADGE_OFFSET_TOP = 20,
-		SUB_TECH_SIZE = 40,
-		SUB_TECH_SPACING = 10;
+		i;
+		
+	function degToRad (deg) {
+		return (deg / 180) * Math.PI;
+	}
+		
+	function rays (ctx) {
+		var i,
+			color = '#eee',
+			rotate = degToRad(this.rotate);
+		
+		ctx.beginPath();
+		ctx.globalAlpha = this.alpha;
+		
+		for (i = 0; i < NUM_RAYS; i++) {
+			ctx.moveTo(this.x, this.y);
+			
+			// This is wrong, it needs to be fixed!
+			ctx.lineTo(
+				RAY_RADIUS * Math.sin( degToRad(this.rotate + (360 / ( NUM_RAYS / i))) ),
+				RAY_RADIUS * Math.cos( degToRad(this.rotate + (360 / ( NUM_RAYS / i))) ));
+		}
+		
+		ctx.lineWidth = 30;
+		ctx.fillStyle = ctx.strokeStyle = color;
+		ctx.fill();
+		ctx.stroke();
+		ctx.closePath();
+		ctx.globalAlpha = 1;
+	}
+		
+	
 		
 	canvas = document.getElementsByTagName('canvas')[0];
 	
 	window.demo = demo = kapi(canvas, {
-		'fRate': 60,
+		'fRate': 45,
 		styles: {
 			'background': '#ddd',
 			'height': CANVAS_HEIGHT,
@@ -45,6 +77,15 @@
 		}
 	}, true);
 	
+	actors.rays = demo.add(rays, {
+		x: CANVAS_WIDTH / 2,
+		y: 140,
+		rotate: 0,
+		alpha: 0
+	});
+	
+	// Helper functions are defined up here, because JSLint yells at you if you define
+	// an anonymous function inside of a loop.
 	function imgSetup (src) {
 		return function () {
 			this.img = new Image();
@@ -76,13 +117,33 @@
 				easing:'easeInOutQuint'
 			});
 			
-			// All of the little symbols will be animated separately from the badge, 
+			// All of the little symbols (sub-techs) will be animated separately from the badge, 
 			// this is a helpful way to loop through them later
 			if (actor !== 'badge') {
 				subTechNameList.push(actor);
 			}
 		}
 	}
+	
+	function revPerSecond (seconds) {
+		return '+=' + (seconds * 90);
+	}
+	
+	actors.rays
+		.keyframe(0, {
+			
+		})
+		.keyframe('1s', {})
+		.keyframe('2s', {
+			rotate: revPerSecond(1),
+			alpha: 1
+		})
+		.keyframe('6s', {
+			rotate: revPerSecond(4)
+		}).keyframe('6.5s', {
+			alpha: 0,
+			rotate: revPerSecond(.5)
+		});
 	
 	actors.badge
 		.keyframe(0, {
@@ -101,13 +162,14 @@
 		.keyframe('5s', {
 			scaleX: BADGE_SIZE + 70,
 			scaleY: BADGE_SIZE + 70,
-			x: '-=35' // OMG BUG!  The dynamic keyframe is being repeated!
+			x: '-=35'
 		})
 		.keyframe('6s', {})
 		.keyframe('7s', {
 			alpha: 0
 		});
 		
+	// Helper functions defined outside of the loop, making JSLint happy again
 	function getXofOffscreenSubTech () {
 		return -this.scaleX;
 	}
