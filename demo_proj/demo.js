@@ -1,7 +1,8 @@
 /*global kapi:true, window:true, document:true, Image:true */
 
 (function () {
-	var CANVAS_HEIGHT = 375,
+	var FRAME_RATE = 30,
+		CANVAS_HEIGHT = 375,
 		CANVAS_WIDTH = 500,
 		BADGE_SIZE = 256,
 		BADGE_OFFSET_TOP = 20,
@@ -33,7 +34,8 @@
 	function rays (ctx) {
 		var i,
 			color = '#eee',
-			rotate = degToRad(this.rotate);
+			rotate = degToRad(this.rotate),
+			rayRot;
 		
 		ctx.beginPath();
 		ctx.globalAlpha = this.alpha;
@@ -42,9 +44,14 @@
 			ctx.moveTo(this.x, this.y);
 			
 			// This is wrong, it needs to be fixed!
+			
+			rayRot = degToRad( 360 * ( i / NUM_RAYS ) );
+			
 			ctx.lineTo(
-				RAY_RADIUS * Math.sin( degToRad(this.rotate + (360 / ( NUM_RAYS / i))) ),
-				RAY_RADIUS * Math.cos( degToRad(this.rotate + (360 / ( NUM_RAYS / i))) ));
+				
+				this.x + RAY_RADIUS * Math.sin( this.rotate + rayRot ),
+				this.y + RAY_RADIUS * Math.cos( this.rotate + rayRot ))
+				
 		}
 		
 		ctx.lineWidth = 30;
@@ -60,7 +67,7 @@
 	canvas = document.getElementsByTagName('canvas')[0];
 	
 	window.demo = demo = kapi(canvas, {
-		'fRate': 45,
+		'fRate': FRAME_RATE,
 		styles: {
 			'background': '#ddd',
 			'height': CANVAS_HEIGHT,
@@ -126,7 +133,7 @@
 	}
 	
 	function revPerSecond (seconds) {
-		return '+=' + (seconds * 90);
+		return '+=' + (seconds * 360);
 	}
 	
 	actors.rays
