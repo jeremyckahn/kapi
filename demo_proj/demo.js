@@ -36,6 +36,10 @@
 			color = '#eee',
 			rotate = degToRad(this.rotate),
 			rayRot;
+			
+		if (this.alpha === 0) {
+			return;
+		}
 		
 		ctx.beginPath();
 		ctx.globalAlpha = this.alpha;
