@@ -8,8 +8,9 @@
 		BADGE_OFFSET_TOP = 20,
 		SUB_TECH_SIZE = 40,
 		SUB_TECH_SPACING = 10,
-		NUM_RAYS = 10,
-		RAY_RADIUS = 1000,
+		NUM_RAYS = 15,
+		RAY_RADIUS = 320,
+		RAY_BASE_WIDTH = 40,
 		imageUrls = {
 			'badge': 'img/HTML5_Badge.png',
 			'3d': 'img/3D_Effects.png',
@@ -46,27 +47,30 @@
 		
 		for (i = 0; i < NUM_RAYS; i++) {
 			ctx.moveTo(this.x, this.y);
-			
-			// This is wrong, it needs to be fixed!
-			
 			rayRot = degToRad( 360 * ( i / NUM_RAYS ) );
 			
+			
 			ctx.lineTo(
-				
+				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot - 90 ),
+				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot - 90 ));
+			
+			ctx.lineTo(
 				this.x + RAY_RADIUS * Math.sin( this.rotate + rayRot ),
-				this.y + RAY_RADIUS * Math.cos( this.rotate + rayRot ))
+				this.y + RAY_RADIUS * Math.cos( this.rotate + rayRot ));
+				
+			ctx.lineTo(
+				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot + 90 ),
+				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot + 90 ));
 				
 		}
 		
-		ctx.lineWidth = 30;
+		ctx.lineWidth = 1;
 		ctx.fillStyle = ctx.strokeStyle = color;
 		ctx.fill();
 		ctx.stroke();
 		ctx.closePath();
 		ctx.globalAlpha = 1;
 	}
-		
-	
 		
 	canvas = document.getElementsByTagName('canvas')[0];
 	
@@ -137,7 +141,7 @@
 	}
 	
 	function revPerSecond (seconds) {
-		return '+=' + (seconds * 360);
+		return '-=' + degToRad(seconds * 40);
 	}
 	
 	actors.rays

@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.0b2
+ * v1.0.0b3
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.0b2',
+	var version = '1.0.0b3',
 		defaults = {
 			'fRate': 20,
 			'autoclear': true
@@ -82,6 +82,7 @@ function kapi(canvas, params, events) {
 			fCount : 0
 		},
 		toStr = Object.prototype.toString,
+		rModifierComponents = /(\+|\-|=|\*|\/)/g,
 		calcKeyframe = {
 			/**
 			 * Calculates the keyframe based on a given amount of amount of *milliseconds*.  To be invoked with `Function.call`.
@@ -376,7 +377,7 @@ function kapi(canvas, params, events) {
 	 * @returns {Boolean}
 	 */
 	function isModifierString (str) {
-		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=\d+\s*$/).test(str));
+		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=/).test(str));
 	}
 	
 	function isDynamic (prop) {
@@ -665,25 +666,25 @@ function kapi(canvas, params, events) {
 		 *
 		 * @codestart
 		 * var demo = kapi(document.getElementById('myCanvas')),
-     *  circle1 = demo.add(circle, {
-     *    name : 'myCircle',
-     *      x : 50,
-     *      y : 50,
-     *      radius : 50,
-     *      color : '#0f0',
-     *      easing : 'easeInOutQuad'
-     *    });
-     * 
+		 *  circle1 = demo.add(circle, {
+		 *    name : 'myCircle',
+		 *      x : 50,
+		 *      y : 50,
+		 *      radius : 50,
+		 *      color : '#0f0',
+		 *      easing : 'easeInOutQuad'
+		 *    });
+		 * 
 		 * circle1
-     *   .keyframe(0, {
-     *     x: 50,
-     *     y: 50
-     *   })
-     *   .keyframe('3s', {
-     *     x: {easeInSine: 450},
-     *     y: {easeOutSine: 250},
-     *     color: '#f0f'
-     *   }).liveCopy('5s', 0);
+		 *   .keyframe(0, {
+		 *     x: 50,
+		 *     y: 50
+		 *   })
+		 *   .keyframe('3s', {
+		 *     x: {easeInSine: 450},
+		 *     y: {easeOutSine: 250},
+		 *     color: '#f0f'
+		 *   }).liveCopy('5s', 0);
 		 * @codeend
 		 */
 		actorObj.keyframe = function keyframe (keyframeId, stateObj) {
@@ -698,7 +699,7 @@ function kapi(canvas, params, events) {
 			for (prop in stateObj) {
 				if (stateObj.hasOwnProperty(prop)) {
 					// Yeah it's ugly.  But it's fast and DRY.
-					if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(/\D/gi, ''))).toString() ) {
+					if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(rModifierComponents, ''))).toString() ) {
 						stateObj[prop] = digits;
 					}
 				}
@@ -1152,7 +1153,7 @@ function kapi(canvas, params, events) {
 						}
 						
 						// Convert the value into a number and perform the value modification
-						fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(/\D/g, ''));
+						fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
 					}
 					
 					// Update the cache
@@ -1182,7 +1183,7 @@ function kapi(canvas, params, events) {
 							toProp = toProp.call(toState) || 0;
 						} else {
 							modifier = getModifier(toProp);
-							toProp = modifiers[modifier](fromProp, +toProp.replace(/\D/g, ''));
+							toProp = modifiers[modifier](fromProp, +toProp.replace(rModifierComponents, ''));
 						}
 						
 						inst._keyframeCache[toStateId].to[keyProp] = toProp;
