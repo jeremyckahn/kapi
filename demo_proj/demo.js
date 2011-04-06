@@ -1,26 +1,53 @@
 /*global kapi:true, window:true, document:true, Image:true */
 
+/** Kapi demo animation
+    by Jeremy Kahn - jeremyckahn@gmail.com
+
+This is a demonstration of the type of animation that can be made with the Kapi, a keyframing API for the HTML 5 canvas.  Images are used under the Creative Commons License, and were obtained from: http://www.w3.org/html/logo/
+
+For more information and to download Kapi, please visit: https://github.com/jeremyckahn/kapi
+*/
+
 (function () {
 	var FRAME_RATE = 30,
 		CANVAS_HEIGHT = 375,
 		CANVAS_WIDTH = 500,
 		BADGE_SIZE = 256,
 		BADGE_OFFSET_TOP = 20,
+		SUB_TECH_Y = 300,
 		SUB_TECH_SIZE = 40,
 		SUB_TECH_SPACING = 10,
 		actors = {},
 		subTechNameList = [],
+		imageUrls = {
+			'badge': 'img/HTML5_Badge.png',
+			'3d': 'img/3D_Effects.png',
+			'connect': 'img/Connectivity.png',
+			'access': 'img/Device_Access.png',
+			'multi': 'img/Multimedia.png',
+			'offline': 'img/Offline_Storage.png',
+			'perf': 'img/Performance.png',
+			'sem': 'img/Semantics.png',
+			'style': 'img/Styling.png'},
 		canvas,
 		demo,
 		actor,
 		i;
 		
+	if (!window._demoApp) {
+		window._demoApp = {};
+	}
+		
 	canvas = document.getElementsByTagName('canvas')[0];
 	
-	window.demo = demo = kapi(canvas, {
+	/////////////////
+	// KAPI INSTANCE SETUP
+	/////////////////
+	
+	window._demoApp.kapiInst = demo = kapi(canvas, {
 		'fRate': FRAME_RATE,
 		styles: {
-			'background': '#ddd',
+			'background': '#f2f2f2',
 			'height': CANVAS_HEIGHT,
 			'width': CANVAS_WIDTH
 		}
@@ -35,7 +62,10 @@
 		}
 	}, true);
 	
-	//actors.rays = demo.add(rays, {
+	/////////////////
+	// ACTOR SETUP
+	/////////////////
+	
 	actors.rays = demo.add(window._demoApp.actors.rays, {
 		x: CANVAS_WIDTH / 2,
 		y: 140,
@@ -43,31 +73,11 @@
 		alpha: 0
 	});
 	
-	// Helper functions are defined up here, because JSLint yells at you if you define
-	// an anonymous function inside of a loop.
-	function imgSetup (src) {
-		return function () {
-			this.img = new Image();
-			this.img.src = src;
-		};
-	}
-	
-	function imgDraw (ctx) {
-		ctx.globalAlpha = this.alpha;
-		ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
-		ctx.globalAlpha = 1;
-	}
-	
-	imageUrls = window._demoApp.imageUrls;
-	
-	// Setup all the actors and add them to the kapi instance
+	// Setup all the image actors and add them to the kapi instance
 	for (actor in imageUrls) {
 		if (imageUrls.hasOwnProperty(actor)) {
-			actors[actor] = {
-				setup: imgSetup(imageUrls[actor]),
-				draw: imgDraw
-			};
 			
+			actors[actor] = window._demoApp.actors.img(imageUrls[actor]);
 			actors[actor] = demo.add(actors[actor], {
 				'name': actor,
 				x: 0,
@@ -78,14 +88,19 @@
 				easing:'easeInOutQuint'
 			});
 			
-			// All of the little symbols (sub-techs) will be animated separately from the badge, 
-			// this is a helpful way to loop through them later
+			// All of the little black symbols (sub-techs) will be animated separately from the badge, 
+			// this is a helpful way to keep track of them and loop through later
 			if (actor !== 'badge') {
 				subTechNameList.push(actor);
 			}
 		}
 	}
 	
+	/////////////////
+	// KEYFRAME SETUP
+	/////////////////
+	
+	// Keyframes for the light rays.
 	actors.rays
 		.keyframe(0, {
 			
@@ -99,9 +114,10 @@
 			rotate: window._demoApp.utils.revsPerSecond(4)
 		}).keyframe('6.5s', {
 			alpha: 0,
-			rotate: window._demoApp.utils.revsPerSecond(.5)
+			rotate: window._demoApp.utils.revsPerSecond(0.5)
 		});
 	
+	// Keyframes for the big HTML5 badge image.
 	actors.badge
 		.keyframe(0, {
 			scaleX: 1,
@@ -126,7 +142,8 @@
 			alpha: 0
 		});
 		
-	// Helper functions defined outside of the loop, making JSLint happy again
+	// Helper functions for sub-tech actor positioning.  Seems a bit messier, but JSLint yells at you
+	// if you define the functions inside of the for loop.  These are used in the loop below.
 	function getXofOffscreenSubTech () {
 		return -this.scaleX;
 	}
@@ -136,20 +153,21 @@
 			return ((this.scaleX + SUB_TECH_SPACING) * index) + 50;
 		};
 	}
-		
+	
+	// Loop through all of the "sub-tech" image actors and keyframe them.
 	for (i = 0; i < subTechNameList.length; i++) {
+		// We have the name of the actor, so grab it out of the `actors` Object
 		actor = actors[subTechNameList[i]];
 		
 		actor
 			.keyframe(0, {
-				y: 300,
+				y: SUB_TECH_Y,
 				x: getXofOffscreenSubTech,
 				alpha: 0,
 				scaleX: SUB_TECH_SIZE,
 				scaleY: SUB_TECH_SIZE
 			})
 			.keyframe('1s', {
-				y: BADGE_OFFSET_TOP + BADGE_SIZE + 30,
 				x: getXofOnScreenSubTech(i),
 				alpha: 1
 			})

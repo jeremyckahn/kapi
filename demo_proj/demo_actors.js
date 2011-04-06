@@ -1,3 +1,9 @@
+/*global window:true, Image:true */
+
+/** Kapi demo animation - actors
+    by Jeremy Kahn - jeremyckahn@gmail.com
+*/
+
 (function () {
 	if (!window._demoApp) {
 		window._demoApp = {};
@@ -6,27 +12,23 @@
 	var app = window._demoApp,
 		NUM_RAYS = 15,
 		RAY_RADIUS = 320,
-		RAY_BASE_WIDTH = 40;
+		RAY_BASE_WIDTH = 30;
 	
 	app.imageUrls = {
-		'badge': 'img/HTML5_Badge.png',
-		'3d': 'img/3D_Effects.png',
-		'connect': 'img/Connectivity.png',
-		'access': 'img/Device_Access.png',
-		'multi': 'img/Multimedia.png',
-		'offline': 'img/Offline_Storage.png',
-		'perf': 'img/Performance.png',
-		'sem': 'img/Semantics.png',
-		'style': 'img/Styling.png'
+		
 	};
 	
 	app.actors = {};
 	app.actors.rays = function (ctx) {
 		var i,
-			color = '#eee',
-			rotate = window._demoApp.utils.degToRad(this.rotate),
-			rayRot;
+			color = '#fff',
+			rayRot,
+			adjustedAngle1,
+			adjustedAngle2,
+			adjustedAngle3;
 
+		// A simple optimization.  If the opacity is `0`, then the rays are not visible,
+		// and there is no reason to draw them at all.  Just return.
 		if (this.alpha === 0) {
 			return;
 		}
@@ -34,23 +36,26 @@
 		ctx.beginPath();
 		ctx.globalAlpha = this.alpha;
 
+		// Loop through all the rays and draw them at their respective angles
 		for (i = 0; i < NUM_RAYS; i++) {
 			ctx.moveTo(this.x, this.y);
 			rayRot = window._demoApp.utils.degToRad( 360 * ( i / NUM_RAYS ) );
-
-
-			ctx.lineTo(
-				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot - 90 ),
-				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot - 90 ));
-
-			ctx.lineTo(
-				this.x + RAY_RADIUS * Math.sin( this.rotate + rayRot ),
-				this.y + RAY_RADIUS * Math.cos( this.rotate + rayRot ));
+			
+			adjustedAngle1 = this.rotate + rayRot - 90;
+			adjustedAngle2 = this.rotate + rayRot;
+			adjustedAngle3 = this.rotate + rayRot + 90;
 
 			ctx.lineTo(
-				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot + 90 ),
-				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot + 90 ));
+				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( adjustedAngle1 ),
+				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( adjustedAngle1 ));
 
+			ctx.lineTo(
+				this.x + RAY_RADIUS * Math.sin( adjustedAngle2 ),
+				this.y + RAY_RADIUS * Math.cos( adjustedAngle2 ));
+
+			ctx.lineTo(
+				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( adjustedAngle3 ),
+				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( adjustedAngle3 ));
 		}
 
 		ctx.lineWidth = 1;
@@ -59,5 +64,19 @@
 		ctx.stroke();
 		ctx.closePath();
 		ctx.globalAlpha = 1;
-	}
-}())
+	};
+	
+	app.actors.img = function (src) {
+		return {
+			'setup': function setup () {
+				this.img = new Image();
+				this.img.src = src;
+			},
+			'draw': function draw (ctx) {
+				ctx.globalAlpha = this.alpha;
+				ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
+				ctx.globalAlpha = 1;
+			} 
+		};
+	};
+}());

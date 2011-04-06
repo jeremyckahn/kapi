@@ -1,3 +1,9 @@
+/*global window:true */
+
+/** Kapi demo animation - utilities
+    by Jeremy Kahn - jeremyckahn@gmail.com
+*/
+
 (function () {
 	if (!window._demoApp) {
 		window._demoApp = {};
@@ -13,4 +19,4 @@
 		}
 	};
 	
-}())
+}());
