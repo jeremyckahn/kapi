@@ -29,6 +29,8 @@ For more information and to download Kapi, please visit: https://github.com/jere
 			'perf': 'img/Performance.png',
 			'sem': 'img/Semantics.png',
 			'style': 'img/Styling.png'},
+		numImages = 0,
+		img,
 		canvas,
 		demo,
 		actor,
@@ -36,6 +38,12 @@ For more information and to download Kapi, please visit: https://github.com/jere
 		
 	if (!window._demoApp) {
 		window._demoApp = {};
+	}
+	
+	for (img in imageUrls) {
+		if (imageUrls.hasOwnProperty(img)) {
+			numImages++;
+		}
 	}
 		
 	canvas = document.getElementsByTagName('canvas')[0];
@@ -52,6 +60,14 @@ For more information and to download Kapi, please visit: https://github.com/jere
 			'width': CANVAS_WIDTH
 		}
 	});
+	
+	// The animation will begin as soon as all of the images have loaded.
+	window._demoApp.imageLoadComplete = function () {
+		numImages--;
+		if (numImages === 0) {
+			window._demoApp.kapiInst.play();
+		}
+	};
 	
 	// Set a pause toggle for when the user clicks the canvas.
 	canvas.addEventListener('click', function () {
@@ -176,7 +192,5 @@ For more information and to download Kapi, please visit: https://github.com/jere
 				alpha: 0
 			});
 	}
-	
-	demo.play();
 	
 }());

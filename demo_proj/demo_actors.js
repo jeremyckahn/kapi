@@ -70,9 +70,19 @@
 		return {
 			'setup': function setup () {
 				this.img = new Image();
+				// Call the `imageLoadComplete` function when the image is loaded.
+				// Once the last image is loaded, the animation with `play()`.
+				this.img.onload = window._demoApp.imageLoadComplete;
 				this.img.src = src;
 			},
 			'draw': function draw (ctx) {
+				
+				// This is kind of a weak check...
+				/*if (!this.prototype.img.complete) {
+					return;
+				}*/
+				
+				//ctx.globalAlpha = this.alpha > 0.0001 ? this.alpha : 0;
 				ctx.globalAlpha = this.alpha;
 				ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
 				ctx.globalAlpha = 1;
