@@ -45,7 +45,7 @@ For more information and to download Kapi, please visit: https://github.com/jere
 	/////////////////
 	
 	window._demoApp.kapiInst = demo = kapi(canvas, {
-		'fRate': FRAME_RATE,
+		'fps': FRAME_RATE,
 		styles: {
 			'background': '#f2f2f2',
 			'height': CANVAS_HEIGHT,

@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.0b3
+ * v1.0.0b4
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * hosted at: https://github.com/jeremyckahn/kapi
  * 
@@ -19,7 +19,7 @@
  * 
  * @param {HTMLCanvasElement} canvas The canvas element to be used with Kapi.
  * @param {Object} params Parameters to set on the new Kapi instance. They are as follows:
- *   @param {Number} fRate The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
+ *   @param {Number} fps The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
  *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object.
  *   @param {Boolean} autoclear Controls whether or not the `canvas` is cleared out after each frame is rendered.  This is `true` by default.
  * @param {Object} events An object containing events that can be set on this instance of Kapi.
@@ -29,7 +29,7 @@
  * var myKapi = kapi(document.getElementsByTagName('canvas')[0], 
  *   // params
  *   {
- *     fRate : 30,
+ *     fps : 30,
  *     styles : {
  *       'height':  '300px',
  *       'width': '500px',
@@ -48,9 +48,9 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.0b3',
+	var version = '1.0.0b4',
 		defaults = {
-			'fRate': 20,
+			'fps': 20,
 			'autoclear': true
 		},
 		self = {},
@@ -90,7 +90,7 @@ function kapi(canvas, params, events) {
 			 * @returns {Number} A floating-point equivalent of the keyframe equivalent of `num`.
 			 */
 			'ms': function (num) {
-				return (num * inst._params.fRate) / 1000;
+				return (num * inst._params.fps) / 1000;
 			},
 			/**
 			 * Calculates the keyframe based on a given amount of amount of *seconds*.  To be invoked with `Function.call`.
@@ -99,7 +99,7 @@ function kapi(canvas, params, events) {
 			 */
 
 			's': function (num) {
-				return num * inst._params.fRate;
+				return num * inst._params.fps;
 			}
 		},
 		/**
@@ -604,7 +604,7 @@ function kapi(canvas, params, events) {
 	function _updateAnimationDuration () {
 		// Calculate and update the number of seconds this animation will run for
 		inst._lastKeyframe = last(inst._keyframeIds);
-		inst._animationDuration = 1000 * (inst._lastKeyframe / inst._params.fRate);
+		inst._animationDuration = 1000 * (inst._lastKeyframe / inst._params.fps);
 	}
 	
 	/**
@@ -1328,7 +1328,7 @@ function kapi(canvas, params, events) {
 		if (internals.forceStop) {
 			internals.currFrame = queuedAction.duration + 1;
 		} else {
-			internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * inst._params.fRate;
+			internals.currFrame = ((currTime - (internals.startTime + internals.pauseBuffer)) / 1000) * inst._params.fps;
 		}
 			
 
@@ -1419,7 +1419,7 @@ function kapi(canvas, params, events) {
 	/**
 	 *  Updates the internal Kapi properties to reflect the current state - which is dependant on the current time.  `_updateState` manages all of the high-level frame logic such as determining the current keyframe, starting over the animation loop if needed, clearing the canvas and managing the keyframe cache.
 	 *  
-	 *  This function calls itself repeatedly at the rate defined by the `fRate` property.  `fRate` was provided when the `kapi()` constructor was orignally called.
+	 *  This function calls itself repeatedly at the rate defined by the `fps` property.  `fps` was provided when the `kapi()` constructor was orignally called.
 	 * 
 	 *  You probably don't want to modify this unless you really know what you're doing.
 	 *
@@ -1507,7 +1507,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			_updateState();
-		}, 1000 / inst._params.fRate);
+		}, 1000 / inst._params.fps);
 
 		return inst._updateHandle;
 	}
@@ -1897,8 +1897,8 @@ function kapi(canvas, params, events) {
 		 * 
 		 */
 		framerate: function (newFramerate) {
-			var oldFRate,
-				fRateChange,
+			var oldFps,
+				fpsChange,
 				originalStatesIndexCopy = {},
 				originalStatesCopy = {},
 				originalReachedKeyframeCopy,
@@ -1910,9 +1910,9 @@ function kapi(canvas, params, events) {
 				i;
 			
 			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
-				oldFRate = inst._params.fRate;
-				fRateChange = newFramerate / oldFRate;
-				inst._params.fRate = parseInt(newFramerate, 10);
+				oldFps = inst._params.fps;
+				fpsChange = newFramerate / oldFps;
+				inst._params.fps = parseInt(newFramerate, 10);
 				
 				// Make safe copies of a number of things that have to be re-processed after the framerate change.
 				extend(originalStatesIndexCopy, inst._actorstateIndex);
@@ -1925,12 +1925,12 @@ function kapi(canvas, params, events) {
 					if (originalStatesIndexCopy.hasOwnProperty(index)) {
 
 						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
-							inst._actors[index].keyframe(fRateChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+							inst._actors[index].keyframe(fpsChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
 						}
 						
 						// Update the durations on the Immediate Actions.
 						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
-							inst._actorstateIndex[index].queue[i].duration *= fRateChange;
+							inst._actorstateIndex[index].queue[i].duration *= fpsChange;
 						}
 						
 						// Restore the actor's reachedKeyframes list.
@@ -1945,18 +1945,18 @@ function kapi(canvas, params, events) {
 						for (liveCopy in originalLiveCopies[liveCopyData]) {
 							if (originalLiveCopies[liveCopyData].hasOwnProperty(liveCopy)) {
 								tempLiveCopy = originalLiveCopies[liveCopyData][liveCopy];
-								inst._actors[liveCopyData].liveCopy((+liveCopy) * fRateChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
+								inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
 							}
 						}
 					}
 				}
 				
 				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
-					inst._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fRateChange;
+					inst._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fpsChange;
 				}
 			}
 			
-			return inst._params.fRate;
+			return inst._params.fps;
 		},
 		
 		/**
@@ -1978,7 +1978,7 @@ function kapi(canvas, params, events) {
 			
 			// Fake a bunch of properties to make `update` properly emulate the desired `frame`
 			inst._currentFrame = frame;
-			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fRate);
+			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fps);
 			inst._pausedAtTime = currTime;
 			inst._reachedKeyframes = inst._keyframeIds.slice(0, _getLatestKeyframeId(inst._keyframeIds));
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);

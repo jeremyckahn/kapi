@@ -12,7 +12,7 @@ $(function () {
 			circle1;
 		
 		myKapi = kapi(document.getElementById('demo1'), {
-			fRate: 30,
+			fps: 30,
 			// Set up some basic styles for the canvas
 			styles: {
 				height: 	'400px',
