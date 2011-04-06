@@ -8,69 +8,12 @@
 		BADGE_OFFSET_TOP = 20,
 		SUB_TECH_SIZE = 40,
 		SUB_TECH_SPACING = 10,
-		NUM_RAYS = 15,
-		RAY_RADIUS = 320,
-		RAY_BASE_WIDTH = 40,
-		imageUrls = {
-			'badge': 'img/HTML5_Badge.png',
-			'3d': 'img/3D_Effects.png',
-			'connect': 'img/Connectivity.png',
-			'access': 'img/Device_Access.png',
-			'multi': 'img/Multimedia.png',
-			'offline': 'img/Offline_Storage.png',
-			'perf': 'img/Performance.png',
-			'sem': 'img/Semantics.png',
-			'style': 'img/Styling.png'},
 		actors = {},
 		subTechNameList = [],
 		canvas,
 		demo,
 		actor,
 		i;
-		
-	function degToRad (deg) {
-		return (deg / 180) * Math.PI;
-	}
-		
-	function rays (ctx) {
-		var i,
-			color = '#eee',
-			rotate = degToRad(this.rotate),
-			rayRot;
-			
-		if (this.alpha === 0) {
-			return;
-		}
-		
-		ctx.beginPath();
-		ctx.globalAlpha = this.alpha;
-		
-		for (i = 0; i < NUM_RAYS; i++) {
-			ctx.moveTo(this.x, this.y);
-			rayRot = degToRad( 360 * ( i / NUM_RAYS ) );
-			
-			
-			ctx.lineTo(
-				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot - 90 ),
-				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot - 90 ));
-			
-			ctx.lineTo(
-				this.x + RAY_RADIUS * Math.sin( this.rotate + rayRot ),
-				this.y + RAY_RADIUS * Math.cos( this.rotate + rayRot ));
-				
-			ctx.lineTo(
-				this.x + (RAY_BASE_WIDTH / 2) * Math.sin( this.rotate + rayRot + 90 ),
-				this.y + (RAY_BASE_WIDTH / 2) * Math.cos( this.rotate + rayRot + 90 ));
-				
-		}
-		
-		ctx.lineWidth = 1;
-		ctx.fillStyle = ctx.strokeStyle = color;
-		ctx.fill();
-		ctx.stroke();
-		ctx.closePath();
-		ctx.globalAlpha = 1;
-	}
 		
 	canvas = document.getElementsByTagName('canvas')[0];
 	
@@ -92,7 +35,8 @@
 		}
 	}, true);
 	
-	actors.rays = demo.add(rays, {
+	//actors.rays = demo.add(rays, {
+	actors.rays = demo.add(window._demoApp.actors.rays, {
 		x: CANVAS_WIDTH / 2,
 		y: 140,
 		rotate: 0,
@@ -113,6 +57,8 @@
 		ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
 		ctx.globalAlpha = 1;
 	}
+	
+	imageUrls = window._demoApp.imageUrls;
 	
 	// Setup all the actors and add them to the kapi instance
 	for (actor in imageUrls) {
@@ -140,24 +86,20 @@
 		}
 	}
 	
-	function revPerSecond (seconds) {
-		return '-=' + degToRad(seconds * 40);
-	}
-	
 	actors.rays
 		.keyframe(0, {
 			
 		})
 		.keyframe('1s', {})
 		.keyframe('2s', {
-			rotate: revPerSecond(1),
+			rotate: window._demoApp.utils.revsPerSecond(1),
 			alpha: 1
 		})
 		.keyframe('6s', {
-			rotate: revPerSecond(4)
+			rotate: window._demoApp.utils.revsPerSecond(4)
 		}).keyframe('6.5s', {
 			alpha: 0,
-			rotate: revPerSecond(.5)
+			rotate: window._demoApp.utils.revsPerSecond(.5)
 		});
 	
 	actors.badge
