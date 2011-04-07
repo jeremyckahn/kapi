@@ -87,6 +87,15 @@ circle1
 			
 			<div class="ret"><strong>Returns:</strong>The actor Object (for chaining).</div>
 			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/singleFrame.html">A single keyframe</a></li>
+				<li><a href="tests/modifiers.html">Dynamic modifiers</a></li>
+				<li><a href="tests/funcFrames.html">Function keyframes</a></li>
+				<li><a href="tests/multiEase.html">Demo of multiple easing formulas applied to a single keyframe</a></li>
+			</ul>
+			
 			
 			<a name="to"></a>
 			<h3>to()</h3>
@@ -105,7 +114,7 @@ circle1
 			
 			<h5>events:</h5>
 			
-			<p>Event handlers to attach to this immediate action.  This paramter is optional.  In an event handler function, the <code>this</code> keyword refers to the actor object.  Available events:</p>
+			<p>Event handlers to attach to this immediate action.  This parameter is optional.  In an event handler function, the <code>this</code> keyword refers to the actor object.  Available events:</p>
 			
 			<ul>
 				<li><code>start</code>: A function.  Fires when the Immediate Action starts.</li>
@@ -139,6 +148,12 @@ circle1.keyframe(0, { })
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/immediates.html">actor.to()</a></li>
+				<li><a href="tests/immediatesMulti.html">Multiple actor.to()'s</a></li>
+			</ul>
 			
 			<a name="clearqueue"></a>
 			<h3>clearQueue()</h3>
@@ -159,9 +174,6 @@ circle1.keyframe(0, { })
 			<p>Skips to the end of the currently executing Immediate Action.  The <code>complete</code> event is fired, if it was set.  The Immediate Action queue is not affected.</p>
 			
 			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			
 			<a name="endcurrentaction"></a>
 			<h3>endCurrentAction()</h3>
 			
@@ -169,8 +181,13 @@ circle1.keyframe(0, { })
 			
 			<p>Stops and ends the currently executing Immediate Action in its current state.  Note:  Internally, this method calls <code>actor.skipToEnd()</code>, so the functionality of that method applies here as well.</p>
 			
-			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/endCurrentAction.html">actor.endCurrentAction()</a></li>
+			</ul>
 			
 			
 			<a name="remove"></a>
@@ -185,6 +202,12 @@ circle1.keyframe(0, { })
 			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/removeKeyframe.html">actor.remove()</a></li>
+			</ul>
 			
 			
 			<a name="removeall"></a>
@@ -214,6 +237,12 @@ circle1.keyframe(0, { })
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
 			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/updateKeyframe.html">actor.updateKeyframe</a></li>
+			</ul>
+			
 			
 			<a name="livecopy"></a>
 			<h3>liveCopy()</h3>
@@ -231,6 +260,13 @@ circle1.keyframe(0, { })
 			<p>String or number.  The keyframe identifier of the keyframe to copy.  Expressed in Kapi time syntax.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/liveCopy.html">actor.liveCopy()</a></li>
+				<li><a href="tests/liveCopyMulti.html">Multiple actor.liveCopy()'s</a></li>
+			</ul>
 			
 			
 			<a name="getstate"></a>
@@ -269,6 +305,12 @@ circle1.keyframe(0, { })
 			<p>Number.  The layer to move the actor to.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/layers.html">actor.moveToLayer()</a></li>
+			</ul>
 					
 		</div>
 		
