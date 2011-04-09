@@ -71,6 +71,7 @@
 					currFrameOutput.html(this._currentFrame);
 					
 					try {
+						console.log('Attempting to change layers.');
 						circle1.moveToLayer(circle1.get('layer') + 1);
 					} catch (ex) {
 						console.log('Successfully caught error: ' + ex)
@@ -122,9 +123,7 @@
 		window.circle2 = circle2;
 		window.square1 = square1;
 		
-		demo.gotoAndPlay(0);
-		
-		console.dir(demo);
+		demo.play();
 		
 	</script>
 

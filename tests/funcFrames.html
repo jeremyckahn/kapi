@@ -85,20 +85,20 @@
 			x : 0,
 			color : '#00ff00'
 		}).keyframe('2s', {
+			// This is an example of a frame property that is defined at run-time by a function.
 			x : function() {
 				return 500 * Math.random()
 			}
 		}).keyframe('6s', {
 			x : 400,
+			// Same here.
 			radius : function() {
 				return this.x / 3;
 			},
 			color : '#00f'
 		});
 		
-		demo.gotoAndPlay('0s');
-		
-		console.dir(demo);
+		demo.play();
 		
 	</script>
 

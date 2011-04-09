@@ -96,31 +96,32 @@
 
 			currFrameOutput = $('#currentFrame span');
 			
-		circle1.keyframe(0, {x: 200, y:200})
-		.to('2s', {
-			x: '+=100',
-			y: 50,
-			color: '#3f0000'
-		}, {
-			'start': function () {
-				console.log('First immediate action started!', this);
-			},
-			'complete': function () {
-				console.log('First immediate action completed!', this);
-			}
-		}).to('5s', {
-			x: 10,
-			y: 10,
-			radius: 145,
-			color: '#00f'
-		}).to('1s', {
-			radius: 5,
-			color: '#f00'
-		});
+		// `to()` is an Immediate Action
+		circle1
+			.keyframe(0, {x: 200, y:200})
+			.to('2s', {
+				x: '+=100',
+				y: 50,
+				color: '#3f0000'
+			}, {
+				'start': function () {
+					console.log('First immediate action started!', this);
+				},
+				'complete': function () {
+					console.log('First immediate action completed!', this);
+				}
+			}).to('5s', {
+				x: 10,
+				y: 10,
+				radius: 145,
+				color: '#00f'
+			}).to('1s', {
+				radius: 5,
+				color: '#f00'
+			});
 		
 		demo.play();
 		
-		console.dir(demo);
 		
 	</script>
 

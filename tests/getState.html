@@ -60,40 +60,80 @@
 			{
 				fps : 30,
 				styles : {
-					'height':  '300px',
-					'width': '500px',
+					'height': '300px',
+					'width': 500,
 					'background': '#000'
-				}
+				},
+				autoclear: true
 			},
 			// events
 			{
-				enterFrame: function(){
+				enterFrame: function() {
 					currFrameOutput.html(this._currentFrame);
 				}
 			}),
 			circle1 = demo.add(circle, {	
 				name : 'myCircle',
-				x : 250,
-				y : 200,
+				x : 0,
+				y : 0,
 				radius : 50,
-				color : '#00ff00',
+				color : '#0f0',
 				easing : 'easeInOutQuad'
 			}),
+			circle2 = demo.add(circle, {
+				name : 'myCircle2',
+				color : '#f00',
+				easing : 'easeInOutQuint'
+			}),
+			square1 = demo.add(square, {
+				name : 'square1',
+				height : 75,
+				width : 75,
+				x : 200,
+				y : 200,
+				color : '#00f',
+				easing : 'easeInOutSine'
+			}),
 			currFrameOutput = $('#currentFrame span');
-			
-		circle1.keyframe('0', {
-			color : '#00ff00', 
-			x: '-=0'
-		}).keyframe('1s', {
-			x : '-=100'
-		}).keyframe('6s', {
-			x : '+=200',
-			y : '/=3',
-			radius : '*=2',
-			color : '#0000ff'
+		
+		circle1.keyframe('0.5s', {
+			x : 0,
+			color : '#0f0'
+		}).keyframe('2s', {
+			x : 50,
+			y : 80,
+			color : '#f0f'
+		}).keyframe('4s', {
+			x : 200,
+			y : 150,
+			radius : 100,
+			color : '#00f'
 		});
 		
-		demo.play();
+		circle2.keyframe('0s', {
+			x : 400,
+			y : 200,
+			radius: 10
+		}).keyframe('1.75s', {
+			x : 10,
+			y : 200,
+			radius : 100,
+			color: '#123456'
+		});
+		
+		square1.keyframe('0.5', {
+			x : 15
+		}).keyframe('2s', {
+			x : 300,
+			y : 30
+		}).keyframe('3500ms', {
+			y : 250,
+			color: '#654321'
+		});
+		
+		demo.gotoAndPlay(30);
+		console.log('Logging the state data at frame 30:');
+		console.dir(demo.getState());
 		
 	</script>
 

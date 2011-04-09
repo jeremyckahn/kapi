@@ -113,13 +113,12 @@
 		
 		doTrianglyThing(circle1, function () {
 			setTimeout(function () {
+				console.log('Interrupting the currently executing Immediate Action!')
 				circle1.endCurrentAction();
 			}, 1000);
 		});
 		
 		demo.play();
-		
-		console.dir(demo);
 		
 	</script>
 
