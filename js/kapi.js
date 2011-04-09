@@ -79,7 +79,7 @@ function kapi(canvas, params, events) {
 			_loopPosition : undefined,
 			_updateHandle : undefined,
 			_repeatCompleteHandler : undefined,
-			fCount : 0
+			frameCount : 0
 		},
 		toStr = Object.prototype.toString,
 		rModifierComponents = /(\+|\-|=|\*|\/)/g,
@@ -1429,7 +1429,7 @@ function kapi(canvas, params, events) {
 		// Abandon all hope, ye who enter here.
 		var currTime = now();
 
-		inst.fCount++;
+		inst.frameCount++;
 		inst._updateHandle = setTimeout(function () {
 			var reachedKeyframeLastIndex, 
 				prevKeyframe;

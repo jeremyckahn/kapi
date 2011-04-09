@@ -104,21 +104,20 @@
 			
 		/** What's going on here:
 		
-		I'm setting up a loop of immediate actions.  As soon as the first loop completes, 
-		it schedules a call to `circle1.endCurrentAction()`.  This occurs halfway through
-		the first immediate action of the `doTrianglyThing()` method.  The actor stops where
-		it currently is, and then merrily continues on with the rest of the triangle.
+		I'm setting up a loop of immediate actions.  The loop is repeated after the circle returns to the
+		bottom left half of the screen.  However, this gets interrupted by invoking `clearQueue()`, which
+		clears the stack of queued events.  The last step of the loop is never reached, so the `complete()`
+		event is never fired, so the loop just stops - after reaching the end of the current Immediate Action
+		as expected.
 		*/
 		circle1.keyframe(0, {x: 50, y:250});
-		
-		doTrianglyThing(circle1, function () {
-			setTimeout(function () {
-				console.log('Interrupting the currently executing Immediate Action!');
-				circle1.endCurrentAction();
-			}, 1000);
-		});
-		
+		doTrianglyThing(circle1);
 		demo.play();
+		
+		setTimeout(function () {
+			console.log('Clearing the queue...');
+			circle1.clearQueue();
+		}, 3000);
 		
 	</script>
 

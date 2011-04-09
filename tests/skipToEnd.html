@@ -103,22 +103,18 @@
 		}
 			
 		/** What's going on here:
-		
-		I'm setting up a loop of immediate actions.  As soon as the first loop completes, 
-		it schedules a call to `circle1.endCurrentAction()`.  This occurs halfway through
-		the first immediate action of the `doTrianglyThing()` method.  The actor stops where
-		it currently is, and then merrily continues on with the rest of the triangle.
+		I'm setting up a loop of Immediate Actions (`doTrianglyThing()` calls iteslf when it completes).
+		I'm also calling `skipToEnd()` repeatedly, so each step of the animation is ended prematurely at 500
+		milliseconds into the Immediate Action.
 		*/
 		circle1.keyframe(0, {x: 50, y:250});
-		
-		doTrianglyThing(circle1, function () {
-			setTimeout(function () {
-				console.log('Interrupting the currently executing Immediate Action!');
-				circle1.endCurrentAction();
-			}, 1000);
-		});
-		
+		doTrianglyThing(circle1);
 		demo.play();
+		
+		setInterval(function () {
+			console.log('Skipping to the end of the current Immediate Action!');
+			circle1.skipToEnd();
+		}, 500);
 		
 	</script>
 

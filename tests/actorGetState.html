@@ -60,14 +60,15 @@
 			{
 				fps : 30,
 				styles : {
-					'height':  '300px',
-					'width': '500px',
+					'height': '300px',
+					'width': 500,
 					'background': '#000'
-				}
+				},
+				autoclear: true
 			},
 			// events
 			{
-				enterFrame: function(){
+				enterFrame: function() {
 					currFrameOutput.html(this._currentFrame);
 				}
 			}),
@@ -76,49 +77,66 @@
 				x : 0,
 				y : 0,
 				radius : 50,
-				color : '#00ff00',
+				color : '#0f0',
 				easing : 'easeInOutQuad'
 			}),
+			circle2 = demo.add(circle, {
+				name : 'myCircle2',
+				color : '#f00',
+				easing : 'easeInOutQuint'
+			}),
+			square1 = demo.add(square, {
+				name : 'square1',
+				height : 75,
+				width : 75,
+				x : 200,
+				y : 200,
+				color : '#00f',
+				easing : 'easeInOutSine'
+			}),
 			currFrameOutput = $('#currentFrame span');
-			
-		function doTrianglyThing (actor, loopEndCallback) {
-			actor
-			.to('2s', {
-				x: 450,
-				y: 50
-			}).to('2s', {
-				y: 250,
-			}).to('2s', {
-				x: 50
-			}, {
-				'complete': function () {
-					// Calling doTrianglyThing() from within itself effectively creates an infinite animation loop.
-					doTrianglyThing(actor);
-					
-					if (loopEndCallback) { 
-						loopEndCallback();
-					}
-				}
-			});
-		}
-			
-		/** What's going on here:
 		
-		I'm setting up a loop of immediate actions.  As soon as the first loop completes, 
-		it schedules a call to `circle1.endCurrentAction()`.  This occurs halfway through
-		the first immediate action of the `doTrianglyThing()` method.  The actor stops where
-		it currently is, and then merrily continues on with the rest of the triangle.
-		*/
-		circle1.keyframe(0, {x: 50, y:250});
+		circle1.keyframe('0.5s', {
+			x : 0,
+			color : '#0f0'
+		}).keyframe('2s', {
+			x : 50,
+			y : 80,
+			color : '#f0f'
+		}).keyframe('4s', {
+			x : 200,
+			y : 150,
+			radius : 100,
+			color : '#00f'
+		});
 		
-		doTrianglyThing(circle1, function () {
-			setTimeout(function () {
-				console.log('Interrupting the currently executing Immediate Action!');
-				circle1.endCurrentAction();
-			}, 1000);
+		circle2.keyframe('0s', {
+			x : 400,
+			y : 200,
+			radius: 10
+		}).keyframe('1.75s', {
+			x : 10,
+			y : 200,
+			radius : 100,
+			color: '#123456'
+		});
+		
+		square1.keyframe('0.5', {
+			x : 15
+		}).keyframe('2s', {
+			x : 300,
+			y : 30
+		}).keyframe('3500ms', {
+			y : 250,
+			color: '#654321'
 		});
 		
 		demo.play();
+		
+		setInterval(function () {
+			console.log('Logging the state of "circle1:"');
+			console.dir(circle1.getState());
+		}, 1000);
 		
 	</script>
 

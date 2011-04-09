@@ -176,8 +176,13 @@ circle1.keyframe(0, { })
 			
 			<p>Removes any queued Immediate Actions that have not yet begun.  This does not cancel or affect the currently executing Immediate Action.</p>
 			
-			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/clearQueue.html">clearQueue()</a></li>
+			</ul>
 			
 			
 			<a name="skiptoend"></a>
@@ -186,6 +191,14 @@ circle1.keyframe(0, { })
 			<pre class="func-def"><em>actorInstance</em>.skipToEnd()</pre>
 			
 			<p>Skips to the end of the currently executing Immediate Action.  The <code>complete</code> event is fired, if it was set.  The Immediate Action queue is not affected.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/skipToEnd.html">skipToEnd()</a></li>
+			</ul>
 			
 			
 			<a name="endcurrentaction"></a>
@@ -232,6 +245,12 @@ circle1.keyframe(0, { })
 			<p>Removes the actor from all keyframes.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/removeAll.html">removeAll()</a></li>
+			</ul>
 			
 			
 			<a name="updatekeyframe"></a>
@@ -292,6 +311,12 @@ circle1.keyframe(0, { })
 			
 			<div class="ret"><strong>Returns:</strong>An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when <code>getState</code> is called.</div>
 			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/actorGetState.html">getState()</a></li>
+			</ul>
+			
 			
 			<a name="get"></a>
 			<h3>get()</h3>
@@ -305,6 +330,12 @@ circle1.keyframe(0, { })
 			<p>String.  The state property to retrieve.  If <code>prop</code> is "layer," this function will return the layer that this actor is currently in.</p>
 			
 			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/get.html">get()</a></li>
+			</ul>
 			
 			
 			<a name="movetolayer"></a>
