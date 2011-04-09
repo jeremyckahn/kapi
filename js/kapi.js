@@ -2,9 +2,9 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.0b4
+ * v1.0.0
  * by Jeremy Kahn - jeremyckahn@gmail.com
- * hosted at: https://github.com/jeremyckahn/kapi
+ * Maintained at: https://github.com/jeremyckahn/kapi
  * 
  * Kapi streamlines animation development for the HTML 5 canvas by providing a keyframing API.  It manages timing and tweening so you don't have to.   
  * 
@@ -48,7 +48,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.0b4',
+	var version = '1.0.0',
 		defaults = {
 			'fps': 20,
 			'autoclear': true
