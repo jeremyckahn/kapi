@@ -1134,10 +1134,11 @@ function kapi(canvas, params, events) {
 					}
 				}
 
+				// If the property value was cached, use the cached value
 				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
 				} else if (isDynamic(fromProp)) {
-					// If fromProp is dynamic, preprocess it (by invoking it)
+					// If fromProp is dynamic, process it.  Invoke it if it's a function, or calculate it, if it's a modifier. 
 					if (typeof fromProp === 'function') {
 						fromProp = fromProp.call(fromState) || 0;
 					} else {
