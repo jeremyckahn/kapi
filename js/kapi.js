@@ -1087,6 +1087,23 @@ function kapi(canvas, params, events) {
 			}
 		}
 	}
+
+	function _getLatestStaticPropId (actorName, prop) {
+		var latestKeyframeId,
+			stateIndex,
+			i;
+
+		latestKeyframeId = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
+		stateIndex = inst._actorstateIndex[actorName];
+
+		for (i = latestKeyframeId; i >= 0; i--) {
+			if (!isDynamic(inst._keyframes[stateIndex[i]][actorName][prop])) {
+				return i;
+			}
+		}
+
+		return 0;
+	}
 	
 	/**
 	 * Calculate an actor's properties for the current frame.
@@ -1146,10 +1163,12 @@ function kapi(canvas, params, events) {
 						previousPropVal = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
 						
 						// Convert the keyframe ID to its corresponding property value
+						// TODO:  Using `previousPropVal` as a temp val like this makes absolutely no sense, use a new variable to store the temporary value.
 						if (previousPropVal === -1) {
 							// This is the first keyframe for this object, so modify the original parameter if it is available
 							previousPropVal = fromState.prototype.params[keyProp] || 0;
 						} else {
+							//console.log(_getLatestStaticPropId(fromState.prototype.id, keyProp))
 							previousPropVal = inst._keyframes[previousPropVal][fromStateId][keyProp];
 						}
 						
@@ -1662,6 +1681,9 @@ function kapi(canvas, params, events) {
 			
 			// Allow the animation to run indefinitely if `.play()` is called later.
 			inst._repsRemaining = -1;
+
+			// Flush the keyframe cache
+			inst._keyframeCache = {};
 			
 			// Reset any info stored in `_actorStateIndex`
 			for (obj in inst._actorstateIndex) {
