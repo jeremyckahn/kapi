@@ -1088,21 +1088,51 @@ function kapi(canvas, params, events) {
 		}
 	}
 
-	function _getLatestStaticPropId (actorName, prop) {
+	function _calculateUncachedDynamicProperty (actorName, prop) {
 		var latestKeyframeId,
 			stateIndex,
+			actorPropVal,
+			dynamicStateProps = [],
+			currentVal,
+			dynamicProp,
+			modifier,
 			i;
 
 		latestKeyframeId = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
 		stateIndex = inst._actorstateIndex[actorName];
 
 		for (i = latestKeyframeId; i >= 0; i--) {
-			if (!isDynamic(inst._keyframes[stateIndex[i]][actorName][prop])) {
-				return i;
+			actorPropVal = inst._keyframes[stateIndex[i]][actorName][prop];
+			dynamicStateProps.unshift(actorPropVal);
+
+			// If we are looking at a static property, quit out of the loop.
+			// By setting `i` to `-2` we know that the last property added was static.
+			// Otherwise, `i` would just go to `-1` and there would be no leading static property.
+			if (!isDynamic(actorPropVal)) {
+				i = -2;
 			}
 		}
 
-		return 0;
+		if (i > -2) {
+			dynamicStateProps.unshift(inst._actors[actorName].params[prop]);
+		}
+		
+		currentVal = dynamicStateProps.shift();
+		
+		while (dynamicStateProps.length) {
+			dynamicProp = dynamicStateProps.shift();
+			
+			if (typeof dynamicProp === 'function') {
+				// Yes, this overwrites the `currentVal`.  
+				// But that's ok, because that's what the natural update cycle would do as well.
+				currentVal = dynamicProp.call( inst._keyframes[stateIndex[latestKeyframeId]] ) || 0;
+			} else {
+				modifier = getModifier(dynamicProp);
+				currentVal = modifiers[modifier](currentVal, +dynamicProp.replace(rModifierComponents, ''));
+			}
+		}
+		
+		return currentVal;
 	}
 	
 	/**
@@ -1127,6 +1157,7 @@ function kapi(canvas, params, events) {
 			toStateId,
 			modifier,
 			previousPropVal,
+			prevKeyframeId,
 			fromPropType,
 			easeProp,
 			currentFrameProps = {};
@@ -1155,26 +1186,35 @@ function kapi(canvas, params, events) {
 				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
 				} else if (isDynamic(fromProp)) {
-					// If fromProp is dynamic, process it.  Invoke it if it's a function, or calculate it, if it's a modifier. 
-					if (typeof fromProp === 'function') {
-						fromProp = fromProp.call(fromState) || 0;
+					prevKeyframeId = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
+					
+					if (prevKeyframeId !== -1) {
+						// If we are not looking at the first keyframe for this actor, and there is no cache,
+						// then the user likely called `gotoAndPlay()`.  Therefore, we must calculate the accurate
+						// dynamic value, despite the lack of any cached data.
+						fromProp = _calculateUncachedDynamicProperty(fromState.prototype.id, keyProp);
 					} else {
-						modifier = getModifier(fromProp);
-						previousPropVal = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
-						
-						// Convert the keyframe ID to its corresponding property value
-						// TODO:  Using `previousPropVal` as a temp val like this makes absolutely no sense, use a new variable to store the temporary value.
-						if (previousPropVal === -1) {
-							// This is the first keyframe for this object, so modify the original parameter if it is available
-							previousPropVal = fromState.prototype.params[keyProp] || 0;
+						// If fromProp is dynamic, process it.  Invoke it if it's a function, or calculate it, if it's a modifier. 
+						if (typeof fromProp === 'function') {
+							fromProp = fromProp.call(fromState) || 0;
 						} else {
-							//console.log(_getLatestStaticPropId(fromState.prototype.id, keyProp))
-							previousPropVal = inst._keyframes[previousPropVal][fromStateId][keyProp];
+							modifier = getModifier(fromProp);
+
+							// Convert the keyframe ID to its corresponding property value
+							if (prevKeyframeId === -1) {
+								// This is the first keyframe for this object, so modify the original parameter if it is available
+								previousPropVal = fromState.prototype.params[keyProp] || 0;
+							} else {
+								//_calculateUncachedDynamicProperty(fromState.prototype.id, keyProp)
+								previousPropVal = inst._keyframes[prevKeyframeId][fromStateId][keyProp];
+							}
+
+							// Convert the value into a number and perform the value modification
+							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
 						}
-						
-						// Convert the value into a number and perform the value modification
-						fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
 					}
+					
+					
 					
 					// Update the cache
 					inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
@@ -2004,7 +2044,12 @@ function kapi(canvas, params, events) {
 			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fps);
 			inst._pausedAtTime = currTime;
 			inst._reachedKeyframes = inst._keyframeIds.slice(0, _getLatestKeyframeId(inst._keyframeIds));
+			
+			// Flush the keyframe cache
+			inst._keyframeCache = {};
+			
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			
 			_updateActors(inst._currentFrame);
 			return this;
 		},
