@@ -51,7 +51,8 @@ function kapi(canvas, params, events) {
 	var version = '1.0.0',
 		defaults = {
 			'fps': 20,
-			'autoclear': true
+			'autoclear': true,
+			'clearOnComplete': false
 		},
 		self = {},
 		inst = {
@@ -1477,7 +1478,7 @@ function kapi(canvas, params, events) {
 						}
 					}
 
-					currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx);
+					currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx, self);
 				}
 			}
 			inst._currentState[actorName] = currentFrameStateProperties;
@@ -1741,7 +1742,10 @@ function kapi(canvas, params, events) {
 				}
 			}
 			
-			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			if (inst._params.clearOnComplete === true) {
+				inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			}
+			
 			return this;
 		},
 		
