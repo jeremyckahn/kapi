@@ -539,8 +539,7 @@ function kapi(canvas, params, events) {
 								&& isDynamic(prevProp)
 								&& typeof inst._originalStates[newStateId][actorId][prop] === 'undefined') {
 						newStateObj[prop] = '+=0';
-					}
-					
+					}		
 				}
 			}
 			
@@ -762,31 +761,31 @@ function kapi(canvas, params, events) {
 		 *   - `complete` {Function}: Fires when the Immediate Action completes.
 		 * @returns {Object} The actor Object (for chaining).
 		 * 
-     * @codestart
-     * 
-     * var demo = kapi(document.getElementById('myCanvas')),
-     *  circle1 = demo.add(circle, {
-     *    name : 'myCircle',
-     *      x : 0,
-     *      y : 0,
-     *      radius : 50,
-     *      color : '#00ff00'
-     *    });
-     * 
-     * circle1.keyframe(0, { })
-     *   .to('2s', {
-     *      x: '+=100',
-     *      y: 50,
-     *      color: '#3f0000'
-     *    }, {
-     *      'start': function () {
-     *         console.log('Immediate action started!', this);
-     *       },
-     *       'complete': function () {
-     *         console.log('Immediate action completed!', this);
-     *       }
-     *   });
-     * @codeend
+	     * @codestart
+	     * 
+	     * var demo = kapi(document.getElementById('myCanvas')),
+	     *  circle1 = demo.add(circle, {
+	     *    name : 'myCircle',
+	     *      x : 0,
+	     *      y : 0,
+	     *      radius : 50,
+	     *      color : '#00ff00'
+	     *    });
+	     * 
+	     * circle1.keyframe(0, { })
+	     *   .to('2s', {
+	     *      x: '+=100',
+	     *      y: 50,
+	     *      color: '#3f0000'
+	     *    }, {
+	     *      'start': function () {
+	     *         console.log('Immediate action started!', this);
+	     *       },
+	     *       'complete': function () {
+	     *         console.log('Immediate action completed!', this);
+	     *       }
+	     *   });
+	     * @codeend
 		 */
 		actorObj.to = function to (duration, stateObj, events) {
 			var newestAction, 
@@ -1088,6 +1087,12 @@ function kapi(canvas, params, events) {
 		}
 	}
 
+	/**
+	 * Determines the resultant value of a dynamic actor property, despite the presence of keyframe cache data (which is normally what is used to quickly determine such a value).  This is slow, so it should only be used when cache data is not available (such as after calling `gotoKeyframe()`).
+	 * @param {String} actorName The name of the actor to check against.
+	 * @param {String} prop The name of the dynamic property.
+	 * @returns {Any} The value that would normally be reached by the normal execution logic if the cache was available.
+	 */
 	function _calculateUncachedDynamicProperty (actorName, prop) {
 		var latestKeyframeId,
 			stateIndex,
@@ -1100,13 +1105,15 @@ function kapi(canvas, params, events) {
 
 		latestKeyframeId = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
 		stateIndex = inst._actorstateIndex[actorName];
-
+		
+		// Loop backwards through the actor's state's values for `prop` until the beginning is reached,
+		// or a static property is found.
 		for (i = latestKeyframeId; i >= 0; i--) {
 			actorPropVal = inst._keyframes[stateIndex[i]][actorName][prop];
 			dynamicStateProps.unshift(actorPropVal);
 
 			// If we are looking at a static property, quit out of the loop.
-			// By setting `i` to `-2` we know that the last property added was static.
+			// By setting `i` to `-2` we know that the last property added to the `dynamicStateProps` array was static.
 			// Otherwise, `i` would just go to `-1` and there would be no leading static property.
 			if (!isDynamic(actorPropVal)) {
 				i = -2;
@@ -1114,11 +1121,14 @@ function kapi(canvas, params, events) {
 		}
 
 		if (i > -2) {
+			// A static property was never found.  So, use the actor's initial value for the property as the base.
 			dynamicStateProps.unshift(inst._actors[actorName].params[prop]);
 		}
 		
+		// Get the "base" value to modify
 		currentVal = dynamicStateProps.shift();
 		
+		// Loop through all the dynamics that were collected in the loop above and apply them.
 		while (dynamicStateProps.length) {
 			dynamicProp = dynamicStateProps.shift();
 			
@@ -1213,8 +1223,6 @@ function kapi(canvas, params, events) {
 							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
 						}
 					}
-					
-					
 					
 					// Update the cache
 					inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
