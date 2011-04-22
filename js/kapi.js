@@ -1136,7 +1136,7 @@ function kapi(canvas, params, events) {
 			if (typeof dynamicProp === 'function') {
 				// Yes, this overwrites the `currentVal`.  
 				// But that's ok, because that's what the natural update cycle would do as well.
-				currentVal = dynamicProp.call( inst._keyframes[stateIndex[latestKeyframeId]] ) || 0;
+				currentVal = dynamicProp.call( inst._keyframes[stateIndex[latestKeyframeId]][actorName] ) || 0;
 			} else {
 				modifier = getModifier(dynamicProp);
 				currentVal = modifiers[modifier](currentVal, +dynamicProp.replace(rModifierComponents, ''));
