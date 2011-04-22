@@ -52,7 +52,7 @@ function kapi(canvas, params, events) {
 		defaults = {
 			'fps': 20,
 			'autoclear': true,
-			'clearOnComplete': false
+			'clearOnStop': false
 		},
 		self = {},
 		inst = {
@@ -1136,6 +1136,8 @@ function kapi(canvas, params, events) {
 			if (typeof dynamicProp === 'function') {
 				// Yes, this overwrites the `currentVal`.  
 				// But that's ok, because that's what the natural update cycle would do as well.
+				// Note:  All property functions are being called in the context of the `latestKeyframeId` keyframe,
+				// but that really shouldn't make a difference.  It's faster to do it this way.
 				currentVal = dynamicProp.call( inst._keyframes[stateIndex[latestKeyframeId]][actorName] ) || 0;
 			} else {
 				modifier = getModifier(dynamicProp);
@@ -1742,7 +1744,7 @@ function kapi(canvas, params, events) {
 				}
 			}
 			
-			if (inst._params.clearOnComplete === true) {
+			if (inst._params.clearOnStop === true) {
 				inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			}
 			
