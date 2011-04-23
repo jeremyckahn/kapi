@@ -1094,7 +1094,7 @@ function kapi(canvas, params, events) {
 	 * @param {String} prop The name of the dynamic property.
 	 * @returns {Any} The value that would normally be reached by the normal execution logic if the cache was available.
 	 */
-	function _calculateUncachedDynamicProperty (actorName, prop) {
+	function _calculateUncachedProperty (actorName, prop) {
 		var latestKeyframeId,
 			stateIndex,
 			actorPropVal,
@@ -1128,7 +1128,6 @@ function kapi(canvas, params, events) {
 		
 		// Get the "base" value to modify
 		currentVal = dynamicStateProps.shift();
-		//inst._keyframeCache[actorName] = { from : {}, to : {} };
 		
 		// Loop through all the dynamics that were collected in the loop above and apply them.
 		while (dynamicStateProps.length) {
@@ -1144,8 +1143,6 @@ function kapi(canvas, params, events) {
 				modifier = getModifier(dynamicProp);
 				currentVal = modifiers[modifier](currentVal, +dynamicProp.replace(rModifierComponents, ''));
 			}
-			
-			//inst._keyframeCache[actorName].from[prop] = currentVal;
 		}
 		
 		return currentVal;
@@ -1206,9 +1203,9 @@ function kapi(canvas, params, events) {
 					
 					if (prevKeyframeId !== -1) {
 						// If we are not looking at the first keyframe for this actor, and there is no cache,
-						// then the user likely called `gotoAndPlay()`.  Therefore, we must calculate the accurate
+						// then the user likely called `gotoFrame()`.  Therefore, we must calculate the accurate
 						// dynamic value, despite the lack of any cached data.
-						//fromProp = _calculateUncachedDynamicProperty(fromState.prototype.id, keyProp);
+						fromProp = _calculateUncachedProperty(fromState.prototype.id, keyProp);
 					} else {
 						// If fromProp is dynamic, process it.  Invoke it if it's a function, or calculate it, if it's a modifier. 
 						if (typeof fromProp === 'function') {
@@ -1221,7 +1218,7 @@ function kapi(canvas, params, events) {
 								// This is the first keyframe for this object, so modify the original parameter if it is available
 								previousPropVal = fromState.prototype.params[keyProp] || 0;
 							} else {
-								//_calculateUncachedDynamicProperty(fromState.prototype.id, keyProp)
+								//_calculateUncachedProperty(fromState.prototype.id, keyProp)
 								previousPropVal = inst._keyframes[prevKeyframeId][fromStateId][keyProp];
 							}
 
@@ -2045,9 +2042,6 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} The Kapi instance.
 		 */
 		gotoFrame: function (frame) {
-			// This is not designed to work correctly with dynamic keyframes, because 
-			// there is really no good way to ensure accuracy for skipped dynamic keyframes.
-			// This functionality may come in a future release.  Who knows.
 			var currTime = now();
 			
 			if (this.isPlaying()) {
@@ -2066,17 +2060,6 @@ function kapi(canvas, params, events) {
 			inst._keyframeCache = {};
 			
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
-			
-			_updateActors(inst._currentFrame);
-			
-			
-			var i;
-			for (i = 0; i < frame; i++) {
-				/*for (actor in inst._actors) {
-					_getActorState(actor);
-				}*/
-				_updateActors(i)
-			}
 			
 			return this;
 		},
