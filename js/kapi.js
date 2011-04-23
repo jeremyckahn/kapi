@@ -638,9 +638,9 @@ function kapi(canvas, params, events) {
 	 * @param {Array} lookup The list of keyframes to check against.
 	 * @returns {Number}    
 	 */
-	function _getPreviousKeyframeId (lookup) {
+	/*function _getPreviousKeyframeId (lookup) {
 		return _getLatestKeyframeId(lookup) - 1;
-	}
+	}*/
 	
 	/**
 	 * Get the ID of the next keyframe that has not been started yet.
@@ -1171,8 +1171,6 @@ function kapi(canvas, params, events) {
 			fromStateId,
 			toStateId,
 			modifier,
-			previousPropVal,
-			prevKeyframeId,
 			fromPropType,
 			easeProp,
 			currentFrameProps = {};
@@ -1201,32 +1199,6 @@ function kapi(canvas, params, events) {
 				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
 				} else if (isDynamic(fromProp)) {
-					/*prevKeyframeId = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
-					
-					if (prevKeyframeId !== -1) {
-						// If we are not looking at the first keyframe for this actor, and there is no cache,
-						// then the user likely called `gotoFrame()`.  Therefore, we must calculate the accurate
-						// dynamic value, despite the lack of any cached data.
-						fromProp = _calculateUncachedProperty(fromState.prototype.id, keyProp);
-					} else {
-						// If fromProp is dynamic, process it.  Invoke it if it's a function, or calculate it, if it's a modifier. 
-						if (typeof fromProp === 'function') {
-							fromProp = fromProp.call(fromState) || 0;
-						} else {
-							modifier = getModifier(fromProp);
-
-							// Convert the keyframe ID to its corresponding property value
-							if (prevKeyframeId === -1) {
-								// This is the first keyframe for this object, so modify the original parameter if it is available
-								previousPropVal = fromState.prototype.params[keyProp] || 0;
-							} else {
-								previousPropVal = inst._keyframes[prevKeyframeId][fromStateId][keyProp];
-							}
-
-							// Convert the value into a number and perform the value modification
-							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
-						}
-					}*/
 					fromProp = _calculateUncachedProperty(fromState.prototype.id, keyProp);
 					
 					// Update the cache
@@ -1343,7 +1315,6 @@ function kapi(canvas, params, events) {
 		
 		// Are we transitioning to a new keyframe segment for the actor?
 		if (latestKeyframeId !== lastRecordedKeyframe) {
-			//console.log(latestKeyframeId, lastRecordedKeyframe)
 			// We are!
 			
 			// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
@@ -2044,7 +2015,8 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} The Kapi instance.
 		 */
 		gotoFrame: function (frame) {
-			var currTime = now();
+			var currTime = now(),
+				actorName;
 			
 			if (this.isPlaying()) {
 				this.stop();
@@ -2063,16 +2035,19 @@ function kapi(canvas, params, events) {
 			
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			
-			var actorName, actorReachedKeyframes;
 			for (actorName in inst._actors) {
 				if (inst._actors.hasOwnProperty(actorName)) {
-					//inst._actorstateIndex[actorName].reachedKeyframes = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
+					
+					inst._keyframeCache[actorName] = {
+		                'from': {},
+		                'to': {}
+		            };
+					
 					inst._actorstateIndex[actorName].reachedKeyframes.push(_getLatestKeyframeId(inst._actorstateIndex[actorName]));
-					//console.log(inst._actorstateIndex[actorName].reachedKeyframes)
 				}
 			}
 			
-			_updateActors(inst._currentFrame)
+			_updateActors(inst._currentFrame);
 			
 			return this;
 		},
