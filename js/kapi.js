@@ -2053,14 +2053,15 @@ function kapi(canvas, params, events) {
 			
 			// Fake a bunch of properties to make `update` properly emulate the desired `frame`
 			inst._currentFrame = frame;
-			inst._loopStartTime = inst._startTime = currTime - (frame * inst._params.fps);
+			inst._loopStartTime = inst._startTime = currTime - (frame * (1000 / inst._params.fps));
 			inst._pausedAtTime = currTime;
-			inst._reachedKeyframes = inst._keyframeIds.slice(0, _getLatestKeyframeId(inst._keyframeIds));
+			inst._reachedKeyframes = inst._keyframeIds.slice(0, _getLatestKeyframeId(inst._keyframeIds) + 1);
 			
 			// Flush the keyframe cache
 			inst._keyframeCache = {};
 			
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			//_updateActors(inst._currentFrame)
 			
 			return this;
 		},
