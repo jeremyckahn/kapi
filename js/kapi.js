@@ -52,7 +52,8 @@ function kapi(canvas, params, events) {
 		defaults = {
 			'fps': 20,
 			'autoclear': true,
-			'clearOnStop': false
+			'clearOnStop': false,
+			'clearOnComplete': false
 		},
 		self = {},
 		inst = {
@@ -1501,6 +1502,11 @@ function kapi(canvas, params, events) {
 					
 					if (inst._repsRemaining === 0) {
 						self.stop();
+						
+						if (inst._params.clearOnComplete === true) {
+							self.clear();
+						}
+						
 						if (typeof inst._repeatCompleteHandler === 'function') {
 							inst._repeatCompleteHandler.call(inst);
 							inst._repeatCompleteHandler = undefined;
@@ -1543,7 +1549,7 @@ function kapi(canvas, params, events) {
 			if (inst._currentFrame <= inst._lastKeyframe) {
 				// Clear out the canvas
 				if (inst.autoclear !== false) {
-					inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+					self.clear();
 				}
 
 				_fireEvent('enterFrame');
@@ -1718,8 +1724,14 @@ function kapi(canvas, params, events) {
 			}
 			
 			if (inst._params.clearOnStop === true) {
-				inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+				self.clear();
 			}
+			
+			return this;
+		},
+		
+		clear: function () {
+			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			
 			return this;
 		},
@@ -2033,7 +2045,7 @@ function kapi(canvas, params, events) {
 			// Flush the keyframe cache
 			inst._keyframeCache = {};
 			
-			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
+			self.clear();
 			
 			for (actorName in inst._actors) {
 				if (inst._actors.hasOwnProperty(actorName)) {
