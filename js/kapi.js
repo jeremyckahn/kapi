@@ -1343,6 +1343,7 @@ function kapi(canvas, params, events) {
 		
 		// Are we transitioning to a new keyframe segment for the actor?
 		if (latestKeyframeId !== lastRecordedKeyframe) {
+			//console.log(latestKeyframeId, lastRecordedKeyframe)
 			// We are!
 			
 			// Flush half of the `_keyframeCache` to maintain the "from" dynamic states
@@ -2061,7 +2062,17 @@ function kapi(canvas, params, events) {
 			inst._keyframeCache = {};
 			
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
-			//_updateActors(inst._currentFrame)
+			
+			var actorName, actorReachedKeyframes;
+			for (actorName in inst._actors) {
+				if (inst._actors.hasOwnProperty(actorName)) {
+					//inst._actorstateIndex[actorName].reachedKeyframes = _getLatestKeyframeId(inst._actorstateIndex[actorName]);
+					inst._actorstateIndex[actorName].reachedKeyframes.push(_getLatestKeyframeId(inst._actorstateIndex[actorName]));
+					//console.log(inst._actorstateIndex[actorName].reachedKeyframes)
+				}
+			}
+			
+			_updateActors(inst._currentFrame)
 			
 			return this;
 		},
