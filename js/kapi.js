@@ -1141,6 +1141,8 @@ function kapi(canvas, params, events) {
 				currentVal = dynamicProp.call( inst._keyframes[stateIndex[latestKeyframeId]][actorName] ) || 0;
 			} else {
 				modifier = getModifier(dynamicProp);
+				
+				// Convert the value into a number and perform the value modification
 				currentVal = modifiers[modifier](currentVal, +dynamicProp.replace(rModifierComponents, ''));
 			}
 		}
@@ -1199,7 +1201,7 @@ function kapi(canvas, params, events) {
 				if (typeof inst._keyframeCache[fromStateId].from[keyProp] !== 'undefined') {
 					fromProp = inst._keyframeCache[fromStateId].from[keyProp];
 				} else if (isDynamic(fromProp)) {
-					prevKeyframeId = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
+					/*prevKeyframeId = _getPreviousKeyframeId(inst._actorstateIndex[fromStateId]);
 					
 					if (prevKeyframeId !== -1) {
 						// If we are not looking at the first keyframe for this actor, and there is no cache,
@@ -1218,14 +1220,14 @@ function kapi(canvas, params, events) {
 								// This is the first keyframe for this object, so modify the original parameter if it is available
 								previousPropVal = fromState.prototype.params[keyProp] || 0;
 							} else {
-								//_calculateUncachedProperty(fromState.prototype.id, keyProp)
 								previousPropVal = inst._keyframes[prevKeyframeId][fromStateId][keyProp];
 							}
 
 							// Convert the value into a number and perform the value modification
 							fromProp = modifiers[modifier](previousPropVal, +fromProp.replace(rModifierComponents, ''));
 						}
-					}
+					}*/
+					fromProp = _calculateUncachedProperty(fromState.prototype.id, keyProp);
 					
 					// Update the cache
 					inst._keyframeCache[fromStateId].from[keyProp] = fromProp;
@@ -1287,7 +1289,6 @@ function kapi(canvas, params, events) {
 
 							// Swap the last RGB comma for an end-paren
 							currentFrameProps[keyProp] = currentFrameProps[keyProp].replace(/,$/, ')');
-
 						} else {
 							currentFrameProps[keyProp] = applyEase.call(this, easing, fromKeyframe, toKeyframe, fromProp, toProp, options.currentFrame);
 						}
