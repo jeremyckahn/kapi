@@ -50,6 +50,9 @@ $(function () {
 				myKapi.play();
 			}
 		});
+		
+		// Makes the myKapi variable global.  Not neccesary, just handy for checking kapi.min.js.
+		window.myKapi = myKapi;
 	}());
 	/****************************************** Demo 1 */
 });
