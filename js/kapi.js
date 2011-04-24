@@ -20,8 +20,10 @@
  * @param {HTMLCanvasElement} canvas The canvas element to be used with Kapi.
  * @param {Object} params Parameters to set on the new Kapi instance. They are as follows:
  *   @param {Number} fps The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.
- *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplieds as an object.
+ *   @param {Object} styles CSS styles to be set upon `canvas`.  They are to be supplied as an object.
  *   @param {Boolean} autoclear Controls whether or not the `canvas` is cleared out after each frame is rendered.  This is `true` by default.
+ *   @param {Boolean} clearOnStop Determines whether to call `.clear()` automatically after `.stop()` is called.  This is `false` by default.
+ *   @param {Boolean} clearOnComplete Determines whether to call `.clear()` automatically after an `.iterate()` or `repeat()` sequence completes. This is `false` by default. 
  * @param {Object} events An object containing events that can be set on this instance of Kapi.
  *   @param {Function} enterFrame This event fires each time a new frame is processed, before it is rendered.
  * 
@@ -1697,7 +1699,8 @@ function kapi(canvas, params, events) {
 		},
 
 		/**
-		 * Stops the animation.  When the animation is started again with `play()`, it starts from the beginning of the loop.
+		 * Stops the animation.  When the animation is started again with `play()`, it starts from the beginning of the loop.  Note:  The canvas will be cleared out automatically for you if the `clearOnStop` option is set to `true`.  This option is set to `false` by default.
+
 		 * @returns {Kapi} The Kapi instance.
 		 */
 		stop: function () {
@@ -1730,6 +1733,10 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 		
+		/**
+		 * Clears out the canvas and sets it to its default color.
+		 * @returns {Object} The Kapi instance
+		 */
 		clear: function () {
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			
@@ -1737,7 +1744,7 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * Play the animation for set amount of repetitions.  After starting over the specified amount of times, the animation will `stop()`.
+		 * Play the animation for a set amount of repetitions.  After starting over the specified amount of times, the animation will call `stop()`.  Note:  The canvas will be cleared out automatically for you if the `clearOnComplete` option is set to `true`.  This option is set to `false` by default.
 		 * @param {Number} repetitions The number of times to start over.
 		 * @param {Function} callback An optional callback function that will be invoked when the `repeat()` sequence completes.
 		 * @returns {Kapi} The Kapi instance.
@@ -1753,7 +1760,7 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * Play the animation And let it run for a set amount of iterations.  After running over the specified amount of times, the animation will `stop()`.  This is extremely similar to the functionality of `kapi.repeat()`, but the parameter controls how many times the animation runs for, not how many times it starts over.
+		 * Play the animation and let it run for a set amount of iterations.  After running for the specified amount of times, the animation will call `stop()`.  This is extremely similar to the functionality of `kapi.repeat()`, but the parameter controls how many times the animation runs for, not how many times it starts over.  Note:  The canvas will be cleared out automatically for you if the `clearOnComplete` option is set to `true`.  This option is set to `false` by default.
 		 * @param {Number} iterations The number of times to run for.
 		 * @param {Function} callback An optional callback function that will be invoked when the `iterate()` sequence completes.
 		 * @returns {Kapi} The Kapi instance.
@@ -2051,9 +2058,9 @@ function kapi(canvas, params, events) {
 				if (inst._actors.hasOwnProperty(actorName)) {
 					
 					inst._keyframeCache[actorName] = {
-		                'from': {},
-		                'to': {}
-		            };
+						'from': {},
+						'to': {}
+					};
 					
 					inst._actorstateIndex[actorName].reachedKeyframes.push(_getLatestKeyframeId(inst._actorstateIndex[actorName]));
 				}

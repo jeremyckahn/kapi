@@ -79,6 +79,10 @@
 				<li><strong>fps:</strong>String or number.  The frame rate that Kapi refreshes at.  60 is the limit of human perception, and 12 is choppy.  A happy medium is between 20 and 30.</li>
 				<li><strong>styles:</strong>Object.  CSS styles to be set upon <code>canvas</code>.</li>
 				<li><strong>autoclear:</strong>Controls whether or not the <code>canvas</code> is cleared out after each frame is rendered.  This is <code>true</code> by default.</li>
+
+				<li><strong>clearOnStop:</strong>Determines whether to call <code>.clear()</code> automatically after <code>.stop()</code> is called.  This is <code>false</code> by default.</li>
+				<li><strong>clearOnComplete:</strong>Determines whether to call <code>.clear()</code> automatically after an <code>.iterate()</code> or <code>repeat()</code> sequence completes. This is <code>false</code> by default.</li>
+
 			</ul>
 			
 			<h5>events:</h5>
@@ -141,7 +145,7 @@
 			
 			<pre class="func-def"><em>kapiInstance</em>.stop()</pre>
 			
-			<p>Stops the animation.  When the animation is started again with <code>play()</code>, it starts from the beginning of the loop.</p>
+			<p>Stops the animation.  When the animation is started again with <code>play()</code>, it starts from the beginning of the loop.  Note:  The canvas will be cleared out automatically for you if the <code>clearOnStop</code> option is set to <code>true</code>.  This option is set to <code>false</code> by default.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
@@ -151,7 +155,7 @@
 			
 			<pre class="func-def"><em>kapiInstance</em>.repeat( repetitions, callback )</pre>
 			
-			<p>Play the animation for set amount of repetitions.  After starting over the specified amount of times, the animation will <code>stop()</code>.</p>
+			<p>Play the animation for a set amount of repetitions.  After starting over the specified amount of times, the animation will call <code>stop()</code>.  Note:  The canvas will be cleared out automatically for you if the <code>clearOnComplete</code> option is set to <code>true</code>.  This option is set to <code>false</code> by default.</p>
 			
 			<h5>repetitions:</h5>
 			
@@ -175,7 +179,7 @@
 			
 			<pre class="func-def"><em>kapiInstance</em>.iterate( iterations, callback )</pre>
 			
-			<p>Play the animation And let it run for a set amount of iterations.  After running over the specified amount of times, the animation will <code>stop()</code>.  This is extremely similar to the functionality of <code>kapiInstance.repeat()</code>, but the parameter controls how many times the animation runs for, not how many times it starts over.</p>
+			<p>Play the animation and let it run for a set amount of iterations.  After running for the specified amount of times, the animation will call <code>stop()</code>.  This is extremely similar to the functionality of <code>kapiInstance.repeat()</code>, but the parameter controls how many times the animation runs for, not how many times it starts over.  Note:  The canvas will be cleared out automatically for you if the <code>clearOnComplete</code> option is set to <code>true</code>.  This option is set to <code>false</code> by default.</p>
 			
 			<h5>iterations:</h5>
 			
@@ -193,7 +197,16 @@
 				<li><a href="tests/iterate.html">iterate()</a></li>
 			</ul>
 			
+
+			<a name="clear"></a>
+			<h3>clear()</h3>
 			
+			<pre class="func-def"><em>kapiInstance</em>.clear()</pre>
+			
+			<p>Clears out the canvas and sets it to its default color.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
+		
 			<a name="add"></a>
 			<h3>add()</h3>
 			
@@ -312,7 +325,7 @@ myCircle = myKapi.add(circle, {
 			
 			<h5>frame:</h5>
 			
-			<p>A keyframe identifier (integer, <code>"{number}s"</code> or <code>"{number}ms"</code>) specifying which frame to go to and render.  Specify an integer if you know exactly what frame you want to go to.  If you want to go to a frame that exists at a specific amount of time into the animation, pass a string in the <code>"{number}s"</code> or <code>"{number}ms"</code> formats.  <code>"{number}s"</code> is seconds, <code>"{number}ms"</code> is milliseconds.</p>
+			<p>A keyframe identifier (integer, <code>{number}s</code> or <code>{number}ms</code>) specifying which frame to go to and render.  Specify an integer if you know exactly what frame you want to go to.  If you want to go to a frame that exists at a specific amount of time into the animation, pass a string in the <code>{number}s</code> or <code>{number}ms</code> formats.  <code>{number}s</code> is seconds, <code>"{number}ms"</code> is milliseconds.</p>
 			
 			<pre class="brush: js;">
 myKapi.gotoFrame('1.5s');</pre>
@@ -327,7 +340,7 @@ myKapi.gotoFrame('1.5s');</pre>
 			
 			<pre class="func-def"><em>kapiInstance</em>.gotoAndPlay( frame )</pre>
 			
-			<p>Works exactly like <code>gotoFrame()</code>, but has the added benefit of also playing the animation.</p>
+			<p>Works exactly like <code>gotoFrame()</code>, but has the added benefit of also <code>.play()</code>ing the animation.</p>
 			
 			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
 			
