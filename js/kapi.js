@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.1
+ * v1.0.2
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * Maintained at: https://github.com/jeremyckahn/kapi
  * 
@@ -50,7 +50,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.1',
+	var version = '1.0.2',
 		defaults = {
 			'fps': 20,
 			'autoclear': true,
@@ -1740,6 +1740,16 @@ function kapi(canvas, params, events) {
 		clear: function () {
 			inst.ctx.clearRect(0, 0, inst.el.width, inst.el.height);
 			
+			return this;
+		},
+
+		/**
+		 * Forces a redraw of the current actors' states.  Handy if used in tandem with `.clear()`.
+		 * @returns {Object} The Kapi instance
+		 */
+		redraw: function () {
+			_updateActors(inst._currentFrame);
+
 			return this;
 		},
 		
