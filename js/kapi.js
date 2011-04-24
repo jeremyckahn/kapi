@@ -1073,6 +1073,9 @@ function kapi(canvas, params, events) {
 			return actorObj;
 		};
 
+		// actorObj maintains a reference to the kapi instance.
+		actorObj.kapi = self;
+
 		return actorObj;
 	}
 
@@ -1785,6 +1788,9 @@ function kapi(canvas, params, events) {
 
 		/**
 		 * Add an actor to Kapi.  This method creates an actor object with the following properties:
+		 * ========================
+		 * TODO:  UPDATE THIS LIST
+		 * ========================
 		 * - *draw()*: The initial function that contains the drawing logic.
 		 * - *get(prop)*: Retrieve the current value for `prop`.
 		 * - *getState()*: Retrieve an object that contains the current state info.
@@ -1799,9 +1805,10 @@ function kapi(canvas, params, events) {
 		 * 
 		 * @param {Function|Object} actor The function or Object that defines an actor.
 		 *   If you are providing an object, you can supply any number of the following properties:
-		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.
+		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.  It is passed the canvas context as the first parameter, and the kapi instance is passed as the second.
 		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
 		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).
+		 * You can also just pass a Function, which should look exactly like the draw function described above.
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */

@@ -227,10 +227,10 @@
 			
 			<p>A function or object.</p>
 			
-			<p><strong>If you are passing a function:</strong>  Logically, this function should draw something to the canvas.  All actor functions access their state properties with the <code>this</code> JavaScript keyword.  Actor functions get a reference to the canvas's <code>context</code> as the first parameter.  Here's an example of an actor:</p>
+			<p><strong>If you are passing a function:</strong>  Logically, this function should draw something to the canvas.  All actor functions access their state properties with the <code>this</code> JavaScript keyword.  Actor functions get a reference to the canvas's <code>context</code> as the first parameter, and a reference to the kapi instance as the second.  Handy note:  A reference to the canvas element can be be retrieved from the context like so: <code><em>ctx</em>.canvas</code>  Here's an example of an actor:</p>
 			
 			<pre class="brush: js;">
-function circle(ctx){
+function circle(ctx, kapiInst){
 	ctx.beginPath();
 	ctx.arc(
 		this.x || 0,
@@ -252,7 +252,7 @@ function circle(ctx){
 			<ul>
 				<li><strong>draw:</strong> This is required.  This defines the drawing logic for the actor.  This is actually the same function that you would pass as the first parameter to <code>kapi.add()</code>, so the same rules apply.</li>
 				<li><strong>setup:</strong> This is called once the actor is added to Kapi. Handy for any actor initialization logic.</li>
-				<li><strong>teardown:</strong> This is called after the actor is removed from the Kapi instance (with <code>kapi.removeActor()</code>).  Note:  This functionality does not exist as of v0.2.1, <a href="https://github.com/jeremyckahn/kapi/issues#issue/27" target="_blank">it will be added in the future</a>.</li>
+				<li><strong>teardown:</strong> This is called after the actor is removed from the Kapi instance (with <code>kapi.removeActor()</code>).</li>
 			</ul>
 			
 			<p>Here's a example of an actor similar to the previous example, but as an object with <code>setup</code> and <code>teardown</code> methods: 
@@ -263,7 +263,7 @@ var circle = {
 			console.log('Setting up ', this)
 		}
 	},
-	draw: function (ctx){
+	draw: function (ctx, kapiInst){
 		ctx.beginPath();
 		ctx.arc(
 			this.x || 0,
