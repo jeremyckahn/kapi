@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.2
+ * v1.0.3
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * Maintained at: https://github.com/jeremyckahn/kapi
  * 
@@ -50,7 +50,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.2',
+	var version = '1.0.3',
 		defaults = {
 			'fps': 20,
 			'autoclear': true,
@@ -1643,6 +1643,14 @@ function kapi(canvas, params, events) {
 		 */
 		getVersion: function () {
 			return version;
+		},
+
+		/**
+		 * Returns the context of the canvas that Kapi is controlling.
+		 * @returns {CanvasObject} An HTML5 canvas context.
+		 */
+		getContext: function () {
+			return inst.ctx;
 		},
 
 		/**
