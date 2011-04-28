@@ -1,6 +1,8 @@
 Changlog
 ===
 
+* __1.0.4__: 2011-04-28.  Fixes [issue 52](https://github.com/jeremyckahn/kapi/issues/52).  Removed a global tween variable.  SHA: 4bfd452063adb89baf75a182d4e7551dda77c1bd
+
 * __1.0.3__: 2011-04-24.  Added `.getContext().`  Actors now have reference to their `kapi` instance through `actorObj.kapi`.  SHA: a1bcdaa8c7b8c1cf0ab2573ae08fbc514f07a3a4
 
 * __1.0.2__: 2011-04-24.  Added `.redraw().` SHA: 6a3348b8a721ea62bf1c1ef0eccd7e508cc26d9d
