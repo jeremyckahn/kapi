@@ -1827,7 +1827,7 @@ function kapi(canvas, params, events) {
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
-		add: function (actor, initialState) {
+		add: function (actor, initialState, setupParams) {
 			var actorInst = {},
 				validProps = ['setup', 'draw', 'teardown'],
 				i,
@@ -1899,7 +1899,8 @@ function kapi(canvas, params, events) {
 			actorInst = _addActorMethods(actorInst);
 			
 			// Call the actor's `setup` function
-			actorInst.setup(this);
+			// TODO:  Document this.
+			actorInst.setup.apply(actorInst, [this].concat(setupParams || []));
 			delete actorInst.setup;
 
 			return actorInst;
