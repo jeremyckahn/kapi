@@ -2,7 +2,7 @@
 
 /**
  * Kapi - A keyframe API
- * v1.0.3
+ * v1.0.4
  * by Jeremy Kahn - jeremyckahn@gmail.com
  * Maintained at: https://github.com/jeremyckahn/kapi
  * 
@@ -50,7 +50,7 @@
  */
 function kapi(canvas, params, events) {
 
-	var version = '1.0.3',
+	var version = '1.0.4',
 		defaults = {
 			'fps': 20,
 			'autoclear': true,
@@ -2267,7 +2267,7 @@ kapi.tween.easeOutCubic = function (t, b, c, d) {
 };
 
 // acceleration until halfway, then deceleration
-easeInOutCubic = function (t, b, c, d) {
+kapi.tween.easeInOutCubic = function (t, b, c, d) {
 	t /= d / 2;
 	if (t < 1) {
 		return c / 2 * t * t * t + b;
@@ -2378,4 +2378,4 @@ kapi.tween.easeInOutCirc = function (t, b, c, d) {
 	}
 	t -= 2;
 	return c / 2 * (Math.sqrt(1 - t * t) + 1) + b;
-}
+};
