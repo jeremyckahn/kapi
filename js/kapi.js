@@ -1512,6 +1512,13 @@ function kapi(canvas, params, events) {
 							self.clear();
 						}
 						
+						// Possible fix for https://github.com/jeremyckahn/kapi/issues/52
+						// Needs to be thoroughly tested.
+						// Sets the current frame to the final frame in the animation, clears and redraws.
+						inst._currentFrame = inst._lastKeyframe;
+						self.clear();
+						self.redraw();
+
 						if (typeof inst._repeatCompleteHandler === 'function') {
 							inst._repeatCompleteHandler.call(inst);
 							inst._repeatCompleteHandler = undefined;
