@@ -2206,6 +2206,11 @@ function kapi(canvas, params, events) {
 }
 
 /**
+ * This is a namespaced container for any actors you'd care to add.
+ */
+kapi.actor = {};
+
+/**
  * This object contains all of the tweens available to Kapi.  It is extendable - simply attach properties to this Object following the same format at `linear`.
  * 
  * This pattern was copied from Robert Penner, under BSD License (http://www.robertpenner.com/)
