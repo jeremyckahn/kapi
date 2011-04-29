@@ -1468,7 +1468,7 @@ function kapi(canvas, params, events) {
 						}
 					}
 
-					currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx, self);
+					currentFrameStateProperties.prototype.draw.call(currentFrameStateProperties, inst.ctx, self, currentFrameStateProperties.prototype);
 				}
 			}
 			inst._currentState[actorName] = currentFrameStateProperties;
