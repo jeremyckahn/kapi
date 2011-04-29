@@ -517,6 +517,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			newStateObj = extend(stateCopy, inst._originalStates[newStateId][actorId], true);
+			delete newStateObj.data;
 			newStateObj.prototype = inst._actors[actorId];
 			
 			inst._keyframes[newStateId][actorId] = newStateObj;
@@ -1071,6 +1072,14 @@ function kapi(canvas, params, events) {
 			}
 			
 			return actorObj;
+		};
+
+		actorObj.data = function data (newData) {
+			if (newData) {
+				actorObj.params.data = newData;
+			}
+			
+			return actorObj.params.data;
 		};
 
 		// actorObj maintains a reference to the kapi instance.
@@ -1876,6 +1885,7 @@ function kapi(canvas, params, events) {
 			
 			actorInst.params = initialState;
 			actorInst.constructor = actor.draw;
+			actorInst.params.data = actorInst.params.data || {};
 			
 			// Make really really sure the id is unique, if one is not provided
 			if (typeof actorInst.id === 'undefined') {
