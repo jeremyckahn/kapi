@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>kapi</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Jeremy Kahn">
+	<!-- Date: 2010-12-07 -->
+	
+	<script src="../js/kapi.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
+	
+	<style type="text/css">
+		canvas{
+			float: left;
+		}
+	
+		ul{
+			float: left;
+		}
+	</style>
+	
+</head>
+<body>
+
+	<canvas id="myCanvas">Plz stop using IE.</canvas>
+	
+	<ul>
+		<li id="currentFrame">Current frame <span></span></li>
+		<li><a id="play" href="javascript:void(0);">Play</a></li>
+		<li><a id="pause" href="javascript:void(0);">Pause</a></li>
+		<li><a id="stop" href="javascript:void(0);">Stop</a></li>
+	</ul>
+	
+	<script type="text/javascript">
+	
+		// Note:  jQuery is here just to make the demo quicker to make.
+		// Kapi does not use jQuery.
+		$('#play').click(function(ev){
+			ev.preventDefault();
+			demo.play();
+		});
+		
+		$('#pause').click(function(ev){
+			ev.preventDefault();
+			demo.pause();
+		});
+		
+		$('#stop').click(function(ev){
+			ev.preventDefault();
+			demo.stop();
+		});
+				
+		var demo = kapi(document.getElementById('myCanvas'), 
+			// params
+			{
+				fps : 30,
+				styles : {
+					'height':  '300px',
+					'width': '500px',
+					'background': '#000'
+				}
+			},
+			// events
+			{
+				enterFrame: function(){
+					currFrameOutput.html(this._currentFrame);
+				}
+			}),
+			circle1 = demo.add(circle, {	
+				name : 'myCircle1',
+				x : 200,
+				y : 150,
+				radius : 50,
+				color : '#00ff00',
+				easing : 'easeInOutQuad'
+			}),
+			circle2 = demo.add(circle, {	
+				name : 'myCircle2',
+				x : 350,
+				y : 100,
+				radius : 50,
+				color : '#f0f',
+				easing : 'easeInOutQuad'
+			})
+			currFrameOutput = $('#currentFrame span');
+			
+		circle1.keyframe('0', {
+			
+		});
+
+		circle2.keyframe('0', {
+			
+		});
+		
+		circle2.data({
+			str: "I am a string.  I am stored on myCircle1... and not myCircle2!"
+		})
+
+		console.log(circle1.data())
+		console.log(circle2.data())
+
+		demo.play();
+		
+	</script>
+
+</body>
+</html>
