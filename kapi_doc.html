@@ -295,7 +295,7 @@ var circle = {
 			
 			<h5>initialState:</h5>
 			
-			<p>An object defining the initial state for the actor.  If an actor uses a property in any of its keyframes, it must be present in this object.  Note:  If the <code>name</code> property is not provided, it is added automatically.</p>
+			<p>An object defining the initial state for the actor.  If an actor uses a property in any of its keyframes, it must be present in this object.  There is a special <code>data</code> parameter you can add here.  It simply stores arbitrary data on the actor, and can be updated and accessed at any time with <code>actor.data()</code>.  This <code>data</code> property is not present on any of the keyframes.  Note:  If the <code>name</code> property is not provided, it is added automatically as a random string.</p>
 			
 			<pre class="brush: js;">
 myKapi = kapi(document.getElementsByTagName('canvas')[0]);
@@ -306,7 +306,10 @@ myCircle = myKapi.add(circle, {
 	y: 		70,
 	radius: 50,
 	color: 	'#00ffaa',
-	easing: 'easeInOutQuint'
+	easing: 'easeInOutQuint',
+	data: {
+		val: 'You can store whatever data you please here and access it later with myCircle.data().'
+	}
 });</pre>
 			
 			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to Kapi.</div>

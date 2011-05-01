@@ -1838,7 +1838,7 @@ function kapi(canvas, params, events) {
 		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
 		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  This method receives the actor's `name` as a string.
 		 * You can also just pass a Function, which should look exactly like the draw function described above.
-		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
+		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.  There is a special `data` parameter you can add here.  It simply stores arbitrary data on the actor, and can be updated and accessed at any time with `actor.data()`.  This `data` property is not present on any of the keyframes.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
 		add: function (actor, initialState, setupParams) {
@@ -2222,9 +2222,9 @@ function kapi(canvas, params, events) {
 }
 
 /**
- * This is a namespaced container for any actors you'd care to add.
+ * This is a namespaced container for any actor templates you'd care to add.
  */
-kapi.actor = {};
+kapi.actorTemplates = {};
 
 /**
  * This object contains all of the tweens available to Kapi.  It is extendable - simply attach properties to this Object following the same format at `linear`.
