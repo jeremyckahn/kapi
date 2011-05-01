@@ -516,8 +516,8 @@ function kapi(canvas, params, events) {
 				stateCopy = extend({}, prevStateObj);
 			}
 			
+			delete stateCopy.data;
 			newStateObj = extend(stateCopy, inst._originalStates[newStateId][actorId], true);
-			delete newStateObj.data;
 			newStateObj.prototype = inst._actors[actorId];
 			
 			inst._keyframes[newStateId][actorId] = newStateObj;
@@ -1829,9 +1829,9 @@ function kapi(canvas, params, events) {
 		 * 
 		 * @param {Function|Object} actor The function or Object that defines an actor.
 		 *   If you are providing an object, you can supply any number of the following properties:
-		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.  It is passed the canvas context as the first parameter, and the kapi instance is passed as the second.
+		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.  It is passed the canvas context as the first parameter, the kapi instance (which exposes the kapi methods) as the second, and the actor object (which exposes the actor methods) as the third.
 		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
-		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).
+		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  This method receives the actor's `name` as a string.
 		 * You can also just pass a Function, which should look exactly like the draw function described above.
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
@@ -1884,8 +1884,8 @@ function kapi(canvas, params, events) {
 			}
 			
 			actorInst.params = initialState;
-			actorInst.constructor = actor.draw;
 			actorInst.params.data = actorInst.params.data || {};
+			actorInst.constructor = actor.draw;
 			
 			// Make really really sure the id is unique, if one is not provided
 			if (typeof actorInst.id === 'undefined') {

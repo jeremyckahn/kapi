@@ -76,7 +76,10 @@
 				y : 150,
 				radius : 50,
 				color : '#00ff00',
-				easing : 'easeInOutQuad'
+				easing : 'easeInOutQuad',
+				data: {
+					val: 'I am some arbitrary data that was specified when the actor was add()ed.'	
+				} 
 			}),
 			circle2 = demo.add(circle, {	
 				name : 'myCircle2',
@@ -88,16 +91,12 @@
 			})
 			currFrameOutput = $('#currentFrame span');
 			
-		circle1.keyframe('0', {
-			
-		});
+		circle1.keyframe('0', {});
 
-		circle2.keyframe('0', {
-			
-		});
+		circle2.keyframe('0', {});
 		
 		circle2.data({
-			str: "I am a string.  I am stored on myCircle1... and not myCircle2!"
+			str: "I am a string.  I am stored on myCircle1.  I was added with circle2.data()."
 		})
 
 		console.log(circle1.data())

@@ -5,12 +5,12 @@
 
 
 var circle = {
-	setup: function () {
+	setup: function (ctx, kapiInst, actorInst) {
 		if (window.console) {
 			console.log('Setting up: ' + this.id)
 		}
 	},
-	draw: function (ctx){
+	draw: function (ctx, kapiInst, actorInst){
 		ctx.beginPath();
 		ctx.arc(
 			this.x || 0,
