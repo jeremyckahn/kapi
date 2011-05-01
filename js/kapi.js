@@ -1074,6 +1074,11 @@ function kapi(canvas, params, events) {
 			return actorObj;
 		};
 
+		/**
+		 * Store and retrieves arbitrary data on an actor.  This data can be anything, in any format.
+		 * @param {Anything} newData The data to store on an actor.
+		 * @returns {Anything} Whatever data is currently stored on an actor.
+		 */
 		actorObj.data = function data (newData) {
 			if (newData) {
 				actorObj.params.data = newData;
