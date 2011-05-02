@@ -133,7 +133,7 @@ myCircle.keyframe(0, {
 Immediate actions
 --------------------------
 
-Another way to move your actors around is to use an Immediate Action.  Currently the only Immediate Action is `actor.to()`.  Immediate actions work a little differently that keyframes.  Keyframes form an animation loop that will repeat itself.  Immediate Actions, on the other hand, are executed immediately, and only once, and then discarded.  If multiple Immediate Actions are created for an actor, they are placed into a queue and execute in the order that they were created.
+Another way to move your actors around is to use an Immediate Action.  Currently the only Immediate Action is `actor.to()`.  Immediate actions work a little differently than keyframes.  Keyframes form an animation loop that can repeat itself.  Immediate Actions, on the other hand, are executed immediately, only once, and then discarded.  If multiple Immediate Actions are created for an actor, they are placed into a queue and execute in the order that they were created.
 
 ````javascript
 myCircle.to('2s', {
@@ -163,6 +163,8 @@ myCircle.keyframe(0, {
 ````
 
 This snippet defines keyframe zero, and adds two Immediate Actions to the queue.  In total, this animation will run for 3 seconds and then just stop.
+
+The Immediate Actions API is built off of the same code that powers the keyframe API, so you'll get all of the accuracy and performance of that API for free.  Immediate Actions can be more flexible for many situations.
 
 Controlling Kapi
 ----------------------
