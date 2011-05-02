@@ -8,10 +8,12 @@ Kapi is a keyframing API for the HTML 5 canvas.  It streamlines animation develo
 
 A critical component of programmatically creating an animation is accurately calculating where things should be at a given time.  Doing something like
 
-    function update() {
-      myActor.x++;
-      setTimeout(update, 33);
-    }
+````javascript
+function update() {
+  myActor.x++;
+  setTimeout(update, 33);
+}
+````
 
 is brittle, because it will lose accuracy.  System resource availability will affect the actual state of myActor over time.  A better approach is calculating the state of something based on real time.  This is precisely what Kapi does for you.
 
@@ -42,20 +44,22 @@ A Kapi animation is comprised of two main constructs:
 
 The stage is a place for actors to do what they do.  In the literal sense, the stage is an HTML 5 canvas object, and actors are JavaScript functions that draw something on the canvas.  Here is a very simple example of an actor function that is compatible with Kapi:
 
-    function circle(canvasContext){
-      canvasContext.beginPath();
-      canvasContext.arc(
-        this.x,
-        this.y,
-        this.radius,
-        0,
-        Math.PI*2, 
-        true
-      );
-      canvasContext.fillStyle = this.color;
-      canvasContext.fill();
-      canvasContext.closePath();
-    }
+````javascript
+function circle(canvasContext){
+  canvasContext.beginPath();
+  canvasContext.arc(
+    this.x,
+    this.y,
+    this.radius,
+    0,
+    Math.PI*2, 
+    true
+  );
+  canvasContext.fillStyle = this.color;
+  canvasContext.fill();
+  canvasContext.closePath();
+}
+````
 
 Kapi only does one thing - it manages values based on the passage of time.  It passes those values to your actors, and your actors can do whatever you want them to with the values.
 
@@ -73,14 +77,16 @@ The first step is to create an instance of the Kapi object.  This can be done as
 
 The next step is to add actor instances.  You have complete freedom on how to you want to define your actors.  They are simply doing stuff with their instance variables, which are accessed with the JavaScript `this` keyword.  Let’s use the `circle` example actor defined earlier.  To add an instance of `circle` to Kapi, simply use `.add()`:
 
-    var myCircle = myKapi.add(circle, {	
-        name : 'myCircle',
-        x : 0,
-        y : 0,
-        radius : 50,
-        color : '#00ff00',
-        easing : 'easeInOutQuad'
-     });
+````javascript
+var myCircle = myKapi.add(circle, {	
+    name : 'myCircle',
+    x : 0,
+    y : 0,
+    radius : 50,
+    color : '#00ff00',
+    easing : 'easeInOutQuad'
+});
+````
 
 `kapi.add()` defines the initial state of an actor within the `kapi` instance - this is done in the second parameter with a configuration object.  The properties of this object will be present in all keyframes of `myCircle`.  If there is a property that will be used anywhere by this actor in the animation, you need to define it in `kapi.add()`.
 
@@ -97,12 +103,14 @@ Now that you have set up your actors and your stage, you can define keyframe sta
 
 To define a keyframe, call `actor.keyframe()`, like so:
 
-    myCircle.keyframe(0, {
-      x : 200,
-      y : 150,
-      radius : '*=2',
-      color : '#0000ff'
-    });
+````javascript
+myCircle.keyframe(0, {
+  x : 200,
+  y : 150,
+  radius : '*=2',
+  color : '#0000ff'
+});
+````
 
 This would make a keyframe for `myCircle` at keyframe zero.  This particular keyframe would place the circle down and to the right, double the size, and fade it to blue (from green).  Since this is keyframe zero, the change would be completed as soon as the animation begins.  Any properties that are missing from a keyframe definition are inherited from the previous keyframe, if there is one.  If the property isn’t present on that keyframe, the same property from the keyframe before that is used.  This property lookup goes all the way back to the state that was passed to `kapi.add()`, if necessary.
 
@@ -110,43 +118,49 @@ This would make a keyframe for `myCircle` at keyframe zero.  This particular key
 
 The `actor.keyframe()` function is chainable, so you can do this:
 
-    myCircle.keyframe(0, {
-      x : 60,
-      y : 50,
-      color : '#0000ff'
-    }).keyframe(30, {
-      x : 250,
-      y : 50,
-      radius : '/=2'
-    });
+````javascript
+myCircle.keyframe(0, {
+  x : 60,
+  y : 50,
+  color : '#0000ff'
+}).keyframe(30, {
+  x : 250,
+  y : 50,
+  radius : '/=2'
+});
+````
 
 Immediate actions
 --------------------------
 
 Another way to move your actors around is to use an Immediate Action.  Currently the only Immediate Action is `actor.to()`.  Immediate actions work a little differently that keyframes.  Keyframes form an animation loop that will repeat itself.  Immediate Actions, on the other hand, are executed immediately, and only once, and then discarded.  If multiple Immediate Actions are created for an actor, they are placed into a queue and execute in the order that they were created.
 
-    myCircle.to('2s', {
-      x: '+=100',
-      y: 50,
-      color: '#ff0000'
-    });
+````javascript
+myCircle.to('2s', {
+  x: '+=100',
+  y: 50,
+  color: '#ff0000'
+});
+````
 
 From the instant this method is called, `myCircle` will move 100 pixels to the right of its current position, to the 50th pixel down in the canvas, and fade to red.  This will happen over the course of two seconds, which is defined by the first parameter (`'2s`).
 
 Immediate Actions, like keyframes, are chainable.  It is easiest (and recommended) to use Immediate Actions with animations that only have one keyframe, defined on keyframe zero.  However, mixing Immediate Actions with keyframes is entirely valid.  It's just really hard to achieve the effect you might be going for.
 
-    myCircle.keyframe(0, {
-      x : 100,
-      y : 100,
-      color : '#0000ff'
-    }).to('2s', {
-      x: '+=100',
-      y: 50,
-      color: '#ff0000'
-    }).to('1s', {
-      x: 75,
-      y: '*=2'
-    });
+````javascript
+myCircle.keyframe(0, {
+  x : 100,
+  y : 100,
+  color : '#0000ff'
+}).to('2s', {
+  x: '+=100',
+  y: 50,
+  color: '#ff0000'
+}).to('1s', {
+  x: 75,
+  y: '*=2'
+});
+````
 
 This snippet defines keyframe zero, and adds two Immediate Actions to the queue.  In total, this animation will run for 3 seconds and then just stop.
 
@@ -155,44 +169,60 @@ Controlling Kapi
 
 Once you have set up your stage and actors, you can control the animation.  Additionally, you can specify any point in the animation’s timeline that you’d like to view and play from.  Using our `myKapi` instance from before, we can call the following methods:
 
-    myKapi.play();
+````javascript
+myKapi.play();
+````
 
 Runs the animation from the beginning if it was not running before, or resumes from the paused state.
 
-    myKapi.pause();
+````javascript
+myKapi.pause();
+````
 
 Pauses the animation, but does not clear the canvas.  The state of the animation is “frozen” until it is started again.
 
-    myKapi.stop();
+````javascript
+myKapi.stop();
+````
 
 Stops the animation, clears, the canvas, and resets the state back to the beginning of the animation loop.
 
-    myKapi.repeat( repetitions, callback );
+````javascript
+myKapi.repeat( repetitions, callback );
+````
 
 Repeats the animation a given number of times (defined by `repetitions`), and then just stops.  You can optionally define a `callback` to be fired when the sequence is complete.
 
-    myKapi.iterate( iterations, callback );
+````javascript
+myKapi.iterate( iterations, callback );
+````
 
 Works similarly to `repeat()`, but defines how many times the loop executes, rather than how many times it starts over.
 
 If you would like to go to a specific point in the timeline of the animation, you can do so with 
 
-    myKapi.gotoFrame(desiredFrame);
+````javascript
+myKapi.gotoFrame(desiredFrame);
+````
 
 `desiredFrame` is any frame in the animation.  For your convenience, there is also 
 
-    myKapi.gotoAndPlay(desiredFrame);
+````javascript
+myKapi.gotoAndPlay(desiredFrame);
+````
 
 This simply calls  `gotoFrame()` and then `play()`.  Please note that `gotoFrame()` and `gotoAndPlay()` won't work properly with keyframes that use dynamic properties (properties defined by functions or dynamic modifiers `+=`, `-=`, `/=` and `*=`).  This because there is no reliable way to know what these dynamic properties will be until the keyframe is evaluated.  Support for this may come in a later version of Kapi.
 
 Tweening
 --------------
 
-There is only one tweening formula built into Kapi core code - `linear`.  You can add as many tweening methods as you please; just add methods to the global `kapi.tween` object.
+There is only one tweening formula built into Kapi core code - `linear`.  You can add as many tweening methods as you please; just attach methods to the global `kapi.tween` object.
 
-If you want more tweens than `linear`, you are in luck.  The file `kapi.tweens.js` is included in the Kapi repository, which contains a collection of Robert Penner's tweening methods.  All you have to do is include `kapi.tweens.js` in your page after `kapi.js` to use all the fun tweens.
+````javascript
+kapi.tween.myAwesomeTween = function (t, b, c, d) { ... }
+````
 
-For your convenience, `kapi.tweens.js` is baked into [`kapi.min.js`](https://github.com/jeremyckahn/kapi/raw/master/js/kapi.min.js).
+If you want more tweens than `linear`, you are in luck.  The file `kapi.tweens.js` is included in the Kapi repository, which contains a collection of Robert Penner's tweening methods.  For your convenience, the methods in this file are also included in both the [`kapi.js`](https://github.com/jeremyckahn/kapi/raw/master/js/kapi.js) source file and the [`kapi.min.js`](https://github.com/jeremyckahn/kapi/raw/master/js/kapi.min.js) production file.  They can be removed or modified without affecting the functionality of the Kapi core.
 
 More info
 -------------
