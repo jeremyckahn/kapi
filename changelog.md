@@ -1,6 +1,8 @@
 Changlog
 ===
 
+* __1.0.5__: 2011-04-28.  Added [`actor.data()`](http://jeremyckahn.github.com/kapi/actor_doc.html#data).  Actor `draw()` functions now receive the actor object as a parameter (this means a draw function can access actor methods).  SHA: b708575e5380a91a056e2a9f701a8e6e7805f9fc
+
 * __1.0.4__: 2011-04-28.  Fixes [issue 52](https://github.com/jeremyckahn/kapi/issues/52).  Removed a global tween variable.  SHA: 4bfd452063adb89baf75a182d4e7551dda77c1bd
 
 * __1.0.3__: 2011-04-24.  Added `.getContext().`  Actors now have reference to their `kapi` instance through `actorObj.kapi`.  SHA: a1bcdaa8c7b8c1cf0ab2573ae08fbc514f07a3a4
