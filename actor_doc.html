@@ -62,6 +62,18 @@
 			
 			<h2>Actor methods</h2>
 			
+			<ul>
+				<li><a href="#keyframe">keyframe()</a></li>
+				<li><a href="#updatekeyframe">updateKeyframe()</a></li>
+				<li><a href="#remove">remove()</a></li>
+				<li><a href="#removeall">removeAll()</a></li>
+				<li><a href="#livecopy">liveCopy()</a></li>
+				<li><a href="#getstate">getState()</a></li>
+				<li><a href="#get">get()</a></li>
+				<li><a href="#movetolayer">moveToLayer()</a></li>
+				<li><a href="#data">data()</a></li>
+			</ul>
+			
 			<p>Actors are produced from <code>kapiInstance.add()</code>.</p>
 			
 			<a name="keyframe"></a>
@@ -110,6 +122,174 @@ circle1
 				<li><a href="tests/multiEase.html">Demo of multiple easing formulas applied to a single keyframe</a></li>
 			</ul>
 			
+			<a name="updatekeyframe"></a>
+			<h3>updateKeyframe()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.updateKeyframe( keyframeId, newProps )</pre>
+			
+			<p>Selectively modify the state properties of a keyframe.  Properties that are missing from a call to <code>updateKeyframe()</code> are left unmodified in the keyframe it is modifying.  Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
+			
+			<h5>newprops:</h5>
+			
+			<p>Object.  The properties on the keyframe to be updated and their values.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/updateKeyframe.html">actor.updateKeyframe</a></li>
+			</ul>
+			
+			
+			<a name="remove"></a>
+			<h3>remove()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.remove( keyframeId )</pre>
+			
+			<p>Cleanly removes <code>actorObj</code> from <code>keyframeId</code>, as well as all internal references to it.  An error is logged in the JavaScript console if <code>actorObj</code> does not exist at <code>keyframeId</code>.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/removeKeyframe.html">actor.remove()</a></li>
+			</ul>
+			
+			
+			<a name="removeall"></a>
+			<h3>removeAll()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.removeAll()</pre>
+			
+			<p>Removes the actor from all keyframes.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/removeAll.html">removeAll()</a></li>
+			</ul>
+			
+			
+			<a name="livecopy"></a>
+			<h3>liveCopy()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.liveCopy( keyframeId, keyframeIdToCopy )</pre>
+			
+			<p>Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified or removed, so is the liveCopy.  This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
+			
+			<h5>keyframeId:</h5>
+			
+			<p>String or number.  The keyframe identifier of the keyframe to copy.  Expressed in Kapi time syntax.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/liveCopy.html">actor.liveCopy()</a></li>
+				<li><a href="tests/liveCopyMulti.html">Multiple actor.liveCopy()'s</a></li>
+			</ul>
+			
+			
+			<a name="getstate"></a>
+			<h3>getState()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.getState()</pre>
+			
+			<p>Get the current state of the actor as it exists in Kapi.</p>
+			
+			<div class="ret"><strong>Returns:</strong>An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when <code>getState</code> is called.</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/actorGetState.html">getState()</a></li>
+			</ul>
+			
+			
+			<a name="get"></a>
+			<h3>get()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.get( prop )</pre>
+			
+			<p>Get the current value of a single state property from the actor.</p>
+			
+			<h5>prop:</h5>
+			
+			<p>String.  The state property to retrieve.  If <code>prop</code> is "layer," this function will return the layer that this actor is currently in.</p>
+			
+			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/get.html">get()</a></li>
+			</ul>
+			
+			
+			<a name="movetolayer"></a>
+			<h3>moveToLayer()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.moveToLayer( layerId )</pre>
+			
+			<p>Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling <code><em>kapiInstance</em>.getNumberOfLayers()</code>.</p>
+			
+			<h5>layerId:</h5>
+			
+			<p>Number.  The layer to move the actor to.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/layers.html">actor.moveToLayer()</a></li>
+			</ul>
+			
+			<a name="data"></a>
+			<h3>data()</h3>
+			
+			<pre class="func-def"><em>actorInstance</em>.data( newData )</pre>
+			
+			<p>Store and retrieve arbitrary data on an actor.  This data can be anything, in any format.</p>
+			
+			<h5>newData</h5>
+			
+			<p>Any data type.  This is the data that will be stored on the actor.</p>
+			
+
+			<div class="ret"><strong>Returns:</strong> The data that is currently stored internally on the actor.</div>
+
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/data.html">actor.data()</a></li>
+			</ul>
+			
+			<h2>Immediate Actions API</h2>
+			
+			<ul>
+				<li><a href="#to">to()</a></li>
+				<li><a href="#clearqueue">clearQueue()</a></li>
+				<li><a href="#skiptoend">skipToEnd()</a></li>
+				<li><a href="#endcurrentaction">endCurrentAction()</a></li>
+			</ul>
 			
 			<a name="to"></a>
 			<h3>to()</h3>
@@ -217,170 +397,13 @@ circle1.keyframe(0, { })
 			</ul>
 			
 			
-			<a name="remove"></a>
-			<h3>remove()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.remove( keyframeId )</pre>
-			
-			<p>Cleanly removes <code>actorObj</code> from <code>keyframeId</code>, as well as all internal references to it.  An error is logged in the JavaScript console if <code>actorObj</code> does not exist at <code>keyframeId</code>.</p>
-			
-			<h5>keyframeId:</h5>
-			
-			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/removeKeyframe.html">actor.remove()</a></li>
-			</ul>
-			
-			
-			<a name="removeall"></a>
-			<h3>removeAll()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.removeAll()</pre>
-			
-			<p>Removes the actor from all keyframes.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/removeAll.html">removeAll()</a></li>
-			</ul>
-
-
-			<a name="data"></a>
-			<h3>data()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.data( newData )</pre>
-			
-			<p>Store and retrieve arbitrary data on an actor.  This data can be anything, in any format.</p>
-			
-			<h5>newData</h5>
-			
-			<p>Any data type.  This is the data that will be stored on the actor.</p>
-			
-
-			<div class="ret"><strong>Returns:</strong> The data that is currently stored internally on the actor.</div>
-
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/data.html">actor.data()</a></li>
-			</ul>
-
-
-
-			<a name="updatekeyframe"></a>
-			<h3>updateKeyframe()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.updateKeyframe( keyframeId, newProps )</pre>
-			
-			<p>Selectively modify the state properties of a keyframe.  Properties that are missing from a call to <code>updateKeyframe()</code> are left unmodified in the keyframe it is modifying.  Note!  You cannot update the properties of a keyframe that is a liveCopy.  You can only update the properties of the original keyframe that it is copying.</p>
-			
-			<h5>keyframeId:</h5>
-			
-			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
-			
-			<h5>newprops:</h5>
-			
-			<p>Object.  The properties on the keyframe to be updated and their values.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/updateKeyframe.html">actor.updateKeyframe</a></li>
-			</ul>
-			
-			
-			<a name="livecopy"></a>
-			<h3>liveCopy()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.liveCopy( keyframeId, keyframeIdToCopy )</pre>
-			
-			<p>Add a keyframe to the animation that is a copy of another keyframe.  If the copied keyframe is modified or removed, so is the liveCopy.  This is handy for tweening back to the first keyframe state in the animation right before the loop starts over.</p>
-			
-			<h5>keyframeId:</h5>
-			
-			<p>String or number.  The desired keyframe to remove <code>actorInstance</code> from, expressed in Kapi time syntax.</p>
-			
-			<h5>keyframeId:</h5>
-			
-			<p>String or number.  The keyframe identifier of the keyframe to copy.  Expressed in Kapi time syntax.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/liveCopy.html">actor.liveCopy()</a></li>
-				<li><a href="tests/liveCopyMulti.html">Multiple actor.liveCopy()'s</a></li>
-			</ul>
-			
-			
-			<a name="getstate"></a>
-			<h3>getState()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.getState()</pre>
-			
-			<p>Get the current state of the actor as it exists in Kapi.</p>
-			
-			<div class="ret"><strong>Returns:</strong>An object containing all of the properties defining the actor.  Returns an empty object if the actor does not have a state when <code>getState</code> is called.</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/actorGetState.html">getState()</a></li>
-			</ul>
-			
-			
-			<a name="get"></a>
-			<h3>get()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.get( prop )</pre>
-			
-			<p>Get the current value of a single state property from the actor.</p>
-			
-			<h5>prop:</h5>
-			
-			<p>String.  The state property to retrieve.  If <code>prop</code> is "layer," this function will return the layer that this actor is currently in.</p>
-			
-			<div class="ret"><strong>Returns:</strong> Whatever the current value for <code>prop</code> is.</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/get.html">get()</a></li>
-			</ul>
-			
-			
-			<a name="movetolayer"></a>
-			<h3>moveToLayer()</h3>
-			
-			<pre class="func-def"><em>actorInstance</em>.moveToLayer( layerId )</pre>
-			
-			<p>Change the layer that the actor is currently in.  Valid parameters are any layer index between 0 and the max number of layers (inclusive).  You can get the upper bound by calling <code><em>kapiInstance</em>.getNumberOfLayers()</code>.</p>
-			
-			<h5>layerId:</h5>
-			
-			<p>Number.  The layer to move the actor to.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The actor Object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/layers.html">actor.moveToLayer()</a></li>
-			</ul>
-			
-			
 			<h2>Non-method Properties</h2>
+			
+			<ul>
+				<li><a href="#params">params</a></li>
+				<li><a href="#kapi">kapi</a></li>
+			</ul>
+			
 			<a name="params"></a>
 			<h3>params</h3>
 			

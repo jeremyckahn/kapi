@@ -103,6 +103,31 @@
 			
 			<h2>Kapi instance methods</h2>
 			
+			<ul>
+				<li><a href="#getversion">getVersion()</a></li>
+				<li><a href="#getcontext">getContext()</a></li>
+				<li><a href="#isplaying">isPlaying()</a></li>
+				<li><a href="#play">play()</a></li>
+				<li><a href="#pause">pause()</a></li>
+				<li><a href="#stop">stop()</a></li>
+				<li><a href="#repeat">repeat()</a></li>
+				<li><a href="#iterate">iterate()</a></li>
+				<li><a href="#clear">clear()</a></li>
+				<li><a href="#redraw">redraw()</a></li>
+				<li><a href="#add">add()</a></li>
+				<li><a href="#removeactor">removeActor()</a></li>
+				<li><a href="#removeallkeyframes">removeAllKeyframes()</a></li>
+				<li><a href="#gotoframe">gotoFrame()</a></li>
+				<li><a href="#gotoandplay">gotoAndPlay()</a></li>
+				<li><a href="#getstate">getState()</a></li>
+				<li><a href="#getnumberoflayers">getNumberOfLayers()</a></li>
+				<li><a href="#getactor">getActor()</a></li>
+				<li><a href="#getactorlist">getActorList()</a></li>
+				<li><a href="#framerate">framerate()</a></li>
+				<li><a href="#bind">bind()</a></li>
+				<li><a href="#unbind">unbind()</a></li>
+			</ul>
+			
 			
 			<a name="getversion"></a>
 			<h3>getVersion()</h3>
@@ -334,6 +359,20 @@ myCircle = myKapi.add(circle, {
 				<li><a href="tests/removeActor.html">removeActor()</a></li>
 			</ul>
 			
+			<a name="removeallkeyframes"></a>
+			<h3>removeAllKeyframes()</h3>
+			
+			<pre class="func-def"><em>kapiInstance</em>.removeAllKeyframes()</pre>
+			
+			<p>Remove all of the keyframes for all of the actors in the animation.  Aside from the fact that <code>add</code>ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.</p>
+			
+			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
+			
+			<h2>Examples:</h2>
+			
+			<ul>
+				<li><a href="tests/removeAllKeyframes.html">removeAllKeyframes()</a></li>
+			</ul>
 			
 			<a name="gotoframe"></a>
 			<h3>gotoFrame()</h3>
@@ -435,22 +474,6 @@ myKapi.gotoFrame('1.5s');</pre>
 			
 			<ul>
 				<li><a href="tests/getActorList.html">getActorList()</a></li>
-			</ul>
-			
-			
-			<a name="removeallkeyframes"></a>
-			<h3>removeAllKeyframes()</h3>
-			
-			<pre class="func-def"><em>kapiInstance</em>.removeAllKeyframes()</pre>
-			
-			<p>Remove all of the keyframes for all of the actors in the animation.  Aside from the fact that <code>add</code>ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.</p>
-			
-			<div class="ret"><strong>Returns:</strong> The Kapi object (for chaining).</div>
-			
-			<h2>Examples:</h2>
-			
-			<ul>
-				<li><a href="tests/removeAllKeyframes.html">removeAllKeyframes()</a></li>
 			</ul>
 			
 			
