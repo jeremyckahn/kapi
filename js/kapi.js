@@ -1019,13 +1019,21 @@ function kapi(canvas, params, events) {
 		 */
 		actorObj.liveCopy = function liveCopy (keyframeId, keyframeIdToCopy) {
 			
+			var originalKeyframeId,
+				originalKeyframeIdToCopy;
+			
+			
+			originalKeyframeId = keyframeId;
+			originalKeyframeIdToCopy = keyframeIdToCopy;
 			keyframeId = _getRealKeyframe(keyframeId);
 			keyframeIdToCopy = _getRealKeyframe(keyframeIdToCopy);
 			
 			if (inst._keyframes[keyframeIdToCopy] && inst._keyframes[keyframeIdToCopy][actorObj.id]) {
 				
 				inst._liveCopies[actorObj.id][keyframeId] = {
-					'copyOf': keyframeIdToCopy
+					'copyOf': keyframeIdToCopy,
+					'originalKeyframeId': originalKeyframeId,
+					'originalKeyframeIdCopyOf': originalKeyframeIdToCopy
 				};
 				
 				actorObj.keyframe(keyframeId, {});
@@ -2029,13 +2037,14 @@ function kapi(canvas, params, events) {
 				fpsChange,
 				originalStatesIndexCopy = {},
 				originalStatesCopy = {},
-				originalReachedKeyframeCopy,
 				originalLiveCopies = {},
+				originalReachedKeyframeCopy,
 				originalKeyframeId,
 				index,
 				liveCopy,
 				liveCopyData,
 				tempLiveCopy,
+				originalSourceState,
 				i;
 			
 			if (newFramerate && typeof newFramerate === 'number' && newFramerate > 0) {
@@ -2079,7 +2088,15 @@ function kapi(canvas, params, events) {
 						for (liveCopy in originalLiveCopies[liveCopyData]) {
 							if (originalLiveCopies[liveCopyData].hasOwnProperty(liveCopy)) {
 								tempLiveCopy = originalLiveCopies[liveCopyData][liveCopy];
-								inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
+								
+								originalSourceState = originalStatesCopy[tempLiveCopy.copyOf][liveCopyData]._keyframeID;
+								
+								//inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
+								
+								
+								//inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, tempLiveCopy.copyOf);
+								//inst._actors[liveCopyData].liveCopy(tempLiveCopy.originalKeyframeId, tempLiveCopy.originalKeyframeIdCopyOf);
+								inst._actors[liveCopyData].liveCopy(tempLiveCopy.originalKeyframeId, tempLiveCopy.originalKeyframeIdCopyOf);
 							}
 						}
 					}
