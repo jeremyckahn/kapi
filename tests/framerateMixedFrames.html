@@ -115,12 +115,14 @@
 		setTimeout(function () {
 			console.log('Changing the framerate to 10 frames per second.');
 			demo.framerate(10);
+			console.log(demo._debug());
 			
-			/*setTimeout(function () {
+			setTimeout(function () {
 				console.log('Changing the framerate to 60 frames per second.');
 				demo.framerate(60);
+				console.log(demo._debug());
 
-			}, 4000);*/
+			}, 4000);
 			
 		}, 1000);
 		

@@ -87,6 +87,7 @@ function kapi(canvas, params, events) {
 		},
 		toStr = Object.prototype.toString,
 		rModifierComponents = /(\+|\-|=|\*|\/)/g,
+		rKeyframeIdTimeComponents = /(ms|s)/gi,
 		calcKeyframe = {
 			/**
 			 * Calculates the keyframe based on a given amount of amount of *milliseconds*.  To be invoked with `Function.call`.
@@ -278,6 +279,10 @@ function kapi(canvas, params, events) {
 		});
 	}
 
+	function isTimeBasedKeyframeId (id) {
+		return (typeof id === 'string' && rKeyframeIdTimeComponents.test(id));
+	}
+
 	/**
 	 * Determines if a string is a hexadecimal string (`#xxxxxx`)
 	 * @param {String} str The string to test.
@@ -384,6 +389,11 @@ function kapi(canvas, params, events) {
 		return (typeof str === 'string' && (/^\s*(\+|\-|\*|\/)\=/).test(str));
 	}
 	
+	/**
+	 * Determines if a keyframe property is a modifier string or a function.
+	 * @param {Anything} prop The value to test
+	 * @param {Boolean}
+	 */
 	function isDynamic (prop) {
 		return (isModifierString(prop) || typeof prop === 'function');
 	}
@@ -702,7 +712,7 @@ function kapi(canvas, params, events) {
 			// If any number values were passed as strings, convert them to numbers.
 			for (prop in stateObj) {
 				if (stateObj.hasOwnProperty(prop)) {
-					// Yeah it's ugly.  But it's fast and DRY.
+					// Yeah it's ugly.  But it's relatively fast and DRY.
 					if (typeof stateObj[prop] === 'string' && stateObj[prop] === (digits = +(stateObj[prop].replace(rModifierComponents, ''))).toString() ) {
 						stateObj[prop] = digits;
 					}
@@ -710,6 +720,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			orig = extend({}, stateObj);
+			orig._keyframeID = keyframeId;
 
 			try {
 				keyframeId = _getRealKeyframe(keyframeId);
@@ -2020,6 +2031,7 @@ function kapi(canvas, params, events) {
 				originalStatesCopy = {},
 				originalReachedKeyframeCopy,
 				originalLiveCopies = {},
+				originalKeyframeId,
 				index,
 				liveCopy,
 				liveCopyData,
@@ -2040,9 +2052,14 @@ function kapi(canvas, params, events) {
 				
 				for (index in originalStatesIndexCopy) {
 					if (originalStatesIndexCopy.hasOwnProperty(index)) {
-
+						
+						// Re-add all of the keyframes.
 						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
-							inst._actors[index].keyframe(fpsChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+							//inst._actors[index].keyframe(fpsChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+							
+							originalKeyframeId = originalStatesCopy[originalStatesIndexCopy[index][i]][index]._keyframeID;
+							inst._actors[index].keyframe(originalKeyframeId, originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
+							
 						}
 						
 						// Update the durations on the Immediate Actions.
