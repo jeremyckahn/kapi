@@ -87,7 +87,6 @@ function kapi(canvas, params, events) {
 		},
 		toStr = Object.prototype.toString,
 		rModifierComponents = /(\+|\-|=|\*|\/)/g,
-		rKeyframeIdTimeComponents = /(ms|s)/gi,
 		calcKeyframe = {
 			/**
 			 * Calculates the keyframe based on a given amount of amount of *milliseconds*.  To be invoked with `Function.call`.
@@ -277,10 +276,6 @@ function kapi(canvas, params, events) {
 		return array.sort(function (a, b) {
 			return a - b;
 		});
-	}
-
-	function isTimeBasedKeyframeId (id) {
-		return (typeof id === 'string' && rKeyframeIdTimeComponents.test(id));
 	}
 
 	/**
@@ -2040,9 +2035,8 @@ function kapi(canvas, params, events) {
 				originalLiveCopies = {},
 				originalReachedKeyframeCopy,
 				originalKeyframeId,
-				index,
+				actorName,
 				liveCopy,
-				liveCopyData,
 				tempLiveCopy,
 				originalSourceState,
 				i;
@@ -2052,58 +2046,66 @@ function kapi(canvas, params, events) {
 				fpsChange = newFramerate / oldFps;
 				inst._params.fps = parseInt(newFramerate, 10);
 				
-				// Make safe copies of a number of things that have to be re-processed after the framerate change.
+				// Make a safe copy of `inst._liveCopies`.
+				extend(originalLiveCopies, inst._liveCopies);
+				
+				// Remove any liveCopy keyframes.  They are stored safely in `inst._liveCopies`,
+				// and will added back into the animation after the regular keyframes are added back.
+				for (actorName in originalLiveCopies) {
+					if (originalLiveCopies.hasOwnProperty(actorName)) {
+						for (liveCopy in originalLiveCopies[actorName]) {
+							if (originalLiveCopies[actorName].hasOwnProperty(liveCopy)) {
+								inst._actors[actorName].remove(liveCopy);
+							}
+						}
+					}	
+				}
+				
+				// Make safe copies of `inst._actorstateIndex` and `inst._originalStates`,
+				// they have to be re-added after the framerate change.
 				extend(originalStatesIndexCopy, inst._actorstateIndex);
 				extend(originalStatesCopy, inst._originalStates);
-				extend(originalLiveCopies, inst._liveCopies);
 				originalReachedKeyframeCopy = inst._reachedKeyframes.slice(0);
+				
+				// All needed data has been safely saved, dump it all from the currently executing instance.
 				this.removeAllKeyframes();
 				
-				for (index in originalStatesIndexCopy) {
-					if (originalStatesIndexCopy.hasOwnProperty(index)) {
+				// And add it all back at the new framerate.
+				for (actorName in originalStatesIndexCopy) {
+					if (originalStatesIndexCopy.hasOwnProperty(actorName)) {
 						
 						// Re-add all of the keyframes.
-						for (i = originalStatesIndexCopy[index].length - 1; i > -1; i--) {
-							//inst._actors[index].keyframe(fpsChange * originalStatesIndexCopy[index][i], originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
-							
-							originalKeyframeId = originalStatesCopy[originalStatesIndexCopy[index][i]][index]._keyframeID;
-							inst._actors[index].keyframe(originalKeyframeId, originalStatesCopy[originalStatesIndexCopy[index][i]][index]);
-							
+						for (i = originalStatesIndexCopy[actorName].length - 1; i > -1; i--) {
+							originalKeyframeId = originalStatesCopy[originalStatesIndexCopy[actorName][i]][actorName]._keyframeID;
+							inst._actors[actorName].keyframe(originalKeyframeId, originalStatesCopy[originalStatesIndexCopy[actorName][i]][actorName]);
 						}
 						
 						// Update the durations on the Immediate Actions.
-						for (i = 0; i < originalStatesIndexCopy[index].queue.length; i++) {
-							inst._actorstateIndex[index].queue[i].duration *= fpsChange;
+						for (i = 0; i < originalStatesIndexCopy[actorName].queue.length; i++) {
+							inst._actorstateIndex[actorName].queue[i].duration = parseInt(inst._actorstateIndex[actorName].queue[i].duration * fpsChange, 10);
 						}
 						
 						// Restore the actor's reachedKeyframes list.
-						inst._actorstateIndex[index].reachedKeyframes = originalStatesIndexCopy[index].reachedKeyframes.splice(0);
+						inst._actorstateIndex[actorName].reachedKeyframes = originalStatesIndexCopy[actorName].reachedKeyframes.splice(0);
 					}
 				}
 				
 				// Recreate all of the liveCopies				
-				for (liveCopyData in originalLiveCopies) {
-					if (originalLiveCopies.hasOwnProperty(liveCopyData)) {
-						inst._liveCopies[liveCopyData] = {};
-						for (liveCopy in originalLiveCopies[liveCopyData]) {
-							if (originalLiveCopies[liveCopyData].hasOwnProperty(liveCopy)) {
-								tempLiveCopy = originalLiveCopies[liveCopyData][liveCopy];
-								
-								originalSourceState = originalStatesCopy[tempLiveCopy.copyOf][liveCopyData]._keyframeID;
-								
-								//inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, originalLiveCopies[liveCopyData][liveCopy].copyOf);
-								
-								
-								//inst._actors[liveCopyData].liveCopy((+liveCopy) * fpsChange, tempLiveCopy.copyOf);
-								//inst._actors[liveCopyData].liveCopy(tempLiveCopy.originalKeyframeId, tempLiveCopy.originalKeyframeIdCopyOf);
-								inst._actors[liveCopyData].liveCopy(tempLiveCopy.originalKeyframeId, tempLiveCopy.originalKeyframeIdCopyOf);
+				for (actorName in originalLiveCopies) {
+					if (originalLiveCopies.hasOwnProperty(actorName)) {
+						inst._liveCopies[actorName] = {};
+						for (liveCopy in originalLiveCopies[actorName]) {
+							if (originalLiveCopies[actorName].hasOwnProperty(liveCopy)) {
+								tempLiveCopy = originalLiveCopies[actorName][liveCopy];
+								originalSourceState = originalStatesCopy[tempLiveCopy.copyOf][actorName]._keyframeID;
+								inst._actors[actorName].liveCopy(tempLiveCopy.originalKeyframeId, tempLiveCopy.originalKeyframeIdCopyOf);
 							}
 						}
 					}
 				}
 				
 				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
-					inst._reachedKeyframes[i] = originalReachedKeyframeCopy[i] * fpsChange;
+					inst._reachedKeyframes[i] = parseInt(originalReachedKeyframeCopy[i] * fpsChange, 10);
 				}
 			}
 			
