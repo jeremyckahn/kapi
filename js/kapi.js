@@ -982,15 +982,17 @@ function kapi(canvas, params, events) {
 		 */
 		actorObj.updateKeyframe = function updateKeyframe (keyframeId, newProps) {
 			var keyframeToUpdate,
-				originalState;
+				originalState,
+				originalKeyframeId;
 			
+			originalKeyframeId = keyframeId;
 			keyframeId = _getRealKeyframe(keyframeId);
 			
 			if (inst._keyframes[keyframeId] && inst._keyframes[keyframeId][actorObj.id]) {
 				originalState = inst._originalStates[keyframeId][actorObj.id];
 				keyframeToUpdate = inst._keyframes[keyframeId][actorObj.id];
 				extend(originalState, newProps, true);
-				actorObj.keyframe(keyframeId, originalState);
+				actorObj.keyframe(originalKeyframeId, originalState);
 			} else {
 				if (window.console && window.console.error) {
 					if (!inst._keyframes[keyframeId]) {
