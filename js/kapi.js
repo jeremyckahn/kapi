@@ -2286,7 +2286,7 @@ kapi.tween = {
 // All equations are copied from here: http://www.gizma.com/easing/
 // Originally written by Robert Penner, copied under BSD License (http://www.robertpenner.com/)
 //
-// Params are as follows
+// Params are as follows:
 // t = current time
 // b = start value
 // c = change in value
