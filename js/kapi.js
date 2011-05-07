@@ -59,6 +59,7 @@ function kapi(canvas, params, events) {
 		},
 		self = {},
 		inst = {
+			_params : {},
 			_events : {},
 			_keyframeIds : [],
 			_reachedKeyframes : [],
@@ -70,6 +71,7 @@ function kapi(canvas, params, events) {
 			_originalStates : {},
 			_liveCopies : {},
 			_currentState : {},
+			_puppets: {},
 			_animationDuration : 0,
 			_repsRemaining : -1,
 			_lastKeyframe : undefined,
@@ -83,6 +85,8 @@ function kapi(canvas, params, events) {
 			_loopPosition : undefined,
 			_updateHandle : undefined,
 			_repeatCompleteHandler : undefined,
+			el: undefined,
+			ctx: undefined,
 			frameCount : 0
 		},
 		toStr = Object.prototype.toString,
@@ -1509,7 +1513,8 @@ function kapi(canvas, params, events) {
 		// Abandon all hope, ye who enter here.
 		var currTime,
 			reachedKeyframeLastIndex, 
-			prevKeyframe;
+			prevKeyframe,
+			puppet;
 			
 		currTime = now();
 
@@ -1537,12 +1542,13 @@ function kapi(canvas, params, events) {
 				if (inst._repsRemaining === 0) {
 					self.stop();
 					
-					// Possible fix for https://github.com/jeremyckahn/kapi/issues/52
-					// Needs to be thoroughly tested.
 					// Sets the current frame to the final frame in the animation, clears and redraws.
 					inst._currentFrame = inst._lastKeyframe;
-					self.clear();
-					self.redraw();
+					
+					if (!inst._params.isPuppet) {
+						self.clear();
+						self.redraw();
+					}
 					
 					if (inst._params.clearOnComplete === true) {
 						self.clear();
@@ -1595,6 +1601,19 @@ function kapi(canvas, params, events) {
 
 			_fireEvent('enterFrame');
 			_updateActors(inst._currentFrame);
+			
+			for (puppet in inst._puppets) {
+				if (inst._puppets.hasOwnProperty(puppet)) {
+					inst._puppets[puppet].updateState();
+				}
+			}
+		} else {
+
+			// Not sure if this is the best thing to do...
+			if (inst._params.isPuppet) {
+				//self.updateState();
+				//self.redraw();
+			}
 		}
 	}
 	
@@ -1659,6 +1678,11 @@ function kapi(canvas, params, events) {
 					
 					inst.el.style[style] = removeWhitespace(inst._params.styles[style]);
 				}
+			}
+			
+			if (inst._params.isPuppet) {
+				// Expose the `_updateState` method publicly
+				this.updateState = _updateState;
 			}
 
 			// The height and width of the canvas draw area do not sync
@@ -1735,7 +1759,10 @@ function kapi(canvas, params, events) {
 				_fireEvent('loopStart');
 			}
 
-			_scheduleUpdate();
+			if (!inst._params.isPuppet) {
+				_scheduleUpdate();
+			}
+			
 			return this;
 		},
 
@@ -2249,6 +2276,31 @@ function kapi(canvas, params, events) {
 			}
 			
 			return this;
+		},
+		
+		getPuppet: function (puppetName) {
+			return inst._puppets[puppetName];
+		},
+		
+		createPuppet: function (puppetName) {
+			if (!puppetName) {
+				throw 'Puppet name not specified.';
+			}
+			
+			inst._puppets[puppetName] = kapi(inst.el, {
+				'isPuppet': true,
+				'master': this,
+				'fps': this.framerate(),
+				'clearOnComplete': false,
+				'clearOnStop': false,
+				'autoclear': false
+			}, {
+				'loopComplete': function () {
+					//debugger
+				}
+			});
+			
+			return this.getPuppet(puppetName);
 		},
 		
 		/**
