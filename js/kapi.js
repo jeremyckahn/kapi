@@ -1507,98 +1507,102 @@ function kapi(canvas, params, events) {
 	 */
 	function _updateState () {
 		// Abandon all hope, ye who enter here.
-		var currTime = now();
+		var currTime,
+			reachedKeyframeLastIndex, 
+			prevKeyframe;
+			
+		currTime = now();
 
+		// Calculate how long this iteration of the loop has been running for
+		inst._loopLength = currTime - inst._loopStartTime;
+
+		// Check to see if the loop is starting over.
+		if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
+			// It is!
+
+			// Reset the loop start time relative to when the animation began,
+			// not to when the final keyframe last completed
+			inst._loopStartTime = inst._startTime + parseInt((currTime - inst._startTime) / (inst._animationDuration || 1), 10) * inst._animationDuration;
+			inst._loopLength -= inst._animationDuration || inst._loopLength;
+			inst._reachedKeyframes = [];
+			
+			// Clear out the dynamic keyframe cache
+			inst._keyframeCache = {};
+			
+			_fireEvent('loopComplete');
+			
+			if (inst._repsRemaining > -1) {
+				inst._repsRemaining--;
+				
+				if (inst._repsRemaining === 0) {
+					self.stop();
+					
+					// Possible fix for https://github.com/jeremyckahn/kapi/issues/52
+					// Needs to be thoroughly tested.
+					// Sets the current frame to the final frame in the animation, clears and redraws.
+					inst._currentFrame = inst._lastKeyframe;
+					self.clear();
+					self.redraw();
+					
+					if (inst._params.clearOnComplete === true) {
+						self.clear();
+					}
+
+					if (typeof inst._repeatCompleteHandler === 'function') {
+						inst._repeatCompleteHandler.call(inst);
+						inst._repeatCompleteHandler = undefined;
+					}
+					// Allow the animation to run indefinitely if `.play()` is called later.
+					inst._repsRemaining = -1;
+					return;
+				}
+			}
+			
+			_fireEvent('loopStart');
+		}
+
+		// Determine where we are in the loop
+		if (inst._animationDuration) {
+			inst._loopPosition = inst._loopLength / inst._animationDuration;
+		} else {
+			inst._loopPosition = 0;
+		}
+		
+		// Calculate the current frame of the loop
+		inst._currentFrame = parseInt(inst._loopPosition * inst._lastKeyframe, 10);
+		
+		prevKeyframe = _getLatestKeyframeId(inst._keyframeIds);
+		prevKeyframe = prevKeyframe === -1 ? inst._lastKeyframe : inst._keyframeIds[prevKeyframe];
+		
+		// Maintain a record of keyframes that have been run for this loop iteration
+		if (prevKeyframe > (last(inst._reachedKeyframes) || 0)) {
+			inst._reachedKeyframes.push(prevKeyframe);
+		}
+		
+		reachedKeyframeLastIndex = inst._reachedKeyframes.length ? inst._reachedKeyframes.length - 1 : 0;
+
+		// If a keyframe was skipped, set inst._currentFrame to the first skipped keyframe
+		if (inst._reachedKeyframes[reachedKeyframeLastIndex] !== inst._keyframeIds[reachedKeyframeLastIndex] ) {
+			inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
+		}
+		
+		// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
+		if (inst._currentFrame <= inst._lastKeyframe) {
+			// Clear out the canvas
+			if (inst.autoclear !== false) {
+				self.clear();
+			}
+
+			_fireEvent('enterFrame');
+			_updateActors(inst._currentFrame);
+		}
+	}
+	
+	function _scheduleUpdate () {
 		inst.frameCount++;
 		inst._updateHandle = setTimeout(function () {
-			var reachedKeyframeLastIndex, 
-				prevKeyframe;
-
-			// Calculate how long this iteration of the loop has been running for
-			inst._loopLength = currTime - inst._loopStartTime;
-
-			// Check to see if the loop is starting over.
-			if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
-				// It is!
-
-				// Reset the loop start time relative to when the animation began,
-				// not to when the final keyframe last completed
-				inst._loopStartTime = inst._startTime + parseInt((currTime - inst._startTime) / (inst._animationDuration || 1), 10) * inst._animationDuration;
-				inst._loopLength -= inst._animationDuration || inst._loopLength;
-				inst._reachedKeyframes = [];
-				
-				// Clear out the dynamic keyframe cache
-				inst._keyframeCache = {};
-				
-				_fireEvent('loopComplete');
-				
-				if (inst._repsRemaining > -1) {
-					inst._repsRemaining--;
-					
-					if (inst._repsRemaining === 0) {
-						self.stop();
-						
-						// Possible fix for https://github.com/jeremyckahn/kapi/issues/52
-						// Needs to be thoroughly tested.
-						// Sets the current frame to the final frame in the animation, clears and redraws.
-						inst._currentFrame = inst._lastKeyframe;
-						self.clear();
-						self.redraw();
-						
-						if (inst._params.clearOnComplete === true) {
-							self.clear();
-						}
-
-						if (typeof inst._repeatCompleteHandler === 'function') {
-							inst._repeatCompleteHandler.call(inst);
-							inst._repeatCompleteHandler = undefined;
-						}
-						// Allow the animation to run indefinitely if `.play()` is called later.
-						inst._repsRemaining = -1;
-						return;
-					}
-				}
-				
-				_fireEvent('loopStart');
-			}
-
-			// Determine where we are in the loop
-			if (inst._animationDuration) {
-				inst._loopPosition = inst._loopLength / inst._animationDuration;
-			} else {
-				inst._loopPosition = 0;
-			}
-			
-			// Calculate the current frame of the loop
-			inst._currentFrame = parseInt(inst._loopPosition * inst._lastKeyframe, 10);
-			
-			prevKeyframe = _getLatestKeyframeId(inst._keyframeIds);
-			prevKeyframe = prevKeyframe === -1 ? inst._lastKeyframe : inst._keyframeIds[prevKeyframe];
-			
-			// Maintain a record of keyframes that have been run for this loop iteration
-			if (prevKeyframe > (last(inst._reachedKeyframes) || 0)) {
-				inst._reachedKeyframes.push(prevKeyframe);
-			}
-			
-			reachedKeyframeLastIndex = inst._reachedKeyframes.length ? inst._reachedKeyframes.length - 1 : 0;
-
-			// If a keyframe was skipped, set inst._currentFrame to the first skipped keyframe
-			if (inst._reachedKeyframes[reachedKeyframeLastIndex] !== inst._keyframeIds[reachedKeyframeLastIndex] ) {
-				inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
-			}
-			
-			// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
-			if (inst._currentFrame <= inst._lastKeyframe) {
-				// Clear out the canvas
-				if (inst.autoclear !== false) {
-					self.clear();
-				}
-
-				_fireEvent('enterFrame');
-				_updateActors(inst._currentFrame);
-			}
-			
 			_updateState();
+			_scheduleUpdate();
 		}, 1000 / inst._params.fps);
 
 		return inst._updateHandle;
@@ -1731,7 +1735,7 @@ function kapi(canvas, params, events) {
 				_fireEvent('loopStart');
 			}
 
-			_updateState();
+			_scheduleUpdate();
 			return this;
 		},
 
