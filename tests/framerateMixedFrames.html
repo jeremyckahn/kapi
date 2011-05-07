@@ -115,13 +115,13 @@
 		setTimeout(function () {
 			console.log('Changing the framerate to 10 frames per second.');
 			demo.framerate(10);
-			console.log(demo._debug()._actorstateIndex.myCircle + '');
+			console.log(demo._expose()._actorstateIndex.myCircle + '');
 			
 			setTimeout(function () {
 				console.log('Changing the framerate to 60 frames per second.');
 				demo.framerate(60);
-				console.log(demo._debug()._actorstateIndex.myCircle + '');
-				console.log(demo._debug());
+				console.log(demo._expose()._actorstateIndex.myCircle + '');
+				console.log(demo._expose());
 				
 			}, 4500);
 			

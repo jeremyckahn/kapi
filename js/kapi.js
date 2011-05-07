@@ -2248,10 +2248,10 @@ function kapi(canvas, params, events) {
 		},
 		
 		/**
-		 * Returns an object of internal state properties.  You probably don't need to use this, it's for Kapi development.
+		 * Returns an object of internal state properties.  You probably don't need to use this, it's for Kapi development and extension authoring.
 		 * @returns {Object}
 		 */
-		_debug: function () {
+		_expose: function () {
 			return inst;
 		}
 		
