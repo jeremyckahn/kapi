@@ -1851,10 +1851,11 @@ function kapi(canvas, params, events) {
 		 * @param {Function|Object} actor The function or Object that defines an actor.
 		 *   If you are providing an object, you can supply any number of the following properties:
 		 *   @param {Function} draw This is required.  This defines the drawing logic for the actor.  It is passed the canvas context as the first parameter, the kapi instance (which exposes the kapi methods) as the second, and the actor object (which exposes the actor methods) as the third.
-		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter.
-		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  This method receives the actor's `name` as a string.
+		 *   @param {Function} setup This is called once the actor is added to Kapi.  Handy for any actor initialization logic.  It is passed the Kapi instance as the first parameter, the actor instance as the third, and whatever you passed as `setupParams` to the call `kapiInst.add()` as the third.
+		 *   @param {Function} teardown This is called after the actor is removed from the Kapi instance (with `kapi.removeActor()`).  This method receives the actor's `name` as a string for the first parameter, and the Kapi instance as the second parameter.
 		 * You can also just pass a Function, which should look exactly like the draw function described above.
 		 * @param {Object} initialParams The intial state of the actor.  These are stored internally on the actor as the `params` property.  There is a special `data` parameter you can add here.  It simply stores arbitrary data on the actor, and can be updated and accessed at any time with `actor.data()`.  This `data` property is not present on any of the keyframes.
+		 * @param {Anything} setupParams Arbitrary data that the actor's `setup` method will receive.
 		 * @returns {Object} An actor Object with the properties described above.  The actor returned by this function can also be retrieved at any time in the future with `kapi.getActor()`.
 		 */
 		add: function (actor, initialState, setupParams) {
@@ -1970,7 +1971,7 @@ function kapi(canvas, params, events) {
 				teardownFunc = actor.teardown;
 				delete inst._actors[actorName];
 				
-				teardownFunc(actorName);
+				teardownFunc(actorName, this);
 				
 			} else {
 				if (console && console.error) {

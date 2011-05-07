@@ -26,9 +26,10 @@ var circle = {
 
 		return this;
 	},
-	teardown: function (actorName) {
+	teardown: function (actorName, kapiInst) {
 		if (window.console) {
-			console.log('Tearing down ' + actorName)
+			console.log('Tearing down ' + actorName);
+			console.dir(kapiInst);
 		}
 	}
 }

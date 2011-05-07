@@ -253,13 +253,13 @@
 			<a name="add"></a>
 			<h3>add()</h3>
 			
-			<pre class="func-def"><em>kapiInstance</em>.add( actor, initialState )</pre>
+			<pre class="func-def"><em>kapiInstance</em>.add( actor, initialState, setupParams )</pre>
 			
 			<p>Add an actor to the animation.  Importantly, this method returns a reference to the actor that it added to the Kapi instance.</p>
 			
 			<h5>actor:</h5>
 			
-			<p>A function or object.</p>
+			<p>A function or object.  This is an <a href="extending.html#actors">actor template</a>.</p>
 			
 			<p><strong>If you are passing a function:</strong>  Logically, this function should draw something to the canvas.  All actor functions access their state properties with the <code>this</code> JavaScript keyword.  Actor functions get a reference to the canvas's <code>context</code> as the first parameter, a reference to the kapi instance as the second, and the actor object as the third.  This means that all public Kapi APIs are available from within any actor's draw method.  Handy note:  A reference to the canvas element can be be retrieved from the <code>context</code> like so: <code><em>ctx</em>.canvas</code>  Here's an example of an actor:</p>
 			
@@ -286,13 +286,13 @@ function circle(ctx, kapiInst, actorInst){
 			<ul>
 				<li><strong>draw:</strong> This is required.  This defines the drawing logic for the actor.  This is actually the same function that you would pass as the first parameter to <code>kapi.add()</code>, so the same rules apply.</li>
 				<li><strong>setup:</strong> This is called once the actor is added to Kapi. Handy for any actor initialization logic.</li>
-				<li><strong>teardown:</strong> This is called after the actor is removed from the Kapi instance (with <code>kapi.removeActor()</code>). This method receives the actor's <code>name</code> as a string.</li>
+				<li><strong>teardown:</strong> This is called after the actor is removed from the Kapi instance (with <code>kapi.removeActor()</code>). This method receives the actor's <code>name</code> as a string for the first parameter, and the Kapi instance as the second parameter.</li>
 			</ul>
 			
 			<p>Here's a example of an actor similar to the previous example, but as an object with <code>setup</code> and <code>teardown</code> methods: 
 			<pre class="brush: js;">
 var circle = {
-	setup: function () {
+	setup: function (kapiInst, actorInst, params) {
 		if (console) {
 			console.log('Setting up ', this)
 		}
@@ -313,16 +313,22 @@ var circle = {
 
 		return this;
 	},
-	teardown: function () {
+	teardown: function (actorName, kapiInst) {
 		if (console) {
-			console.log('Tearing down ', this)
+			console.log('Tearing down ', this);
 		}
 	}
 }</pre>
 			
 			<h5>initialState:</h5>
 			
-			<p>An object defining the initial state for the actor.  If an actor uses a property in any of its keyframes, it must be present in this object.  There is a special <code>data</code> parameter you can add here.  It simply stores arbitrary data on the actor, and can be updated and accessed at any time with <code>actor.data()</code>.  This <code>data</code> property is not present on any of the keyframes.  Note:  If the <code>name</code> property is not provided, it is added automatically as a random string.</p>
+			<p>An object defining the initial state for the actor.  If an actor uses a property in any of its keyframes, it must be present in this Object.  There is a special <code>data</code> parameter you can add here.  It simply stores arbitrary data on the actor, and can be updated and accessed at any time with <code>actor.data()</code>.  This <code>data</code> property is not present on any of the keyframes.  Note:  If the <code>name</code> property is not provided, it is added automatically as a random string.</p>
+			
+			<h5>setupParams</h5>
+			
+			<p>This can be anything - but it's probably best to make it an Object.  Whatever you specify for this parameter, it will be passed along to the actor's <code>setup</code> parameter as the third parameter (see example above).</p>
+			
+			<p>Here's an example of how to call <code>kapiInstance.add()</code>:
 			
 			<pre class="brush: js;">
 myKapi = kapi(document.getElementsByTagName('canvas')[0]);
@@ -337,6 +343,8 @@ myCircle = myKapi.add(circle, {
 	data: {
 		val: 'You can store whatever data you please here and access it later with myCircle.data().'
 	}
+}, {
+	setupParam1: "Hello! I am a setup parameter!  I get passed into the actor's `setup` function!"
 });</pre>
 			
 			<div class="ret"><strong>Returns:</strong> A reference to the actor that was added to Kapi.</div>
