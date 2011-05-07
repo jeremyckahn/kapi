@@ -1931,7 +1931,7 @@ function kapi(canvas, params, events) {
 			
 			// Call the actor's `setup` function
 			// TODO:  Document this.
-			actorInst.setup.apply(actorInst, [this].concat(setupParams || []));
+			actorInst.setup.apply(actorInst, [this].concat(actorInst).concat(setupParams || null));
 			delete actorInst.setup;
 
 			return actorInst;

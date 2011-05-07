@@ -5,7 +5,7 @@
 
 
 var circle = {
-	setup: function (ctx, kapiInst, actorInst) {
+	setup: function (kapiInst, actorInst, params) {
 		if (window.console) {
 			console.log('Setting up: ' + this.id)
 		}
