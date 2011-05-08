@@ -1463,6 +1463,10 @@ function kapi(canvas, params, events) {
 			if (typeof inst._actorstateIndex[actorName][0] !== 'undefined' && currentFrame >= inst._actorstateIndex[actorName][0]) {
 				
 				currentFrameStateProperties = _getActorState(actorName);
+				
+				/*if (inst._params.isPuppet) {
+					console.log(inst._currentFrame, currentFrameStateProperties)
+				}*/
 
 				// If there are remaining keyframes for this object, draw it.
 				if (currentFrameStateProperties !== null) {
@@ -1601,18 +1605,25 @@ function kapi(canvas, params, events) {
 
 			_fireEvent('enterFrame');
 			_updateActors(inst._currentFrame);
-			
-			for (puppet in inst._puppets) {
-				if (inst._puppets.hasOwnProperty(puppet)) {
-					inst._puppets[puppet].updateState();
-				}
-			}
 		} else {
-
-			// Not sure if this is the best thing to do...
 			if (inst._params.isPuppet) {
-				//self.updateState();
-				//self.redraw();
+				inst._currentFrame = inst._lastKeyframe
+				
+				// This works, but seems like it might be wrong...
+				_updateActors(inst._currentFrame);
+			}
+		}
+		
+		/*if (!inst._params.isPuppet) {
+			console.log(inst._currentFrame, inst._puppets)
+			if (inst._currentFrame === 61) {
+				debugger
+			}
+		}*/
+		
+		for (puppet in inst._puppets) {
+			if (inst._puppets.hasOwnProperty(puppet)) {
+				inst._puppets[puppet].updateState();
 			}
 		}
 	}
