@@ -1534,13 +1534,11 @@ function kapi(canvas, params, events) {
 		// Calculate how long this iteration of the loop has been running for
 		inst._loopLength = currTime - inst._loopStartTime;
 		
-		if (inst._params.isPuppet && !self.isPlaying()) {
-			return;
-		}
-
 		// Check to see if the loop is starting over.
 		if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
 			// It is!
+			
+			_fireEvent('loopComplete');
 
 			// Reset the loop start time relative to when the animation began,
 			// not to when the final keyframe last completed
@@ -1550,8 +1548,6 @@ function kapi(canvas, params, events) {
 			
 			// Clear out the dynamic keyframe cache
 			inst._keyframeCache = {};
-			
-			_fireEvent('loopComplete');
 			
 			if (inst._repsRemaining > -1) {
 				inst._repsRemaining--;
@@ -1577,6 +1573,14 @@ function kapi(canvas, params, events) {
 			}
 			
 			_fireEvent('loopStart');
+		}
+		
+		// If this is a puppet Kapi, and it is not playing, return.
+		// This code is down here, after the loop "start over" check, 
+		// so that the `loopComplete` event can fire before the loop
+		// actually starts over.
+		if (inst._params.isPuppet && !self.isPlaying()) {
+			return;
 		}
 
 		// Determine where we are in the loop
@@ -2302,10 +2306,6 @@ function kapi(canvas, params, events) {
 				'clearOnComplete': false,
 				'clearOnStop': false,
 				'autoclear': false
-			}, {
-				'loopComplete': function () {
-					//inst._puppets[puppetName].stop()
-				}
 			});
 			
 			return this.getPuppet(puppetName);
