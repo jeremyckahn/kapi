@@ -1438,6 +1438,16 @@ function kapi(canvas, params, events) {
 		);
 	}
 	
+	function _callMethodOnAllPuppets (methodName) {
+		var puppet;
+		
+		for (puppet in inst._puppets) {
+			if (inst._puppets.hasOwnProperty(puppet)) {
+				inst._puppets[puppet][methodName]();
+			}
+		}
+	}
+	
 	/**
 	 * Update the state properties for the all of the actors in the animation.
 	 * @param {Number} currentFrame The deisred frame to process.
@@ -1517,13 +1527,16 @@ function kapi(canvas, params, events) {
 		// Abandon all hope, ye who enter here.
 		var currTime,
 			reachedKeyframeLastIndex, 
-			prevKeyframe,
-			puppet;
+			prevKeyframe;
 			
 		currTime = now();
 
 		// Calculate how long this iteration of the loop has been running for
 		inst._loopLength = currTime - inst._loopStartTime;
+		
+		if (inst._params.isPuppet && !self.isPlaying()) {
+			return;
+		}
 
 		// Check to see if the loop is starting over.
 		if ( (inst._loopLength > inst._animationDuration) && inst._reachedKeyframes.length === inst._keyframeIds.length ) {
@@ -1548,12 +1561,7 @@ function kapi(canvas, params, events) {
 					
 					// Sets the current frame to the final frame in the animation, clears and redraws.
 					inst._currentFrame = inst._lastKeyframe;
-					
-					if (!inst._params.isPuppet) {
-						self.clear();
-						self.redraw();
-					}
-					
+
 					if (inst._params.clearOnComplete === true) {
 						self.clear();
 					}
@@ -1605,27 +1613,16 @@ function kapi(canvas, params, events) {
 
 			_fireEvent('enterFrame');
 			_updateActors(inst._currentFrame);
-		} else {
-			if (inst._params.isPuppet) {
-				inst._currentFrame = inst._lastKeyframe
-				
-				// This works, but seems like it might be wrong...
-				_updateActors(inst._currentFrame);
-			}
+			
+		} else if (inst._params.isPuppet){
+			// If the last keyframe has been passed, and this Kapi is a puppet kapi,
+			// set the current frame to equal the last keyframe and draw anyways.
+			// This prevents any gaps or flashes in puppet Kapi loops.
+			inst._currentFrame = inst._lastKeyframe;
+			_updateActors(inst._currentFrame);
 		}
-		
-		/*if (!inst._params.isPuppet) {
-			console.log(inst._currentFrame, inst._puppets)
-			if (inst._currentFrame === 61) {
-				debugger
-			}
-		}*/
-		
-		for (puppet in inst._puppets) {
-			if (inst._puppets.hasOwnProperty(puppet)) {
-				inst._puppets[puppet].updateState();
-			}
-		}
+			
+		_callMethodOnAllPuppets('updateState');
 	}
 	
 	function _scheduleUpdate () {
@@ -2307,7 +2304,7 @@ function kapi(canvas, params, events) {
 				'autoclear': false
 			}, {
 				'loopComplete': function () {
-					//debugger
+					//inst._puppets[puppetName].stop()
 				}
 			});
 			
