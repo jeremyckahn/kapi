@@ -1438,12 +1438,13 @@ function kapi(canvas, params, events) {
 		);
 	}
 	
-	function _callMethodOnAllPuppets (methodName) {
+	function _callMethodOnAllPuppets (methodName, args) {
 		var puppet;
 		
 		for (puppet in inst._puppets) {
 			if (inst._puppets.hasOwnProperty(puppet)) {
-				inst._puppets[puppet][methodName]();
+				inst._puppets[puppet][methodName].apply(inst._puppets[puppet], args);
+				//inst._puppets[puppet][methodName]();
 			}
 		}
 	}
@@ -1771,7 +1772,7 @@ function kapi(canvas, params, events) {
 				_scheduleUpdate();
 			}
 			
-			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+			if (arguments[0] && arguments[0].preventPuppetPropagation) {
 				_callMethodOnAllPuppets('play');
 			}
 			
@@ -1787,7 +1788,7 @@ function kapi(canvas, params, events) {
 			inst._pausedAtTime = now();
 			inst._isPaused = true;
 			
-			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+			if (arguments[0] && arguments[0].preventPuppetPropagation) {
 				_callMethodOnAllPuppets('pause');
 			}
 			
@@ -1826,7 +1827,7 @@ function kapi(canvas, params, events) {
 				self.clear();
 			}
 			
-			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+			if (arguments[0] && arguments[0].preventPuppetPropagation) {
 				_callMethodOnAllPuppets('stop');
 			}
 			
@@ -2169,6 +2170,8 @@ function kapi(canvas, params, events) {
 				for (i = 0; i < originalReachedKeyframeCopy.length; i++) {
 					inst._reachedKeyframes[i] = parseInt(originalReachedKeyframeCopy[i] * fpsChange, 10);
 				}
+				
+				_callMethodOnAllPuppets('framerate', [newFramerate]);
 			}
 			
 			return inst._params.fps;
