@@ -2298,11 +2298,11 @@ function kapi(canvas, params, events) {
 			return this;
 		},
 		
-		getPuppet: function (puppetName) {
+		puppetGet: function (puppetName) {
 			return inst._puppets[puppetName];
 		},
 		
-		createPuppet: function (puppetName) {
+		puppetCreate: function (puppetName) {
 			if (!puppetName) {
 				throw 'Puppet name not specified.';
 			}
@@ -2316,10 +2316,10 @@ function kapi(canvas, params, events) {
 				'autoclear': false
 			});
 			
-			return this.getPuppet(puppetName);
+			return this.puppetGet(puppetName);
 		},
 
-		deletePuppet: function (puppetName) {
+		puppetDelete: function (puppetName) {
 			return delete inst._puppets[puppetName];
 		},
 		
