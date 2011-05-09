@@ -2318,6 +2318,10 @@ function kapi(canvas, params, events) {
 			
 			return this.getPuppet(puppetName);
 		},
+
+		deletePuppet: function (puppetName) {
+			return delete inst._puppets[puppetName];
+		},
 		
 		/**
 		 * Returns an object of internal state properties.  You probably don't need to use this, it's for Kapi development and extension authoring.
