@@ -1771,7 +1771,9 @@ function kapi(canvas, params, events) {
 				_scheduleUpdate();
 			}
 			
-			_callMethodOnAllPuppets('play');
+			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+				_callMethodOnAllPuppets('play');
+			}
 			
 			return this;
 		},
@@ -1784,7 +1786,11 @@ function kapi(canvas, params, events) {
 			clearTimeout(inst._updateHandle);
 			inst._pausedAtTime = now();
 			inst._isPaused = true;
-			_callMethodOnAllPuppets('pause');
+			
+			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+				_callMethodOnAllPuppets('pause');
+			}
+			
 			return this;
 		},
 
@@ -1820,7 +1826,9 @@ function kapi(canvas, params, events) {
 				self.clear();
 			}
 			
-			_callMethodOnAllPuppets('stop');
+			if (arguments[0] && !arguments[0].preventPuppetPropagation) {
+				_callMethodOnAllPuppets('stop');
+			}
 			
 			return this;
 		},
@@ -2176,7 +2184,9 @@ function kapi(canvas, params, events) {
 				actorName;
 			
 			if (this.isPlaying()) {
-				this.stop();
+				this.stop({
+					'preventPuppetPropagation': true
+				});
 			}
 			
 			frame = _getRealKeyframe(frame) % inst._lastKeyframe;
@@ -2216,7 +2226,9 @@ function kapi(canvas, params, events) {
 		 */
 		gotoAndPlay: function (frame) {
 			this.gotoFrame(frame);
-			return this.play();
+			return this.play({
+				'preventPuppetPropagation': true
+			});
 		},
 		
 		/**
