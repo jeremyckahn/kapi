@@ -1474,10 +1474,6 @@ function kapi(canvas, params, events) {
 				
 				currentFrameStateProperties = _getActorState(actorName);
 				
-				/*if (inst._params.isPuppet) {
-					console.log(inst._currentFrame, currentFrameStateProperties)
-				}*/
-
 				// If there are remaining keyframes for this object, draw it.
 				if (currentFrameStateProperties !== null) {
 					objActionQueue = inst._actorstateIndex[actorName].queue;
@@ -1775,6 +1771,8 @@ function kapi(canvas, params, events) {
 				_scheduleUpdate();
 			}
 			
+			_callMethodOnAllPuppets('play');
+			
 			return this;
 		},
 
@@ -1786,6 +1784,7 @@ function kapi(canvas, params, events) {
 			clearTimeout(inst._updateHandle);
 			inst._pausedAtTime = now();
 			inst._isPaused = true;
+			_callMethodOnAllPuppets('pause');
 			return this;
 		},
 
@@ -1821,6 +1820,8 @@ function kapi(canvas, params, events) {
 				self.clear();
 			}
 			
+			_callMethodOnAllPuppets('stop');
+			
 			return this;
 		},
 		
@@ -1840,6 +1841,7 @@ function kapi(canvas, params, events) {
 		 */
 		redraw: function () {
 			_updateActors(inst._currentFrame);
+			_callMethodOnAllPuppets('redraw');
 
 			return this;
 		},
@@ -2055,13 +2057,19 @@ function kapi(canvas, params, events) {
 		 * Remove all of the keyframes for all of the actors in the animation.  Aside from the fact that `add`ed actors are still available in the Kapi instance, this effectively resets the state of Kapi.
 		 * @returns {Object} The Kapi object (for chaining).
 		 */
-		removeAllKeyframes: function () {
+		removeAllKeyframes: function (alsoRemovePuppetKeyframes) {
 			var currActor;
 			
 			for (currActor in inst._actors) {
 				if (inst._actors.hasOwnProperty(currActor)) {
 					inst._actors[currActor].removeAll();
 				}				
+			}
+			
+			
+			// TODO:  TEST AND DOCUMENT THIS
+			if (alsoRemovePuppetKeyframes) {
+				_callMethodOnAllPuppets('removeAllKeyframes');
 			}
 			
 			return this;
