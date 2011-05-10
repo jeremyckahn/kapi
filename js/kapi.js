@@ -2219,6 +2219,10 @@ function kapi(canvas, params, events) {
 			_updateActors(inst._currentFrame);
 			_callMethodOnAllPuppets('updateState');
 			
+			if (inst._params.isPuppet) {
+				inst._params.master.redraw();
+			}
+			
 			return this;
 		},
 		
