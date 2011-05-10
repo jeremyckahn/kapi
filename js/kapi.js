@@ -1444,7 +1444,6 @@ function kapi(canvas, params, events) {
 		for (puppet in inst._puppets) {
 			if (inst._puppets.hasOwnProperty(puppet)) {
 				inst._puppets[puppet][methodName].apply(inst._puppets[puppet], args);
-				//inst._puppets[puppet][methodName]();
 			}
 		}
 	}
@@ -1772,7 +1771,7 @@ function kapi(canvas, params, events) {
 				_scheduleUpdate();
 			}
 			
-			if (arguments[0] && arguments[0].preventPuppetPropagation) {
+			if (!arguments[0] || !arguments[0].preventPuppetPropagation) {
 				_callMethodOnAllPuppets('play');
 			}
 			
@@ -1783,12 +1782,12 @@ function kapi(canvas, params, events) {
 		 * Pause the animation.  Resuming from the paused state does not start the animation from the beginning, the state of the animation is maintained.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		pause: function () {
+		pause: function (params) {
 			clearTimeout(inst._updateHandle);
 			inst._pausedAtTime = now();
 			inst._isPaused = true;
 			
-			if (arguments[0] && arguments[0].preventPuppetPropagation) {
+			if (!params || !params.preventPuppetPropagation) {
 				_callMethodOnAllPuppets('pause');
 			}
 			
@@ -1800,7 +1799,7 @@ function kapi(canvas, params, events) {
 
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		stop: function () {
+		stop: function (params) {
 			var obj;
 			
 			clearTimeout(inst._updateHandle);
@@ -1827,7 +1826,7 @@ function kapi(canvas, params, events) {
 				self.clear();
 			}
 			
-			if (arguments[0] && arguments[0].preventPuppetPropagation) {
+			if (!params || !params.preventPuppetPropagation) {
 				_callMethodOnAllPuppets('stop');
 			}
 			
