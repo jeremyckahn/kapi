@@ -1738,7 +1738,7 @@ function kapi(canvas, params, events) {
 		 * Starts the animation if it was not running before, or resumes the animation if it was not running previously.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		play: function () {
+		play: function (params) {
 			var pauseDuration,
 				currTime = now();
 
@@ -1771,7 +1771,7 @@ function kapi(canvas, params, events) {
 				_scheduleUpdate();
 			}
 			
-			if (!arguments[0] || !arguments[0].preventPuppetPropagation) {
+			if (!params || !params.preventPuppetPropagation) {
 				_callMethodOnAllPuppets('play');
 			}
 			
@@ -2217,6 +2217,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			_updateActors(inst._currentFrame);
+			_callMethodOnAllPuppets('updateState');
 			
 			return this;
 		},
