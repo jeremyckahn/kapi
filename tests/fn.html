@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>kapi</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Jeremy Kahn">
+	<!-- Date: 2010-12-07 -->
+	
+	<script src="../js/kapi.js"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/shapes.js"></script>
+	
+	<style type="text/css">
+		canvas{
+			float: left;
+		}
+	
+		ul{
+			float: left;
+		}
+	</style>
+	
+</head>
+<body>
+
+	<canvas id="myCanvas">Plz stop using IE.</canvas>
+	
+	<ul>
+		<li id="currentFrame">Current frame <span></span></li>
+		<li><a id="play" href="javascript:void(0);">Play</a></li>
+		<li><a id="pause" href="javascript:void(0);">Pause</a></li>
+		<li><a id="stop" href="javascript:void(0);">Stop</a></li>
+	</ul>
+	
+	<script type="text/javascript">
+	
+		// Note:  jQuery is here just to make the demo quicker to make.
+		// Kapi does not use jQuery.
+		$('#play').click(function(ev){
+			ev.preventDefault();
+			demo.play();
+		});
+		
+		$('#pause').click(function(ev){
+			ev.preventDefault();
+			demo.pause();
+		});
+		
+		$('#stop').click(function(ev){
+			ev.preventDefault();
+			demo.stop();
+		});
+		
+		
+		kapi.fn.dump = function () {
+			console.log(this._expose())
+		}
+				
+		var demo = kapi(document.getElementById('myCanvas'), 
+			// params
+			{
+				fps : 30,
+				styles : {
+					'height': '300px',
+					'width': 500,
+					'background': '#000'
+				},
+				autoclear: true,
+				clearOnStop: true
+			},
+			// events
+			{
+				enterFrame: function() {
+					currFrameOutput.html(this._currentFrame);
+				}
+			}),
+			circle1 = demo.add(circle, {	
+				name : 'myCircle',
+				x : 0,
+				y : 0,
+				radius : 50,
+				color : '#0f0',
+				easing : 'easeInOutQuad'
+			}),
+			circle2 = demo.add(circle, {
+				name : 'myCircle2',
+				color : '#f00',
+				easing : 'easeInOutQuint'
+			}),
+			square1 = demo.add(square, {
+				name : 'square1',
+				height : 75,
+				width : 75,
+				x : 200,
+				y : 200,
+				color : '#00f',
+				easing : 'easeInOutSine'
+			}),
+			currFrameOutput = $('#currentFrame span');
+		
+		circle1.keyframe('0.5s', {
+			x : 0,
+			color : '#0f0'
+		}).keyframe('2s', {
+			x : 50,
+			y : 80,
+			color : '#f0f'
+		}).keyframe('4s', {
+			x : 200,
+			y : 150,
+			radius : 100,
+			color : '#00f'
+		});
+		
+		circle2.keyframe('0s', {
+			x : 400,
+			y : 200,
+			radius: 10
+		}).keyframe('1.75s', {
+			x : 10,
+			y : 200,
+			radius : 100,
+			color: '#123456'
+		});
+		
+		square1.keyframe('0.5', {
+			x : 15
+		}).keyframe('2s', {
+			x : 300,
+			y : 30
+		}).keyframe('3500ms', {
+			y : 250,
+			color: '#654321'
+		});
+		
+		demo.play();
+		
+		console.log('Logging the kapi instance object');
+		console.dir(demo);
+		console.log('Logging the kapi debug data');
+		console.dir(demo._expose());
+		
+	</script>
+
+</body>
+</html>

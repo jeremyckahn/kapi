@@ -415,6 +415,10 @@ function kapi(canvas, params, events) {
 		return (typeof prop === 'number' || isDynamic(prop) || isColorString(prop));
 	}
 
+	function _applyExtensions (kapiObj) {
+		extend(kapiObj, kapi.fn);
+	}
+
 	/**
 	 * Calculates the "real" keyframe from `identifier`.  This means that you can speicify keyframes from things other than plain integers.  For example, you can calculate the real keyframe that will run at a certain period of time.
 	 * 
@@ -1643,7 +1647,8 @@ function kapi(canvas, params, events) {
 		 * @returns {Object} A `kapi` object.
 		 */
 		init: function (canvas, params, events) {
-			var style, eventName;
+			var style, 
+				eventName;
 
 			params = params || {};
 			events = events || {};
@@ -1703,6 +1708,9 @@ function kapi(canvas, params, events) {
 					setDimensionVal.call(inst.el, 'width');
 				}
 			}
+			
+			// Attach all extension methods
+			_applyExtensions(this, kapi.fn);
 			
 			// Since `init` only runs once, just delete it.
 			delete this.init;
@@ -2376,6 +2384,11 @@ kapi.tween = {
 		return c * t / d + b;
 	}
 };
+
+/**
+ * Special object to attach Kapi extensions to.
+ */
+kapi.fn = {};
 
 // Adding in kapi.tweens.js for convenience.  It is not a part of the Kapi core code.
 
