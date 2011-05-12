@@ -432,7 +432,6 @@ function kapi(canvas, params, events) {
 		}
 
 		_private = {};
-		target = target || self;
 
 		for (func in target[extensionName]) {
 			if (target[extensionName].hasOwnProperty(func)) {
