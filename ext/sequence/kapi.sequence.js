@@ -1,3 +1,5 @@
+/*global kapi:true, console:true */
+
 (function (kapi) {
 	var _private;
 	
@@ -7,12 +9,18 @@
 		},
 		
 		_thing2: function () {
-			
+			console.log('thing2');
 		}
-	}
+	};
 	
 	kapi.hook.init.sequence = function () {
 		var func;
+		
+		function attachScopedFunc (self, func, newName) {
+			self.sequence[newName] = function () {
+				return _private[func].apply(self, arguments);
+			};
+		}
 		
 		_private = {};
 		
@@ -23,16 +31,11 @@
 				
 				newName = func.slice(1);
 				_private[func] = self.sequence[func];
-
-				(function (func, newName) {
-					self.sequence[newName] = function () {
-						return _private[func].apply(self, arguments);
-					}
-				}(func, newName));
+				attachScopedFunc (self, func, newName);
+				
+				delete self.sequence[func];
 			}
-			
-			delete self.sequence[func];
 		}
-	}
+	};
 	
 } (kapi));
