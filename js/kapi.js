@@ -415,7 +415,12 @@ function kapi(canvas, params, events) {
 		return (typeof prop === 'number' || isDynamic(prop) || isColorString(prop));
 	}
 
-	function _scopeExtensionMethods (extension, extensionName) {
+	/**
+	 * A kapi extension can be either a function or an object.  If it is an object, the extension's methods' `this` keyword will not be referencing the Kapi instance.  This method fixes that, allowing for namespaced extensions.
+	 * @param {Object} extension The object whose methods' need context need to be fixed.
+	 * @param {String} extensionName The name of the Kapi extention to contextualize.
+	 */
+	function _contextualizeExtensionMethods (extension, extensionName) {
 		var _private,
 			func;
 			
@@ -439,6 +444,10 @@ function kapi(canvas, params, events) {
 		}
 	}
 	
+	/**
+	 * Applies and sets up any Kapi extensions that were provided.
+	 * @{param} kapiObj The Kapi isntance to apply extensions to.
+	 */
 	function _applyExtensions (kapiObj) {
 		var extension;
 		
@@ -449,7 +458,7 @@ function kapi(canvas, params, events) {
 		for (extension in kapi.fn) {
 			if (kapi.fn.hasOwnProperty(extension) && self.hasOwnProperty(extension)) {
 				if (typeof self[extension] !== 'function') {
-					_scopeExtensionMethods.call(self, self[extension], extension);
+					_contextualizeExtensionMethods.call(self, self[extension], extension);
 				}
 			}
 		}
