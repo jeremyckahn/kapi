@@ -1648,7 +1648,8 @@ function kapi(canvas, params, events) {
 		 */
 		init: function (canvas, params, events) {
 			var style, 
-				eventName;
+				eventName,
+				hook;
 
 			params = params || {};
 			events = events || {};
@@ -1711,6 +1712,13 @@ function kapi(canvas, params, events) {
 			
 			// Attach all extension methods
 			_applyExtensions(this, kapi.fn);
+			
+			
+			for (hook in kapi.hook.init) {
+				if (kapi.hook.init.hasOwnProperty(hook)) {
+					kapi.hook.init[hook].call(this);
+				}
+			}
 			
 			// Since `init` only runs once, just delete it.
 			delete this.init;
@@ -2389,6 +2397,11 @@ kapi.tween = {
  * Special object to attach Kapi extensions to.
  */
 kapi.fn = {};
+
+
+kapi.hook = {
+	init: {}
+};
 
 // Adding in kapi.tweens.js for convenience.  It is not a part of the Kapi core code.
 
