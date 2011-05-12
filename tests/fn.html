@@ -55,9 +55,31 @@
 		});
 		
 		
-		kapi.fn.dump = function () {
-			console.log(this._expose())
-		}
+		// This is how you add extensions!
+		(function (kapi) {
+			var _private;
+
+			kapi.fn.testExt1 = {
+				_thing1: function (testArg1, testArg2) {
+					console.log('thing1: ', this, testArg1, testArg2);
+				},
+
+				_thing2: function () {
+					console.log('thing2', this._expose());
+				}
+			};
+
+			kapi.fn.testExt2 = {
+				_thing3: function () {
+					console.log('calling thing3!');
+				}
+			}
+
+			kapi.fn.extFunc = function () {
+				console.log('calling extFunc');
+			}
+
+		} (kapi));
 				
 		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
@@ -138,10 +160,11 @@
 		
 		demo.play();
 		
-		console.log('Logging the kapi instance object');
-		console.dir(demo);
-		console.log('Logging the kapi debug data');
-		console.dir(demo._expose());
+		demo.testExt1.thing1();
+		demo.testExt1.thing2();
+		demo.testExt2.thing3();
+		demo.extFunc();
+		
 		
 	</script>
 

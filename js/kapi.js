@@ -415,8 +415,44 @@ function kapi(canvas, params, events) {
 		return (typeof prop === 'number' || isDynamic(prop) || isColorString(prop));
 	}
 
+	function _scopeExtensionMethods (extension, extensionName) {
+		var _private,
+			func;
+			
+		function attachScopedFunc (func, newName) {
+			self[extensionName][newName] = function () {
+				return _private[func].apply(self, arguments);
+			};
+		}
+
+		_private = {};
+
+		for (func in self[extensionName]) {
+			if (self[extensionName].hasOwnProperty(func)) {
+				var newName;
+
+				newName = func.slice(1);
+				_private[func] = self[extensionName][func];
+				attachScopedFunc (func, newName);
+				delete self[extensionName][func];
+			}
+		}
+	}
+	
 	function _applyExtensions (kapiObj) {
+		var extension;
+		
 		extend(kapiObj, kapi.fn);
+		
+		// Loop through all of the extensions that are Objects, and set up their scope so that the `this`
+		// keyword refers to the Kapi instance
+		for (extension in kapi.fn) {
+			if (kapi.fn.hasOwnProperty(extension) && self.hasOwnProperty(extension)) {
+				if (typeof self[extension] !== 'function') {
+					_scopeExtensionMethods.call(self, self[extension], extension);
+				}
+			}
+		}
 	}
 
 	/**
@@ -1713,7 +1749,7 @@ function kapi(canvas, params, events) {
 			// Attach all extension methods
 			_applyExtensions(this, kapi.fn);
 			
-			
+			// `call` all of the init hooks
 			for (hook in kapi.hook.init) {
 				if (kapi.hook.init.hasOwnProperty(hook)) {
 					kapi.hook.init[hook].call(this);
