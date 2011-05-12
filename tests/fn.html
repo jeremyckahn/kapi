@@ -78,6 +78,16 @@
 			kapi.fn.extFunc = function () {
 				console.log('calling extFunc');
 			}
+			
+			kapi.actorFn.actorExt = function () {
+				console.log('hello, I am an actor extension.', this)
+			}
+			
+			kapi.actorFn.actorObjExt = {
+				_func1: function () {
+					console.log('hi, I am another way of attaching functions to an actor.', this);
+				}
+			}
 
 		} (kapi));
 				
@@ -158,9 +168,12 @@
 			color: '#654321'
 		});
 		
+		square1.actorExt();
+		square1.actorObjExt.func1();
+		
 		demo.play();
 		
-		demo.testExt1.thing1();
+		demo.testExt1.thing1('param1', 123);
 		demo.testExt1.thing2();
 		demo.testExt2.thing3();
 		demo.extFunc();

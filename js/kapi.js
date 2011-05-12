@@ -417,48 +417,51 @@ function kapi(canvas, params, events) {
 
 	/**
 	 * A kapi extension can be either a function or an object.  If it is an object, the extension's methods' `this` keyword will not be referencing the Kapi instance.  This method fixes that, allowing for namespaced extensions.
+	 * @param {Object} target The object to add extensions to.
 	 * @param {Object} extension The object whose methods' need context need to be fixed.
 	 * @param {String} extensionName The name of the Kapi extention to contextualize.
 	 */
-	function _contextualizeExtensionMethods (extension, extensionName) {
+	function _contextualizeExtensionMethods (target, extension, extensionName) {
 		var _private,
 			func;
 			
 		function attachScopedFunc (func, newName) {
-			self[extensionName][newName] = function () {
-				return _private[func].apply(self, arguments);
+			target[extensionName][newName] = function () {
+				return _private[func].apply(target, arguments);
 			};
 		}
 
 		_private = {};
+		target = target || self;
 
-		for (func in self[extensionName]) {
-			if (self[extensionName].hasOwnProperty(func)) {
+		for (func in target[extensionName]) {
+			if (target[extensionName].hasOwnProperty(func)) {
 				var newName;
 
 				newName = func.slice(1);
-				_private[func] = self[extensionName][func];
+				_private[func] = target[extensionName][func];
 				attachScopedFunc (func, newName);
-				delete self[extensionName][func];
+				delete target[extensionName][func];
 			}
 		}
 	}
 	
 	/**
 	 * Applies and sets up any Kapi extensions that were provided.
-	 * @{param} kapiObj The Kapi isntance to apply extensions to.
+	 * @{param} target The object to extend.  Likely either a Kapi or actor instance.
+	 * @{param} source The oject containing the methods to add.  Likely either a Kapi or actor instance.
 	 */
-	function _applyExtensions (kapiObj) {
+	function _applyExtensions (target, source) {
 		var extension;
 		
-		extend(kapiObj, kapi.fn);
+		extend(target, source);
 		
 		// Loop through all of the extensions that are Objects, and set up their scope so that the `this`
 		// keyword refers to the Kapi instance
-		for (extension in kapi.fn) {
-			if (kapi.fn.hasOwnProperty(extension) && self.hasOwnProperty(extension)) {
-				if (typeof self[extension] !== 'function') {
-					_contextualizeExtensionMethods.call(self, self[extension], extension);
+		for (extension in source) {
+			if (source.hasOwnProperty(extension) && target.hasOwnProperty(extension)) {
+				if (typeof target[extension] !== 'function') {
+					_contextualizeExtensionMethods.call(target, target, target[extension], extension);
 				}
 			}
 		}
@@ -1158,6 +1161,8 @@ function kapi(canvas, params, events) {
 
 		// actorObj maintains a reference to the kapi instance.
 		actorObj.kapi = self;
+		
+		_applyExtensions(actorObj, kapi.actorFn);
 
 		return actorObj;
 	}
@@ -1756,7 +1761,7 @@ function kapi(canvas, params, events) {
 			}
 			
 			// Attach all extension methods
-			_applyExtensions(this, kapi.fn);
+			_applyExtensions(self, kapi.fn);
 			
 			// `call` all of the init hooks
 			for (hook in kapi.hook.init) {
@@ -2443,7 +2448,14 @@ kapi.tween = {
  */
 kapi.fn = {};
 
+/**
+ * Special object to attach actor extensions to.
+ */
+kapi.actorFn = {};
 
+/**
+ * Container for various Kapi core extension hooks. 
+ */
 kapi.hook = {
 	init: {}
 };
