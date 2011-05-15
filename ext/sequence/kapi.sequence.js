@@ -1,7 +1,9 @@
 /*global kapi:true, console:true */
 
 (function (kapi) {
-	var _private;
+	var sequences;
+	
+	sequences = {};
 	
 	kapi.fn.sequence = {
 		/**
@@ -10,7 +12,9 @@
 		 */
 		_create: function create (sequenceName, sequence) {
 			var actorSequenceName,
-				actorTemplate;
+				actorTemplate,
+				actorInst,
+				puppetInst;
 			
 			actorSequenceName = '_sapi.' + sequenceName;
 			
@@ -21,6 +25,9 @@
 				
 				draw: function () {
 					
+					if (this.val === 1 && !puppetInst.isPlaying()) {
+						puppetInst.play();
+					}
 				},
 				
 				teardown: function () {
@@ -28,7 +35,17 @@
 				}
 			};
 			
+			puppetInst = this.puppetCreate(actorTemplate);
+			sequence(puppetInst);
 			
+			actorInst = this.add(actorTemplate, {
+				'name': actorSequenceName,
+				'val': 0
+			});
+			
+			actorInst.keyframe(0, {});
+			
+			sequences[sequenceName] = actorInst;
 		},
 		
 		/**
@@ -36,7 +53,13 @@
 		 * @param {String|Number} keyframeId
 		 */
 		_startAt: function startAt (sequenceName, keyframeId) {
+			var sequence;
 			
+			sequence = sequences[sequenceName];
+			
+			sequence.keyframe(keyframeId, {
+				'val': 1
+			});
 		},
 		
 		/**

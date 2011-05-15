@@ -58,7 +58,7 @@
 		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fps : 30,
+				fps : 10,
 				styles : {
 					'height': '300px',
 					'width': 500,
@@ -134,10 +134,27 @@
 		
 		demo.play();
 		
-		console.log('Logging the kapi instance object');
-		console.dir(demo);
-		console.log('Logging the kapi debug data');
-		console.dir(demo._expose());
+		demo.sequence.create('testSeq', function (masterInst) {
+			var circleInst;
+			
+			circleInst = masterInst.add(circle, {
+				name : 'sequencedCircle1',
+				x : 150,
+				y : 150,
+				radius : 50,
+				color : '#ff8',
+				easing : 'easeInOutQuad'
+			});
+			
+			circleInst
+				.keyframe(0, {})
+				.keyframe('1s', {
+					x : 250,
+					y : 250
+				})
+		});
+		
+		demo.sequence.startAt('testSeq', '.5s');
 		
 	</script>
 
