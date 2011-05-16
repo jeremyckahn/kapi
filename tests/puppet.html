@@ -99,7 +99,8 @@
 		circle1.keyframe('0.5s', {
 			x : 0,
 			color : '#0f0'
-		}).keyframe('2s', {
+		})
+		.keyframe('2s', {
 			x : 50,
 			y : 80,
 			color : '#f0f'
@@ -147,11 +148,11 @@
 		
 		subCircle
 			.keyframe(0, {})
-			.keyframe('20', { 
+			.keyframe('1.5s', { 
 				x: 300,
 				y: 200
 			})
-			.liveCopy('2s', 0);
+			.liveCopy('3.25s', 0);
 			
 		puppet.play();
 		//puppet.iterate(3)
