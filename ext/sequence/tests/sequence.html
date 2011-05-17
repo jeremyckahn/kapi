@@ -58,7 +58,7 @@
 		var demo = kapi(document.getElementById('myCanvas'), 
 			// params
 			{
-				fps : 10,
+				fps : 20,
 				styles : {
 					'height': '300px',
 					'width': 500,
@@ -132,8 +132,6 @@
 			color: '#654321'
 		});
 		
-		demo.play();
-		
 		demo.sequence.create('testSeq', function (masterInst) {
 			var circleInst;
 			
@@ -148,13 +146,15 @@
 			
 			circleInst
 				.keyframe(0, {})
-				.keyframe('1s', {
+				.keyframe('4s', {
 					x : 250,
 					y : 250
 				})
 		});
 		
 		demo.sequence.startAt('testSeq', '.5s');
+		
+		demo.play();
 		
 	</script>
 

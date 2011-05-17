@@ -1803,7 +1803,8 @@ function kapi(canvas, params, events) {
 		 * Starts the animation if it was not running before, or resumes the animation if it was not running previously.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		play: function (params) {
+		//play: function (params) {
+		play: function (playPuppets) {
 			var pauseDuration,
 				currTime = now();
 
@@ -1830,15 +1831,20 @@ function kapi(canvas, params, events) {
 				inst._loopStartTime = currTime;
 				_updateAnimationDuration();
 				_fireEvent('loopStart');
+				
+				// The loop is starting from the beginning, so set `_currentFrame` to 0
+				inst._currentFrame = 0;
 			}
 
 			if (!inst._params.isPuppet) {
 				_scheduleUpdate();
 			}
 			
-			if (!params || !params.preventPuppetPropagation) {
+			if (playPuppets) {
 				_callMethodOnAllPuppets('play');
 			}
+			
+			_fireEvent('onPlay');
 			
 			return this;
 		},
@@ -1847,14 +1853,16 @@ function kapi(canvas, params, events) {
 		 * Pause the animation.  Resuming from the paused state does not start the animation from the beginning, the state of the animation is maintained.
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		pause: function (params) {
+		pause: function (pausePuppets) {
 			clearTimeout(inst._updateHandle);
 			inst._pausedAtTime = now();
 			inst._isPaused = true;
 			
-			if (!params || !params.preventPuppetPropagation) {
+			if (pausePuppets) {
 				_callMethodOnAllPuppets('pause');
 			}
+			
+			_fireEvent('onPause');
 			
 			return this;
 		},
@@ -1864,7 +1872,7 @@ function kapi(canvas, params, events) {
 
 		 * @returns {Kapi} The Kapi instance.
 		 */
-		stop: function (params) {
+		stop: function (stopPuppets) {
 			var obj;
 			
 			clearTimeout(inst._updateHandle);
@@ -1891,9 +1899,11 @@ function kapi(canvas, params, events) {
 				self.clear();
 			}
 			
-			if (!params || !params.preventPuppetPropagation) {
+			if (stopPuppets) {
 				_callMethodOnAllPuppets('stop');
 			}
+			
+			_fireEvent('onStop');
 			
 			return this;
 		},
@@ -2251,9 +2261,7 @@ function kapi(canvas, params, events) {
 				actorName;
 			
 			if (this.isPlaying()) {
-				this.stop({
-					'preventPuppetPropagation': true
-				});
+				this.stop();
 			}
 			
 			frame = _getRealKeyframe(frame) % inst._lastKeyframe;
@@ -2298,9 +2306,8 @@ function kapi(canvas, params, events) {
 		 */
 		gotoAndPlay: function (frame) {
 			this.gotoFrame(frame);
-			return this.play({
-				'preventPuppetPropagation': true
-			});
+
+			return this.play();
 		},
 		
 		/**
@@ -2386,7 +2393,7 @@ function kapi(canvas, params, events) {
 			return inst._puppets[puppetName];
 		},
 		
-		puppetCreate: function (puppetName) {
+		puppetCreate: function (puppetName, events) {
 			if (!puppetName) {
 				throw 'Puppet name not specified.';
 			}
@@ -2398,7 +2405,7 @@ function kapi(canvas, params, events) {
 				'clearOnComplete': false,
 				'clearOnStop': false,
 				'autoclear': false
-			});
+			}, events);
 			
 			return this.puppetGet(puppetName);
 		},

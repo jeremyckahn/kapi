@@ -11,10 +11,16 @@
 		 * @param {Function} sequence
 		 */
 		_create: function create (sequenceName, sequence) {
-			var actorSequenceName,
+			var master,
+				actorSequenceName,
 				actorTemplate,
 				actorInst,
-				puppetInst;
+				puppetInst,
+				masterPlayHandler,
+				masterPauseHandler,
+				masterStopHandler;
+				
+			master = this;
 			
 			actorSequenceName = '_sapi.' + sequenceName;
 			
@@ -23,28 +29,53 @@
 					
 				},
 				
-				draw: function () {
-					
+				draw: function () {	
 					if (this.val === 1 && !puppetInst.isPlaying()) {
 						puppetInst.play();
 					}
 				},
 				
 				teardown: function () {
-					
+					master.unbind('onPlay', masterPlayHandler);
+					master.unbind('onPause', masterPauseHandler);
+					master.unbind('onStop', masterPauseHandler);
 				}
 			};
 			
-			puppetInst = this.puppetCreate(actorTemplate);
+			masterPlayHandler = function () {
+				var masterFrame,
+					puppetStartFrame;
+				
+				masterFrame = master._expose()._currentFrame;
+				puppetStartFrame = master._expose()._actorstateIndex[actorSequenceName][1];
+				
+				if (masterFrame >= puppetStartFrame) {
+					puppetInst.play();
+				}
+			}
+			
+			masterPauseHandler = function () {
+				puppetInst.pause();
+			}
+			
+			masterStopHandler = function () {
+				puppetInst.stop();
+			}
+			
+			master.bind('onPlay', masterPlayHandler);
+			master.bind('onPause', masterPauseHandler);
+			master.bind('onStop', masterStopHandler);
+			
+			puppetInst = master.puppetCreate(actorTemplate);
+			
 			sequence(puppetInst);
 			
-			actorInst = this.add(actorTemplate, {
+			actorInst = master.add(actorTemplate, {
 				'name': actorSequenceName,
 				'val': 0
 			});
 			
 			actorInst.keyframe(0, {});
-			
 			sequences[sequenceName] = actorInst;
 		},
 		
@@ -57,6 +88,7 @@
 			
 			sequence = sequences[sequenceName];
 			
+			// Once `val` reaches 1, the puppet will `play()`
 			sequence.keyframe(keyframeId, {
 				'val': 1
 			});

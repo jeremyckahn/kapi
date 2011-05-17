@@ -41,17 +41,17 @@
 		// Kapi does not use jQuery.
 		$('#play').click(function(ev){
 			ev.preventDefault();
-			demo.play();
+			demo.play(true);
 		});
 		
 		$('#pause').click(function(ev){
 			ev.preventDefault();
-			demo.pause();
+			demo.pause(true);
 		});
 		
 		$('#stop').click(function(ev){
 			ev.preventDefault();
-			demo.stop();
+			demo.stop(true);
 		});
 				
 		var demo = kapi(document.getElementById('myCanvas'), 
@@ -147,11 +147,14 @@
 		
 		subCircle
 			.keyframe(0, {})
-			.keyframe('20', { 
+			.keyframe('1.5s', { 
 				x: 300,
 				y: 200
 			})
-			.liveCopy('2s', 0);
+			//.liveCopy('2s', 0);
+			.keyframe('3s', {
+				y: 50
+			});
 			
 		puppet.play();
 		//puppet.iterate(3)
