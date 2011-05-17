@@ -1569,10 +1569,13 @@ function kapi(canvas, params, events) {
 	 *  This function calls itself repeatedly at the rate defined by the `fps` property.  `fps` was provided when the `kapi()` constructor was orignally called.
 	 * 
 	 *  You probably don't want to modify this unless you really know what you're doing.
+	 * 
+	 * @param {Boolean} frameWasCleared If this Kapi instance is a puppet, it needs to know if the frame was cleared from the master.  That information is passed in this boolean.
+	 * @param {Boolean} masterAutoclear If this Kapi instance is a puppet, it needs to know the master's value for `autoclear`.  That information is passed in this boolean.
 	 *
 	 *  @return {Number} The setTimeout identifier for the timer callback.
 	 */
-	function _updateState () {
+	function _updateState (frameWasCleared, masterAutoclear) {
 		// Abandon all hope, ye who enter here.
 		var currTime,
 			reachedKeyframeLastIndex, 
@@ -1617,7 +1620,7 @@ function kapi(canvas, params, events) {
 					}
 					// Allow the animation to run indefinitely if `.play()` is called later.
 					inst._repsRemaining = -1;
-					return;
+					return false;
 				}
 			}
 			
@@ -1657,32 +1660,41 @@ function kapi(canvas, params, events) {
 			inst._currentFrame = inst._reachedKeyframes[reachedKeyframeLastIndex] = inst._keyframeIds[reachedKeyframeLastIndex];
 		}
 		
+		
 		// Only update the canvas if _currentFrame has not gone past the _lastKeyframe
 		if (inst._currentFrame <= inst._lastKeyframe) {
 			// Clear out the canvas
-			if (inst.autoclear !== false) {
+			if (inst.autoclear === true 
+				// This is fixes an edge case issue with puppets.
+				// It's kind of expensive, but it usually won't run too often.
+				|| (inst._params.isPuppet && !frameWasCleared && masterAutoclear)) {
 				self.clear();
+				frameWasCleared = true;
 			}
-
+			
 			_fireEvent('enterFrame');
 			_updateActors(inst._currentFrame);
 			
 		} else if (inst._params.isPuppet){
+
 			// If the last keyframe has been passed, and this Kapi is a puppet kapi,
 			// set the current frame to equal the last keyframe and draw anyways.
 			// This prevents any gaps or flashes in puppet Kapi loops.
 			inst._currentFrame = inst._lastKeyframe;
 			_updateActors(inst._currentFrame);
 		}
-			
-		_callMethodOnAllPuppets('updateState');
+		
+		_callMethodOnAllPuppets('updateState', [frameWasCleared, inst.autoclear]);
+		
+		return true;
 	}
 	
 	function _scheduleUpdate () {
 		inst.frameCount++;
 		inst._updateHandle = setTimeout(function () {
-			_updateState();
-			_scheduleUpdate();
+			if (_updateState()) {
+				_scheduleUpdate();
+			}
 		}, 1000 / inst._params.fps);
 
 		return inst._updateHandle;
