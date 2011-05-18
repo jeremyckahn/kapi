@@ -1,5 +1,13 @@
 /*global kapi:true, console:true */
 
+/**
+ *`state` reference:
+ *
+ *  0 = Sequence hasn't started playing
+ *  1 = Sequence has started playing
+ *  2 = Sequence has played and been stopped
+ */
+
 (function (kapi) {
 	var sequences;
 	
@@ -16,13 +24,14 @@
 				actorTemplate,
 				actorInst,
 				puppetInst,
+				masterEnterFrameHandler,
 				masterPlayHandler,
 				masterPauseHandler,
 				masterStopHandler;
 				
 			master = this;
 			
-			actorSequenceName = '_sapi.' + sequenceName;
+			actorSequenceName = '_sequence.' + sequenceName;
 			
 			actorTemplate = {
 				setup: function () {
@@ -30,8 +39,16 @@
 				},
 				
 				draw: function () {	
-					if (this.val === 1 && !puppetInst.isPlaying()) {
+					// If `controlProp` has reached exactly 1, it is time to `play()`
+					if (this.controlProp === 1 && !puppetInst.isPlaying()) {
 						puppetInst.play();
+						actorInst.data().state = 1;
+						
+						// If `controlProp` has reached exactly 2, and the sequence has started to `play()`,
+						// it is time to `stop()`.
+					} else if (this.controlProp === 2 && actorInst.data().state === 1) {
+						puppetInst.stop();
+						actorInst.data().state = 2;
 					}
 				},
 				
@@ -39,6 +56,7 @@
 					master.unbind('onPlay', masterPlayHandler);
 					master.unbind('onPause', masterPauseHandler);
 					master.unbind('onStop', masterPauseHandler);
+					master.unbind('enterFrame', masterEnterFrameHandler);
 				}
 			};
 			
@@ -51,20 +69,26 @@
 				
 				if (masterFrame >= puppetStartFrame) {
 					puppetInst.play();
+					actorInst.data().state = 1;
 				}
-			}
+			};
 			
 			masterPauseHandler = function () {
 				puppetInst.pause();
-			}
+			};
 			
 			masterStopHandler = function () {
 				puppetInst.stop();
-			}
+			};
+			
+			masterEnterFrameHandler = function () {
+				
+			};
 			
 			master.bind('onPlay', masterPlayHandler);
 			master.bind('onPause', masterPauseHandler);
 			master.bind('onStop', masterStopHandler);
+			master.bind('enterFrame', masterEnterFrameHandler);
 			
 			puppetInst = master.puppetCreate(actorTemplate);
 			
@@ -72,7 +96,11 @@
 			
 			actorInst = master.add(actorTemplate, {
 				'name': actorSequenceName,
-				'val': 0
+				'controlProp': 0
+			});
+			
+			actorInst.data({
+				'state': 0
 			});
 			
 			actorInst.keyframe(0, {});
@@ -88,9 +116,9 @@
 			
 			sequence = sequences[sequenceName];
 			
-			// Once `val` reaches 1, the puppet will `play()`
+			// Once `controlProp` reaches 1, the puppet will `play()`
 			sequence.keyframe(keyframeId, {
-				'val': 1
+				'controlProp': 1
 			});
 		},
 		
@@ -99,7 +127,13 @@
 		 * @param {String|Number} keyframeId
 		 */
 		_endAt: function endAt (sequenceName, keyframeId) {
+			var sequence;
 			
+			sequence = sequences[sequenceName];
+			
+			sequence.keyframe(keyframeId, {
+				'controlProp': 2
+			});
 		},
 		
 		/**
