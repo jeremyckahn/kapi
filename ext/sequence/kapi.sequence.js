@@ -6,6 +6,10 @@
  *  0 = Sequence hasn't started playing
  *  1 = Sequence has started playing
  *  2 = Sequence has played and been stopped
+ *
+ * `controlProp` reference:
+ * 1  = Start the sequence
+ * -1 = Stop the sequence
  */
 
 (function (kapi) {
@@ -40,13 +44,13 @@
 				
 				draw: function () {	
 					// If `controlProp` has reached exactly 1, it is time to `play()`
-					if (this.controlProp === 1 && !puppetInst.isPlaying()) {
+					if (this.controlProp === 1 && actorInst.data().state !== 1) {
 						puppetInst.play();
 						actorInst.data().state = 1;
 						
-						// If `controlProp` has reached exactly 2, and the sequence has started to `play()`,
+						// If `controlProp` has reached exactly -1, and the sequence has started to `play()`,
 						// it is time to `stop()`.
-					} else if (this.controlProp === 2 && actorInst.data().state === 1) {
+					} else if (this.controlProp === -1 && actorInst.data().state !== 2) {
 						puppetInst.stop();
 						actorInst.data().state = 2;
 					}
@@ -132,7 +136,7 @@
 			sequence = sequences[sequenceName];
 			
 			sequence.keyframe(keyframeId, {
-				'controlProp': 2
+				'controlProp': -1
 			});
 		},
 		
