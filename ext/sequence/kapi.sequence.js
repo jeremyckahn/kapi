@@ -24,16 +24,19 @@
 		 */
 		_create: function create (sequenceName, sequence) {
 			var master,
+				exposedMasterData,
 				actorSequenceName,
 				actorTemplate,
 				actorInst,
 				puppetInst,
 				//masterEnterFrameHandler,
+				puppetKeyframeIndex,
 				masterPlayHandler,
 				masterPauseHandler,
 				masterStopHandler;
 				
 			master = this;
+			exposedMasterData = master._expose();
 			
 			actorSequenceName = '_sequence.' + sequenceName;
 			
@@ -44,13 +47,15 @@
 				
 				draw: function () {	
 					// If `controlProp` has reached exactly 1, it is time to `play()`
-					if (this.controlProp === 1 && actorInst.data().state !== 1) {
+					//if (this.controlProp === 1 && actorInst.data().state !== 1) {
+					if (puppetKeyframeIndex[1] <= exposedMasterData._currentFrame && actorInst.data().state !== 1) {
 						puppetInst.play();
 						actorInst.data().state = 1;
 						
 						// If `controlProp` has reached exactly -1, and the sequence has started to `play()`,
 						// it is time to `stop()`.
-					} else if (this.controlProp === -1 && actorInst.data().state !== 2) {
+					//} else if (this.controlProp === -1 && actorInst.data().state !== 2) {
+					} else if (puppetKeyframeIndex[2] <= exposedMasterData._currentFrame && actorInst.data().state !== 2) {
 						puppetInst.stop();
 						actorInst.data().state = 2;
 					}
@@ -108,6 +113,7 @@
 			});
 			
 			actorInst.keyframe(0, {});
+			puppetKeyframeIndex = master._expose()._actorstateIndex[actorSequenceName];
 			sequences[sequenceName] = actorInst;
 		},
 		
@@ -119,6 +125,11 @@
 			var sequence;
 			
 			sequence = sequences[sequenceName];
+			
+			// Don't allow the sequence to start on keyframe 0, that will overwrite the first keyframe
+			if (keyframeId === 0 || keyframeId === '0' || keyframeId === '0s') {
+				keyframeId = 1;
+			}
 			
 			// Once `controlProp` reaches 1, the puppet will `play()`
 			sequence.keyframe(keyframeId, {
@@ -135,6 +146,11 @@
 			
 			sequence = sequences[sequenceName];
 			
+			// Don't allow the sequence to start on keyframe 0, that will overwrite the first keyframe
+			if (keyframeId === 0 || keyframeId === '0' || keyframeId === '0s') {
+				keyframeId = 1;
+			}
+			
 			// Once `controlProp` reaches -1, the puppet will `stop()`
 			sequence.keyframe(keyframeId, {
 				'controlProp': -1
@@ -150,6 +166,7 @@
 			
 			sequence = sequences[sequenceName];
 			puppet = sequence.kapi._expose()._puppets[sequence.id];
+			this.removeActor(sequence.id);
 			
 			puppet.stop();
 			delete sequence.kapi._expose()._puppets[sequence.id];
