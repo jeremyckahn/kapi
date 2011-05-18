@@ -28,7 +28,7 @@
 				actorTemplate,
 				actorInst,
 				puppetInst,
-				masterEnterFrameHandler,
+				//masterEnterFrameHandler,
 				masterPlayHandler,
 				masterPauseHandler,
 				masterStopHandler;
@@ -60,7 +60,7 @@
 					master.unbind('onPlay', masterPlayHandler);
 					master.unbind('onPause', masterPauseHandler);
 					master.unbind('onStop', masterPauseHandler);
-					master.unbind('enterFrame', masterEnterFrameHandler);
+					//master.unbind('enterFrame', masterEnterFrameHandler);
 				}
 			};
 			
@@ -85,16 +85,16 @@
 				puppetInst.stop();
 			};
 			
-			masterEnterFrameHandler = function () {
+			/*masterEnterFrameHandler = function () {
 				
-			};
+			};*/
 			
 			master.bind('onPlay', masterPlayHandler);
 			master.bind('onPause', masterPauseHandler);
 			master.bind('onStop', masterStopHandler);
-			master.bind('enterFrame', masterEnterFrameHandler);
+			//master.bind('enterFrame', masterEnterFrameHandler);
 			
-			puppetInst = master.puppetCreate(actorTemplate);
+			puppetInst = master.puppetCreate(actorSequenceName, actorTemplate);
 			
 			sequence(puppetInst);
 			
@@ -135,6 +135,7 @@
 			
 			sequence = sequences[sequenceName];
 			
+			// Once `controlProp` reaches -1, the puppet will `stop()`
 			sequence.keyframe(keyframeId, {
 				'controlProp': -1
 			});
@@ -144,7 +145,14 @@
 		 * @param {String} sequenceName
 		 */
 		_destroy: function destroy (sequenceName) {
+			var sequence,
+				puppet;
 			
+			sequence = sequences[sequenceName];
+			puppet = sequence.kapi._expose()._puppets[sequence.id];
+			
+			puppet.stop();
+			delete sequence.kapi._expose()._puppets[sequence.id];
 		}
 	};
 	

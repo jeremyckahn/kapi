@@ -153,9 +153,12 @@
 		});
 		
 		demo.sequence.startAt('testSeq', '1s');
-		//demo.sequence.endAt('testSeq', '3s');
 		
 		demo.play();
+		
+		setTimeout(function () {
+			demo.sequence.destroy('testSeq');
+		}, 2000);
 		
 	</script>
 
