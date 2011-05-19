@@ -77,6 +77,7 @@
 				},
 				
 				draw: function () {	
+
 					// Once the starting keyframe has been passed, and the sequence actor has not begun,
 					// it is time to `play()`
 					if (actorInst.data().startingKeyframeId <= exposedMasterData._currentFrame + 1 && actorInst.data().state < 1) {

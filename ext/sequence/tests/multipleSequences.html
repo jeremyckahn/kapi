@@ -97,7 +97,7 @@
 			}),
 			currFrameOutput = $('#currentFrame span');
 		
-		circle1.keyframe(0, {
+		/*circle1.keyframe(0, {
 			x : 0,
 			color : '#0f0'
 		}).keyframe('2.5s', {
@@ -109,9 +109,9 @@
 			y : 150,
 			radius : 100,
 			color : '#00f'
-		});
+		});*/
 		
-		demo.sequence.create('testSeq', function (masterInst) {
+		demo.sequence.create('testSeq1', function (masterInst) {
 			var circleInst;
 			
 			circleInst = masterInst.add(circle, {
@@ -131,7 +131,30 @@
 				})
 		});
 		
-		demo.sequence.startAt('testSeq', 0);
+		demo.sequence.create('testSeq2', function (masterInst) {
+			var circleInst;
+			
+			circleInst = masterInst.add(circle, {
+				name : 'sequencedCircle1',
+				x : 300,
+				y : 100,
+				radius : 60,
+				color : '#bada55',
+				easing : 'easeInOutQuad'
+			});
+			
+			circleInst
+				.keyframe(0, {})
+				.keyframe('4s', {
+					x : '-=250'
+				})
+		});
+		
+		demo.sequence.startAt('testSeq1', 0);
+		demo.sequence.startAt('testSeq2', 0);
+		
+		//demo.sequence.endAt('testSeq1', '3s');
+		
 		//demo.sequence.endAt('testSeq', '2s');
 		
 		demo.play();
