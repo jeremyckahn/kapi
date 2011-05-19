@@ -1,5 +1,7 @@
 /*global kapi:true, console:true */
 
+// Sequences should not end before they begins.
+
 /**
  *`state` reference:
  *
@@ -37,7 +39,8 @@
 				puppetKeyframeIndex,
 				masterPlayHandler,
 				masterPauseHandler,
-				masterStopHandler;
+				masterStopHandler,
+				masterLoopComplete;
 				
 			masterPlayHandler = function () {
 				var masterFrame,
@@ -60,20 +63,31 @@
 				puppetInst.stop();
 			};
 			
+			// If the sequence is finished and the master's loop has completed,
+			// reset the sequence's recorded state
+			masterLoopComplete = function () {
+				if (actorInst.data().state === 2) {
+					actorInst.data().state = 0;
+				}
+			};
+			
 			actorTemplate = {
 				setup: function () {
 					
 				},
 				
 				draw: function () {	
-					// If `dummyProp` has reached exactly 1, it is time to `play()`
-					if (puppetKeyframeIndex[1] <= exposedMasterData._currentFrame && actorInst.data().state !== 1) {
-						puppetInst.play();
+					// Once the starting keyframe has been passed, and the sequence actor has not begun,
+					// it is time to `play()`
+					if (actorInst.data().startingKeyframeId <= exposedMasterData._currentFrame + 1 && actorInst.data().state < 1) {
+						puppetInst.iterate(1, function () {
+							actorInst.data().state = 0;
+						});
 						actorInst.data().state = 1;
 						
-					// If `dummyProp` has reached exactly -1, and the sequence has started to `play()`,
-					// it is time to `stop()`.
-					} else if (puppetKeyframeIndex[2] <= exposedMasterData._currentFrame && actorInst.data().state !== 2) {
+					// Once the ending keyframe has been passed, and the sequence actor has begun,
+					// it is time to `stop()`
+					} else if (actorInst.data().endingKeyframeId <= exposedMasterData._currentFrame + 1 && actorInst.data().state < 2) {
 						puppetInst.stop();
 						actorInst.data().state = 2;
 					}
@@ -83,6 +97,7 @@
 					master.unbind('onPlay', masterPlayHandler);
 					master.unbind('onPause', masterPauseHandler);
 					master.unbind('onStop', masterPauseHandler);
+					master.unbind('loopComplete', masterLoopComplete);
 				}
 			};
 				
@@ -92,6 +107,7 @@
 			master.bind('onPlay', masterPlayHandler);
 			master.bind('onPause', masterPauseHandler);
 			master.bind('onStop', masterStopHandler);
+			master.bind('loopComplete', masterLoopComplete);
 			puppetInst = master.puppetCreate(actorSequenceName, actorTemplate);
 			sequence(puppetInst);
 			
@@ -125,6 +141,8 @@
 			sequence.keyframe(keyframeId, {
 				'dummyProp': 1
 			});
+			
+			sequence.data().startingKeyframeId = this._expose()._puppets[sequence.id].getRealKeyframe(keyframeId);
 		},
 		
 		/**
@@ -140,6 +158,8 @@
 			sequence.keyframe(keyframeId, {
 				'dummyProp': -1
 			});
+			
+			sequence.data().endingKeyframeId = this._expose()._puppets[sequence.id].getRealKeyframe(keyframeId);
 		},
 		
 		/**
@@ -157,5 +177,4 @@
 			delete sequence.kapi._expose()._puppets[sequence.id];
 		}
 	};
-	
 } (kapi));

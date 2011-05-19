@@ -1756,8 +1756,9 @@ function kapi(canvas, params, events) {
 			}
 			
 			if (inst._params.isPuppet) {
-				// Expose the `_updateState` method publicly
+				// Expose some methods publicly that will be needed by puppets
 				this.updateState = _updateState;
+				this.getRealKeyframe = _getRealKeyframe;
 			}
 
 			// The height and width of the canvas draw area do not sync
