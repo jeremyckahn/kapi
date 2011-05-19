@@ -6,14 +6,19 @@
  *  0 = Sequence hasn't started playing
  *  1 = Sequence has started playing
  *  2 = Sequence has played and been stopped
- *
- * `controlProp` reference:
- * 1  = Start the sequence
- * -1 = Stop the sequence
  */
 
 (function (kapi) {
 	var sequences;
+	
+	// Don't allow the sequence to start on keyframe 0, that will overwrite the first keyframe
+	function validateKeyframeId (keyframeId) {
+		if (keyframeId === 0 || keyframeId === '0' || keyframeId === '0s') {
+			keyframeId = 1;
+		}
+		
+		return keyframeId;
+	}
 	
 	sequences = {};
 	
@@ -29,16 +34,31 @@
 				actorTemplate,
 				actorInst,
 				puppetInst,
-				//masterEnterFrameHandler,
 				puppetKeyframeIndex,
 				masterPlayHandler,
 				masterPauseHandler,
 				masterStopHandler;
 				
-			master = this;
-			exposedMasterData = master._expose();
-			
-			actorSequenceName = '_sequence.' + sequenceName;
+			masterPlayHandler = function () {
+				var masterFrame,
+					puppetStartFrame;
+
+				masterFrame = master._expose()._currentFrame;
+				puppetStartFrame = master._expose()._actorstateIndex[actorSequenceName][1];
+
+				if (masterFrame >= puppetStartFrame) {
+					puppetInst.play();
+					actorInst.data().state = 1;
+				}
+			};
+
+			masterPauseHandler = function () {
+				puppetInst.pause();
+			};
+
+			masterStopHandler = function () {
+				puppetInst.stop();
+			};
 			
 			actorTemplate = {
 				setup: function () {
@@ -46,15 +66,13 @@
 				},
 				
 				draw: function () {	
-					// If `controlProp` has reached exactly 1, it is time to `play()`
-					//if (this.controlProp === 1 && actorInst.data().state !== 1) {
+					// If `dummyProp` has reached exactly 1, it is time to `play()`
 					if (puppetKeyframeIndex[1] <= exposedMasterData._currentFrame && actorInst.data().state !== 1) {
 						puppetInst.play();
 						actorInst.data().state = 1;
 						
-						// If `controlProp` has reached exactly -1, and the sequence has started to `play()`,
-						// it is time to `stop()`.
-					//} else if (this.controlProp === -1 && actorInst.data().state !== 2) {
+					// If `dummyProp` has reached exactly -1, and the sequence has started to `play()`,
+					// it is time to `stop()`.
 					} else if (puppetKeyframeIndex[2] <= exposedMasterData._currentFrame && actorInst.data().state !== 2) {
 						puppetInst.stop();
 						actorInst.data().state = 2;
@@ -65,54 +83,29 @@
 					master.unbind('onPlay', masterPlayHandler);
 					master.unbind('onPause', masterPauseHandler);
 					master.unbind('onStop', masterPauseHandler);
-					//master.unbind('enterFrame', masterEnterFrameHandler);
 				}
 			};
-			
-			masterPlayHandler = function () {
-				var masterFrame,
-					puppetStartFrame;
 				
-				masterFrame = master._expose()._currentFrame;
-				puppetStartFrame = master._expose()._actorstateIndex[actorSequenceName][1];
-				
-				if (masterFrame >= puppetStartFrame) {
-					puppetInst.play();
-					actorInst.data().state = 1;
-				}
-			};
-			
-			masterPauseHandler = function () {
-				puppetInst.pause();
-			};
-			
-			masterStopHandler = function () {
-				puppetInst.stop();
-			};
-			
-			/*masterEnterFrameHandler = function () {
-				
-			};*/
-			
+			master = this;
+			exposedMasterData = master._expose();
+			actorSequenceName = '_sequence.' + sequenceName;
 			master.bind('onPlay', masterPlayHandler);
 			master.bind('onPause', masterPauseHandler);
 			master.bind('onStop', masterStopHandler);
-			//master.bind('enterFrame', masterEnterFrameHandler);
-			
 			puppetInst = master.puppetCreate(actorSequenceName, actorTemplate);
-			
 			sequence(puppetInst);
 			
 			actorInst = master.add(actorTemplate, {
 				'name': actorSequenceName,
-				'controlProp': 0
+				'dummyProp': 0
+			}).keyframe(0, {
+				// Nothing!
 			});
 			
 			actorInst.data({
 				'state': 0
 			});
 			
-			actorInst.keyframe(0, {});
 			puppetKeyframeIndex = master._expose()._actorstateIndex[actorSequenceName];
 			sequences[sequenceName] = actorInst;
 		},
@@ -125,15 +118,12 @@
 			var sequence;
 			
 			sequence = sequences[sequenceName];
+			keyframeId = validateKeyframeId(keyframeId);
 			
-			// Don't allow the sequence to start on keyframe 0, that will overwrite the first keyframe
-			if (keyframeId === 0 || keyframeId === '0' || keyframeId === '0s') {
-				keyframeId = 1;
-			}
-			
-			// Once `controlProp` reaches 1, the puppet will `play()`
+			// Make a dummy keyframe, so that the sequence registers a valid keyframe
+			// on the master timeline
 			sequence.keyframe(keyframeId, {
-				'controlProp': 1
+				'dummyProp': 1
 			});
 		},
 		
@@ -145,15 +135,10 @@
 			var sequence;
 			
 			sequence = sequences[sequenceName];
+			keyframeId = validateKeyframeId(keyframeId);
 			
-			// Don't allow the sequence to start on keyframe 0, that will overwrite the first keyframe
-			if (keyframeId === 0 || keyframeId === '0' || keyframeId === '0s') {
-				keyframeId = 1;
-			}
-			
-			// Once `controlProp` reaches -1, the puppet will `stop()`
 			sequence.keyframe(keyframeId, {
-				'controlProp': -1
+				'dummyProp': -1
 			});
 		},
 		
