@@ -138,14 +138,16 @@ For more information and to download Kapi, please visit: https://github.com/jere
 		.keyframe(0, {
 			scaleX: 1,
 			scaleY: 1,
-			alpha: 0
+			alpha: 0,
+			rotate: 45
 		})
-		.keyframe('2s', {
+		.keyframe('1.75s', {
 			scaleX: BADGE_SIZE,
 			scaleY: BADGE_SIZE,
 			x: (CANVAS_WIDTH / 2) - (BADGE_SIZE / 2),
 			y: BADGE_OFFSET_TOP,
-			alpha: 1
+			alpha: 1,
+			rotate: 0
 		})
 		.keyframe('4s', {})
 		.keyframe('5s', {

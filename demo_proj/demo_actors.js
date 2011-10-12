@@ -76,9 +76,11 @@
 				this.img.src = src;
 			},
 			'draw': function draw (ctx) {
+			  ctx.rotate(window._demoApp.utils.degToRad(this.rotate || 0));
 				ctx.globalAlpha = this.alpha;
 				ctx.drawImage(this.prototype.img, this.x, this.y, this.scaleX, this.scaleY);
 				ctx.globalAlpha = 1;
+				ctx.rotate(-window._demoApp.utils.degToRad(this.rotate || 0));
 			} 
 		};
 	};
