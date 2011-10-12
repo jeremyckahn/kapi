@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+ 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">		 
+ 
+		<head> 
+ 
+ 
+	<!-- Title --> 
+	<title>Kapi - open source keyframing animation API for HTML 5 canvas</title> 
+	
+	<link rel = "stylesheet" type = "text/css" href = "css/style.css" /> 
+	
+	<!-- JavaScript includes --> 
+	
+	<script type="text/javascript" src="js/jquery.js"></script> 
+	<script type="text/javascript" src="js/kapi.js"></script> 
+	<script type="text/javascript" src="js/kapi.tweens.js"></script> 
+	<script type="text/javascript" src="js/shapes.js"></script> 
+	
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shCore.js"></script> 
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shBrushJScript.js"></script> 
+	
+	<script type="text/javascript" src="js/demo_runner.js"></script>
+	
+	<link type="text/css" rel="stylesheet" href="js/syntaxhighlighter/styles/shCoreDefault.css"/>
+		
+	<!-- Meta tags --> 
+	<meta name="description" content="" /> 
+	<meta name="keywords" content="" /> 
+	<meta name="author" content="" /> 
+	
+	<script type="text/javascript">
+
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-10592695-6']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+
+	</script>
+ 
+	</head> 
+	
+	<body class="api"> 
+		<div class="container">
+			<h1>Kapi</h1>
+
+			<h3>A keyframing API for the HTML 5 canvas</h3>
+			
+			<h4>A JavaScript framework by <a href="http://www.jeremyckahn.com" target="_blank">Jeremy Kahn</a></h4>
+			
+			<ul>
+				<li><a href="index.html">Home</a></li>
+				<li><a href="kapi_doc.html">Kapi constructor and object reference</a></li>
+				<li><a href="actor_doc.html">Actor object reference</a></li>
+				<li><a href="extending.html">Extending Kapi</a></li>
+				<li><a href="https://github.com/jeremyckahn/kapi" target="_blank">Github repo</a> - <em>fork 'n follow!</em></li>
+			</ul>
+			
+			<h2>Extending Kapi</h2>
+			
+			<ul>
+				<li><a href="#actors">Actors, templates and instances</a></li>
+				<li><a href="#tween">Adding tweens</a></li>
+			</ul>
+			
+			<p>Kapi is designed to be easily extendible, so you can easily modify it to suit your needs.</p>
+			
+			<a name="actors"></a>
+			<h3>Actors, templates and instances</h3>
+			
+			<p>Kapi is designed to completely abstract away your animation's state management logic.  In every frame, Kapi hands off the current state data to your actors.  But what are actors, and how do you make and use them?</p>
+			
+			<p>For instructions on how to add an actor to your Kapi instance, check out the documentation for <code><a href="kapi_doc.html#add">kapiInst.add()</a></code>.  This section deals with the ideas behind the actor construct.</p>
+			
+			<h5>Actor Templates</h5>
+			
+			<p>Before we can make an actor, we must first define an <em>actor template</em>.  An actor template is just the blueprint for how an actor will operate.  This is an actor template example:</p>
+			
+			<pre class="brush: js;">
+var circle = {
+	draw: function (ctx, kapiInst, actorInst){
+		ctx.beginPath();
+		ctx.arc(
+			this.x || 0,
+			this.y || 0,
+			this.radius || 0,
+			0,
+			Math.PI*2, 
+			true
+			);
+		ctx.fillStyle = this.color || '#f0f';
+		ctx.fill();
+		ctx.closePath();
+
+		return this;
+	}
+}</pre>
+
+			<p>The format for this is important, as this is how Kapi interfaces with actors.  If you found that unhelpful, here's a skeleton of an actor you can use to build off of:</p>
+			
+				<pre class="brush: js;">
+	var actorSkeleton = {
+		draw: function (ctx, kapiInst, actorInst){
+			// Code that draws stuff to the canvas (`ctx`) goes here
+			
+			return this;
+		}
+	}</pre>
+	
+	<p>You can also have <code>setup</code> and <code>teardown</code> methods in addition to <code>draw</code>, but that is outside of the scope of this section (see <code><a href="kapi_doc.html#add">kapiInst.add()</a></code>).</p>
+	
+	<h5>kapi.actorTemplates</h5>
+	
+	<p>Although you don't have to, it's not a bad idea to attach your actor templates to <code>kapi.actorTemplates</code>.  It's just a globally-accessible container that's attached to the <code>kapi</code> constructor function.  Doing this will ensure that your actor templates are accessible to any parts of your code that might need them.  Here's how that might look:</p>
+	
+	<pre class="brush: js;">
+kapi.actorTemplates.myAwesomeActor = {
+	draw: function (ctx, kapiInst, actorInst){
+	// Code that draws stuff to the canvas (`ctx`) goes here
+
+	return this;
+	}
+}</pre>
+	
+			<h5>Actor instances</h5>
+			<p>Once you have an actor template, you can make actor instances.  For example, if <code>circle</code> is an actor template, you can make as many instances of <code>circle</code> as you need.  To create an instance of an actor, pass an actor template into <code><a href="kapi_doc.html#add">kapiInst.add()</a></code>.  A reference to the new instance is returned from the method call.  You can also get a reference to the actor instance from the Kapi instance at any time with <code><a href="kapi_doc.html#getactor">kapiInst.getActor()</a></code>.  Actor instances have all of the methods and properties that are documented in the <a href="actor_doc.html">actor documentation page</a>.</p>
+			
+			<a name="tween"></a>
+			<h3>Adding tweens</h3>
+			
+			<p>Kapi has only one tweening method built into the core: <code>linear</code>. (This is <a href="http://www.robertpenner.com/" target="_blank">Robert Penner's</a> Linear tweening equation).  You can add whatever tweening methods you like, as long as they follow the same format.  Here's the code for <code>Linear</code>:
+				
+				<pre class="brush: js;">
+// Params are as follows:
+// t = current time
+// b = start value
+// c = change in value
+// d = duration
+kapi.tween = {
+	linear: function (t, b, c, d) {
+		// no easing, no acceleration
+		return c * t / d + b;
+	}
+};
+	</pre>
+		
+		<p>For convenience, a selection of Robert Penner's tweening equations can be found in <code><a href="https://github.com/jeremyckahn/kapi/blob/master/js/kapi.tweens.js" target="_blank">kapi.tweens.js</a></code>.  For even more convenience, the contents of this file are also in the <a href="https://github.com/jeremyckahn/kapi/blob/master/js/kapi.js" target="_blank">main source file</a> and also in the <a href="https://github.com/jeremyckahn/kapi/blob/master/js/kapi.min.js" target="_blank">standard minified build</a>.  If you feel you don't need these extra equations, you can safely delete them from the files.</p>
+		<p>If you would like to add more tweens, just attach them to the <code>kapi.tween</code> object.  Here's an example of how to add a tween; Robert Penner's "easeInOutQuint," in this case:</p>
+		
+		<pre class="brush: js;">
+kapi.tween.easeInQuint = function (t, b, c, d) {
+	t /= d;
+	return c * t * t * t * t * t + b;
+};
+</pre>
+			
+		</div>
+		
+		</body> 
+ 
+</html>

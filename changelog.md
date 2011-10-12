@@ -1,6 +1,8 @@
 Changelog
 ===
 
+* __1.0.7__: 2011-05-06.  Added parameters to `kapi.add()` and the actor template's `setup` method. SHA: 75c9ee57945d52a45f715a9c9a75f839713261ca
+
 * __1.0.6__: 2011-05-03.  Fixed [Issue 55](https://github.com/jeremyckahn/kapi/issues/55): "kapi.framerate() might mess up statically timed keyframes".  SHA: ce3783570511af21d4b410b060701119462db2bf
 
 * __1.0.5__: 2011-04-28.  Added [`actor.data()`](http://jeremyckahn.github.com/kapi/actor_doc.html#data).  Actor `draw()` functions now receive the actor object as a parameter (this means a draw function can access actor methods).  SHA: b708575e5380a91a056e2a9f701a8e6e7805f9fc

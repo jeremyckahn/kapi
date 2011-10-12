@@ -5,7 +5,7 @@
 
 
 var circle = {
-	setup: function (ctx, kapiInst, actorInst) {
+	setup: function (kapiInst, actorInst, params) {
 		if (window.console) {
 			console.log('Setting up: ' + this.id)
 		}
@@ -26,9 +26,10 @@ var circle = {
 
 		return this;
 	},
-	teardown: function (actorName) {
+	teardown: function (actorName, kapiInst) {
 		if (window.console) {
-			console.log('Tearing down ' + actorName)
+			console.log('Tearing down ' + actorName);
+			console.dir(kapiInst);
 		}
 	}
 }
