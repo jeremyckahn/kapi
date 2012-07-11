@@ -1,34 +1,34 @@
 
 <!DOCTYPE html>
- 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">    
- 
-    <head> 
- 
- 
-	<!-- Title --> 
-	<title>Kapi - open source keyframing animation API for HTML 5 canvas</title> 
-	
-	<link rel = "stylesheet" type = "text/css" href = "css/style.css" /> 
-	
-	<!-- JavaScript includes --> 
-	
-	<script type="text/javascript" src="js/jquery.js"></script> 
-	<script type="text/javascript" src="js/kapi.min.js"></script> 
-	<script type="text/javascript" src="js/shapes.js"></script> 
-	
-	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shCore.js"></script> 
-	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shBrushJScript.js"></script> 
-	
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+    <head>
+
+
+	<!-- Title -->
+	<title>Kapi - open source keyframing animation API for HTML 5 canvas</title>
+
+	<link rel = "stylesheet" type = "text/css" href = "css/style.css" />
+
+	<!-- JavaScript includes -->
+
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/kapi.min.js"></script>
+	<script type="text/javascript" src="js/shapes.js"></script>
+
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="js/syntaxhighlighter/scripts/shBrushJScript.js"></script>
+
 	<script type="text/javascript" src="js/demo_runner.js"></script>
-	
+
 	<link type="text/css" rel="stylesheet" href="js/syntaxhighlighter/styles/shCoreDefault.css"/>
-    
-	<!-- Meta tags --> 
-	<meta name="description" content="" /> 
-	<meta name="keywords" content="" /> 
-	<meta name="author" content="" /> 
- 
+
+	<!-- Meta tags -->
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+	<meta name="author" content="" />
+
 	<script type="text/javascript">
 
 	  var _gaq = _gaq || [];
@@ -43,16 +43,16 @@
 
 	</script>
 
-	</head> 
-  
-	<body> 
+	</head>
+
+	<body>
 		<div class="container">
 	 		<h1>Kapi</h1>
 
 			<h3>A keyframing API for the HTML 5 canvas</h3>
-			
+
 			<h4>A JavaScript framework by <a href="http://www.jeremyckahn.com" target="_blank">Jeremy Kahn</a></h4>
-			
+
 			<ul>
 				<li><a href="index.html">Home</a></li>
 				<li><a href="kapi_doc.html">Kapi constructor and object reference</a></li>
@@ -60,19 +60,19 @@
 				<li><a href="extending.html">Extending Kapi</a></li>
 				<li><a href="https://github.com/jeremyckahn/kapi" target="_blank">Github repo</a> - <em>fork 'n follow!</em></li>
 			</ul>
-			
+
 			<h2>Latest stable release: <a href="js/kapi.min.js" target="_blank">1.0.7</a>.  (Includes <code>kapi.tweens.js</code>)</h2>
-                        
-                        <p class="deprecation-notice"><strong>NOTE:  Kapi is no longer being developed.  However, this library has been rewritten with a nearly identical API and improved feature set.  The new version is  being actively developed - check out <a href="http://jeremyckahn.github.com/rekapi/">Rekapi</a>.</strong></p>
-			
+
+                        <p class="deprecation-notice"><strong>NOTE:  Kapi is no longer being developed.  However, this library has been rewritten with a nearly identical API and improved feature set.  The new version is  being actively developed - check out <a href="http://rekapi.com/">Rekapi</a>.</strong></p>
+
 			<p>Kapi is a tool that helps you make fun animations on the web.  It completely manages animation timing and provides a user-friendly API to define keyframe states.  This page contains some demos that show what Kapi can do.  Please follow the links above to see the API documentation.  For a tutorial on how to get started with Kapi, please consult the <a href="https://github.com/jeremyckahn/kapi/blob/master/README.md" target="_blank">README</a>.</p>
-	
+
 			<p>Kapi is free and open source software (<a href="http://en.wikipedia.org/wiki/MIT_License" target="_blank">MIT license</a>).  You are completely free to use, distribute, and modify the code.  The Github repo contains all of the source files.</p>
-			
+
 			<canvas id="demo1">IE sucks.</canvas>
-			
+
 			<p>Here's the code that generated what you see above:</p>
-			
+
 			<pre class="brush: js;">
 myKapi = kapi(document.getElementById('demo1'), {
 	fps: 30,
@@ -104,31 +104,31 @@ circle1 = myKapi.add(circle, {
 	y: 	100
 }).liveCopy('8s', 0);
 			</pre>
-			
+
 			<h3>More demos</h3>
-			
+
 			<p>Here's a demo of the type of animation that Kapi can help you make.  View the source to see how it works!</p>
-			
+
 			<ul class="demo-list">
 				<li><em><a href="demo_proj/">The future is now!</a></em></li>
 			</ul>
-			
+
 			<p>Kapi is used in production sites as well:</p>
-			
+
 			<ul class="demo-list">
 				<li><a href="http://www.cmegroup.com/investor-relations/annual-review/2010/" target="_blank">CME Group 2010 Annual Report</a> (Kapi animations can be found on the <a href="http://www.cmegroup.com/investor-relations/annual-review/2010/financials.html" target="_blank">Financial Highlights</a> and <a href="http://www.cmegroup.com/investor-relations/annual-review/2010/financial_milestones.html" target="_blank">Financial Milestones</a> pages)</li>
 			</ul>
-			
+
 			<p>More examples can be found in the docs, near the respective API documentation.
-			
+
 			<h3>Helping out</h3>
-			
+
 			<p>This project needs help from the community to grow and be awesome.  Play with the code and let me know what you like and what you don't.  Please <a href="https://github.com/jeremyckahn/kapi/issues" target="_blank">fill out a bug report on Github</a> if you find a bug, or if you would like a feature to be added.  If you would like to discuss Kapi or get help, please visit the <a href="http://groups.google.com/group/kapi_js" target="_blank">Google Group</a>.</p>
-			
+
 			<p>Also, feel free to ping me on Twitter at <a href="http://twitter.com/jeremyckahn" target="_blank">@jeremyckahn</a>.
-			
+
 		</div>
-		
-    </body> 
- 
+
+    </body>
+
 </html>
