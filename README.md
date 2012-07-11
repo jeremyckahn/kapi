@@ -1,7 +1,7 @@
 Kapi - A keyframing API for the HTML 5 Canvas
 =============================================
 
-__NOTE__:  Kapi is __discontinued__.  New features are _not_ being added.  But have no fear!  This project lives on as [Rekapi](https://github.com/jeremyckahn/rekapi/).  Rekapi is simply a rewrite of Kapi with some minor changes.  The API is extremely similar, so porting to Rekapi should hopefully not be difficult.  If there are any significant bugs you find with Kapi, please report them in the [issue tracker](https://github.com/jeremyckahn/kapi/issues) and I will try to fix them.  But otherwise, this project is no longer being maintained.
+### NOTE:  Kapi is discontinued.  New features are _not_ being added.  But have no fear!  This project lives on as [Rekapi](https://github.com/jeremyckahn/rekapi/).  Rekapi is simply a rewrite of Kapi with some minor changes and additions.  The API is extremely similar, so porting to Rekapi should hopefully not be difficult.  If there are any significant bugs you find with Kapi, please report them in the [issue tracker](https://github.com/jeremyckahn/kapi/issues) and I will try to fix them.  But otherwise, this project is no longer being maintained.
 
 What Kapi does
 -----------------------
