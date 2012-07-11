@@ -186,3 +186,16 @@ code {
 em {
 	font-style: italic;
 }
+
+.deprecation-notice {
+  background: #f00;
+  color: #fff;
+}
+
+.deprecation-notice a {
+  color: #AAA;
+}
+
+.deprecation-notice a:hover {
+  color: #888;
+}
